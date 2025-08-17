@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { Settings, Bot, Plus } from 'lucide-react';
 import { selectAllCharacters } from '../../entities/character/selectors';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
 import type { Room } from '../../entities/room/types';
+import { openSettingsModal } from '../../entities/setting/slice';
 
 interface SidebarProps {
     setRoom: (room: Room | null) => void;
 }
 
 function Sidebar({ setRoom }: SidebarProps) {
+    const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -30,7 +32,7 @@ function Sidebar({ setRoom }: SidebarProps) {
                         <h1 className="text-xl md:text-2xl font-bold text-white mb-1">예진그램</h1>
                         <p className="text-xs md:text-sm text-gray-400">상대를 초대/대화 하세요</p>
                     </div>
-                    <button id="open-settings-modal" className="p-2 md:p-2.5 rounded-full bg-gray-800 hover:bg-gray-700 transition-all duration-200">
+                    <button id="open-settings-modal" onClick={() => dispatch(openSettingsModal())} className="p-2 md:p-2.5 rounded-full bg-gray-800 hover:bg-gray-700 transition-all duration-200">
                         <Settings className="w-5 h-5 text-gray-300" />
                     </button>
                 </div>

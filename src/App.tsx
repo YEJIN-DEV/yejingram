@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './App.css'
 import Sidebar from './components/sidebar/Sidebar'
 import MainChat from './components/mainchat/MainChat'
+import SettingsModal from './components/settings/SettingsModal'
 
 function App() {
   const [room, setRoom] = useState(null)
@@ -22,6 +23,7 @@ function App() {
 
         <main id="main-chat" className="flex-1 flex flex-col bg-gray-950">
           <MainChat room={room} />
+          <SettingsModal />
         </main>
 
         <div id="sidebar-backdrop" className="fixed inset-0 z-20 hidden bg-black/50 md:hidden"></div>

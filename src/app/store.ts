@@ -2,12 +2,14 @@ import { configureStore } from '@reduxjs/toolkit'
 import characterReducer from '../entities/character/slice'
 import roomReducer from '../entities/room/slice'
 import messageReducer from '../entities/message/slice'
+import settingsReducer from '../entities/setting/slice'
 import { listener } from '../entities/listeners'
 
 export const store = configureStore({
     reducer: {
         characters: characterReducer,
         rooms: roomReducer,
+        settings: settingsReducer,
         messages: messageReducer,
     },
     middleware: (getDefaultMiddleware) =>
