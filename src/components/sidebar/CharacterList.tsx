@@ -4,6 +4,7 @@ import { Bot, Plus, Edit3, Trash2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectAllRooms } from '../../entities/room/selectors';
 import { roomsActions } from '../../entities/room/slice';
+import { charactersActions } from '../../entities/character/slice';
 import RoomList from './RoomList';
 import type { Room } from '../../entities/room/types';
 
@@ -76,7 +77,10 @@ function CharacterList({
                         <Plus className="w-3 h-3" />
                     </button>
                     <button
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch(charactersActions.openCharacterModal(character.id));
+                        }}
                         className="p-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 hover:text-white transition-colors"
                         title="수정"
                     >
