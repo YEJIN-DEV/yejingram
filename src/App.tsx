@@ -4,6 +4,7 @@ import Sidebar from './components/sidebar/Sidebar'
 import MainChat from './components/mainchat/MainChat'
 import SettingsModal from './components/settings/SettingsModal'
 import PromptModal from './components/settings/PromptModal'
+import CharacterModal from './components/character/CharacterModal'
 
 function App() {
   const [room, setRoom] = useState(null)
@@ -26,6 +27,7 @@ function App() {
           <MainChat room={room} />
           <SettingsModal />
           <PromptModal />
+          <CharacterModal />
         </main>
 
         <div id="sidebar-backdrop" className="fixed inset-0 z-20 hidden bg-black/50 md:hidden"></div>

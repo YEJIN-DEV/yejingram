@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
 import type { Room } from '../../entities/room/types';
 import { openSettingsModal } from '../../entities/setting/slice';
+import { charactersActions } from '../../entities/character/slice';
 
 interface SidebarProps {
     setRoom: (room: Room | null) => void;
@@ -51,7 +52,7 @@ function Sidebar({ setRoom }: SidebarProps) {
 
             <div className="flex-1 overflow-y-auto">
                 <div className="p-4 space-y-2">
-                    <button id="open-new-character-modal" className="w-full flex items-center justify-center py-3 md:py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all duration-200 font-medium shadow-lg text-sm">
+                    <button id="open-new-character-modal" onClick={() => dispatch(charactersActions.openCharacterModal(null))} className="w-full flex items-center justify-center py-3 md:py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all duration-200 font-medium shadow-lg text-sm">
                         <Plus className="w-4 h-4 mr-2" />
                         초대하기
                     </button>
