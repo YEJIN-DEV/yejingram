@@ -7,8 +7,28 @@ export interface ApiConfig {
     customModels: string[];
 }
 
+export interface MainPrompts {
+    system_rules: string;
+    role_and_objective: string;
+    memory_generation: string;
+    character_acting: string;
+    message_writing: string;
+    language: string;
+    additional_instructions: string;
+    sticker_usage: string;
+    group_chat_context: string;
+    open_chat_context: string;
+}
+
+export interface Prompts {
+    main: MainPrompts;
+    profile_creation: string;
+    character_sheet_generation: string;
+}
+
 export interface SettingsState {
     isModalOpen: boolean;
+    isPromptModalOpen: boolean;
     apiProvider: ApiProvider;
     apiConfigs: Record<ApiProvider, ApiConfig>;
     fontScale: number;
@@ -19,4 +39,5 @@ export interface SettingsState {
     randomCharacterCount: number;
     randomMessageFrequencyMin: number;
     randomMessageFrequencyMax: number;
+    prompts: Prompts;
 }

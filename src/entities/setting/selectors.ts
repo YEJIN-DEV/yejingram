@@ -8,6 +8,16 @@ export const selectIsSettingsModalOpen = createSelector(
     (settings) => settings.isModalOpen
 );
 
+export const selectIsPromptModalOpen = createSelector(
+    [selectSettingsState],
+    (settings) => settings.isPromptModalOpen
+);
+
+export const selectPrompts = createSelector(
+    [selectSettingsState],
+    (settings) => settings.prompts
+);
+
 export const selectAllSettings = createSelector(
     [selectSettingsState],
     (settings) => settings

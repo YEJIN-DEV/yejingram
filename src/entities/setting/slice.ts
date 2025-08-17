@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { SettingsState, ApiProvider, ApiConfig } from './types';
+import type { SettingsState, ApiProvider, ApiConfig, Prompts } from './types';
 
 const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     gemini: { apiKey: '', model: 'gemini-2.5-pro', customModels: [] },
@@ -13,6 +13,23 @@ const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
 
 const initialState: SettingsState = {
     isModalOpen: false,
+    isPromptModalOpen: false,
+    prompts: {
+        main: {
+            system_rules: '',
+            role_and_objective: '',
+            memory_generation: '',
+            character_acting: '',
+            message_writing: '',
+            language: '',
+            additional_instructions: '',
+            sticker_usage: '',
+            group_chat_context: '',
+            open_chat_context: '',
+        },
+        profile_creation: '',
+        character_sheet_generation: '',
+    },
     apiProvider: 'gemini',
     apiConfigs: initialApiConfigs,
     fontScale: 1.0,
@@ -35,6 +52,12 @@ const settingsSlice = createSlice({
         closeSettingsModal: (state) => {
             state.isModalOpen = false;
         },
+        openPromptModal: (state) => {
+            state.isPromptModalOpen = true;
+        },
+        closePromptModal: (state) => {
+            state.isPromptModalOpen = false;
+        },
         setSettings: (state, action: PayloadAction<Partial<SettingsState>>) => {
             return { ...state, ...action.payload };
         },
@@ -44,16 +67,26 @@ const settingsSlice = createSlice({
         setApiConfig: (state, action: PayloadAction<{ provider: ApiProvider; config: Partial<ApiConfig> }>) => {
             const { provider, config } = action.payload;
             state.apiConfigs[provider] = { ...state.apiConfigs[provider], ...config };
-        }
+        },
+        setPrompts: (state, action: PayloadAction<Prompts>) => {
+            state.prompts = action.payload;
+        },
+        resetPrompts: (state) => {
+            state.prompts = initialState.prompts;
+        },
     },
 });
 
 export const {
     openSettingsModal,
     closeSettingsModal,
+    openPromptModal,
+    closePromptModal,
     setSettings,
     setApiProvider,
     setApiConfig,
+    setPrompts,
+    resetPrompts,
 } = settingsSlice.actions;
 
 export default settingsSlice.reducer;

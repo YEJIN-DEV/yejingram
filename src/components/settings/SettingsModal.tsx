@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsSettingsModalOpen, selectAllSettings } from '../../entities/setting/selectors';
-import { closeSettingsModal, setSettings } from '../../entities/setting/slice';
+import { closeSettingsModal, setSettings, openPromptModal } from '../../entities/setting/slice';
 import { RootState } from '../../app/store';
 import { useEffect, useState } from 'react';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
@@ -64,7 +64,7 @@ function SettingsModal() {
                 </div>
                 <ProviderSettings settings={localSettings} setSettings={setLocalSettings} />
                 <div>
-                  <button id="open-prompt-modal" className="w-full mt-2 py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                  <button id="open-prompt-modal" onClick={() => dispatch(openPromptModal())} className="w-full mt-2 py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
                     <FilePenLine className="w-4 h-4" /> 프롬프트 수정
                   </button>
                 </div>
