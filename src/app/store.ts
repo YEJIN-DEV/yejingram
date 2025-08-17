@@ -1,0 +1,19 @@
+import { configureStore } from '@reduxjs/toolkit'
+import characterReducer from '../entities/character/slice'
+import roomReducer from '../entities/room/slice'
+import messageReducer from '../entities/message/slice'
+import { listener } from '../entities/listeners'
+
+export const store = configureStore({
+    reducer: {
+        characters: characterReducer,
+        rooms: roomReducer,
+        messages: messageReducer,
+    },
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().prepend(listener.middleware),
+})
+
+// 타입 추론용
+export type RootState = ReturnType<typeof store.getState>
+export type AppDispatch = typeof store.dispatch
