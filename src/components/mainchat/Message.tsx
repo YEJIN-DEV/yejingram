@@ -9,6 +9,8 @@ import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
 import { Avatar } from '../../utils/Avatar';
+import { SendMessage } from '../../services/LLMcaller';
+import type { Room } from '../../entities/room/types';
 
 // Helper function for date formatting
 const formatDateSeparator = (date: Date): string => {
@@ -45,12 +47,14 @@ const findMessageGroup = (messages: MessageType[], currentIndex: number): Messag
 
 interface MessageListProps {
   messages: MessageType[];
+  room: Room;
   isWaitingForResponse: boolean; // Assuming this is passed as a prop
   currentUserId: number; // Assuming current user ID is available to determine isMe
 }
 
 const MessageList: React.FC<MessageListProps> = ({
   messages,
+  room,
   isWaitingForResponse,
   currentUserId,
 }) => {
@@ -119,15 +123,23 @@ const MessageList: React.FC<MessageListProps> = ({
                     data-id={msg.id.toString()}
                     className="edit-message-textarea w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500/50 text-sm"
                     rows={3}
-                    defaultValue={messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.content).join('\n')}
+                    defaultValue={msg.content || ''} // Default to empty string if no content
                   ></textarea>
                 )}
                 <div className="flex items-center space-x-2 mt-2">
                   <button onClick={() => {
-                    console.log('Cancel edit', msg.id)
+                    setEditingMessageId(null);
                   }} data-id={msg.id.toString()} className="cancel-edit-btn text-xs text-gray-400 hover:text-white" >취소</button>
                   <button onClick={() => {
-                    console.log('Save edit', msg.id)
+                    const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
+                    if (textarea) {
+                      const newContent = textarea.value;
+                      dispatch(messagesActions.updateOne({
+                        id: msg.id,
+                        changes: { content: newContent }
+                      }));
+                      setEditingMessageId(null);
+                    }
                   }} data-id={msg.id.toString()} className="save-edit-btn text-xs text-blue-400 hover:text-blue-300">저장</button>
                 </div>
               </div>
@@ -284,33 +296,78 @@ const MessageList: React.FC<MessageListProps> = ({
                   <div className="message-content-wrapper">
                     {renderMessageContent()}
                   </div>
-                  {isLastInGroup && <p className="text-xs text-gray-500 shrink-0 self-end">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
+                  {isLastInGroup && (
+                    <div className="group flex items-end gap-1">
+                      <div
+                        className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-2`}
+                      >
+                        {isLastInGroup && (
+                          <div
+                            className={`flex items-center ${isMe ? 'flex-row-reverse' : ''
+                              } group`}
+                          >
+                            {/* 버튼 컨테이너: 기본 가려짐 → hover 시 폭이 생기며 타임스탬프를 밀어냄 */}
+                            <div
+                              className={`
+          flex items-center gap-2
+          overflow-hidden
+          max-w-0 opacity-0
+          transition-all duration-200
+          group-hover:max-w-28 group-hover:opacity-100
+          ${isMe ? 'ml-2' : 'mr-2'}
+        `}
+                            >
+                              {(msg.type === 'TEXT' || (msg.type === 'IMAGE' && msg.content)) && (
+                                <button
+                                  data-id={msg.id.toString()}
+                                  onClick={() => { setEditingMessageId(msg.id) }}
+                                  className="edit-msg-btn text-gray-500 hover:text-white"
+                                  aria-label="메시지 편집"
+                                  title="편집"
+                                >
+                                  <Edit3 className="w-3 h-3 pointer-events-none" />
+                                </button>
+                              )}
+
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
+                                className="delete-msg-btn text-gray-500 hover:text-white"
+                                aria-label="메시지 삭제"
+                                title="삭제"
+                              >
+                                <Trash2 className="w-3 h-3 pointer-events-none" />
+                              </button>
+
+                              {!isMe && (msg.type === 'TEXT' || msg.type === 'IMAGE') && i === messages.length - 1 && !isWaitingForResponse && (
+                                <button
+                                  data-id={msg.id.toString()}
+                                  onClick={() => {
+                                    console.log('Reroll message', msg.id)
+                                    dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
+                                    SendMessage(room)
+                                  }}
+                                  className="reroll-msg-btn text-gray-500 hover:text-white"
+                                  aria-label="다시 생성"
+                                  title="다시 생성"
+                                >
+                                  <RefreshCw className="w-3 h-3 pointer-events-none" />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* 타임스탬프: 버튼이 펼쳐질 때 자연스럽게 옆으로 밀림 */}
+                            <p
+                              className="text-xs text-gray-500 shrink-0 self-end"
+                            >
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {/* Action Buttons */}
-                {isLastInGroup && (
-                  <div className={`flex items-center gap-2 mt-1.5 h-5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${isMe ? 'justify-end' : ''}`}>
-                    {isMe && (msg.type === 'TEXT' || (msg.type === 'IMAGE' && msg.content)) && (
-                      <button data-id={msg.id.toString()} onClick={() => {
-                        console.log('Edit message', msg.id)
-                        setEditingMessageId(msg.id)
-                      }} className="edit-msg-btn text-gray-500 hover:text-white">
-                        <Edit3 className="w-3 h-3 pointer-events-none" />
-                      </button>
-                    )}
-                    <button data-id={msg.id.toString()} onClick={() => {
-                      // Dispatch action to delete message
-                      dispatch(messagesActions.removeOne(msg.id))
-                      console.log('Delete message', msg.id)
-                    }} className="delete-msg-btn text-gray-500 hover:text-white">
-                      <Trash2 className="w-3 h-3 pointer-events-none" />
-                    </button>
-                    {!isMe && (msg.type === 'TEXT' || msg.type === 'IMAGE') && i === messages.length - 1 && !isWaitingForResponse && (
-                      <button data-id={msg.id.toString()} onClick={() => { console.log('Reroll message', msg.id) }} className="reroll-msg-btn text-gray-500 hover:text-white">
-                        <RefreshCw className="w-3 h-3 pointer-events-none" />
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </React.Fragment>

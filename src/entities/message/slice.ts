@@ -12,7 +12,9 @@ const messagesSlice = createSlice({
     reducers: {
         upsertOne: messagesAdapter.upsertOne,
         upsertMany: messagesAdapter.upsertMany,
-        removeOne: messagesAdapter.removeOne
+        removeOne: messagesAdapter.removeOne,
+        updateOne: messagesAdapter.updateOne,
+        removeMany: messagesAdapter.removeMany
     }
 })
 

@@ -1,10 +1,58 @@
 import { store } from "../app/store";
-import type { Character } from "../entities/character/types";
+import { selectCharacterById } from "../entities/character/selectors";
 import type { Message } from "../entities/message/types";
-import { selectPrompts } from "../entities/setting/selectors";
+import type { Room } from "../entities/room/types";
+import { selectAllSettings, selectCurrentApiConfig, selectPrompts } from "../entities/setting/selectors";
 import { buildTimeContext } from "./prompt";
+import { messagesActions } from "../entities/message/slice";
+import type { ChatResponse } from "./type";
+import { selectMessagesByRoomId } from "../entities/message/selectors";
+import type { Character } from "../entities/character/types";
 
-export async function callGeminiAPI(apiKey: string, model: string, userName: string, userDescription: string, character: Character, messages: Message[], isProactive = false, forceSummary = false, customSystemPrompt = null) {
+export async function SendMessage(room: Room) {
+    const dispatch = store.dispatch;
+    const memberChars = room.memberIds.map(id => selectCharacterById(store.getState(), id));
+
+    const messagePromises = memberChars.map(char => {
+        if (!char) return Promise.resolve(null);
+        return LLMSend(room, char);
+    });
+
+    Promise.all(messagePromises)
+        .then(results => {
+            results.forEach((res, i) => {
+                const char = memberChars[i];
+                if (res && char) {
+                    if (res.messages && Array.isArray(res.messages)) {
+                        let totalDelay = 0;
+                        res.messages.forEach((msg: { delay: number, content: string }) => {
+                            totalDelay += msg.delay;
+                            setTimeout(() => {
+                                dispatch(messagesActions.upsertOne({
+                                    id: crypto.randomUUID(),
+                                    roomId: room.id,
+                                    authorId: char.id,
+                                    content: msg.content,
+                                    createdAt: new Date().toISOString(),
+                                    type: 'TEXT'
+                                }));
+                            }, totalDelay);
+                        });
+                    }
+                }
+            });
+        })
+}
+
+export async function LLMSend(room: Room, char: Character) {
+    const api = selectCurrentApiConfig(store.getState());
+    const settings = selectAllSettings(store.getState());
+    const res = await callGeminiAPI(api.apiKey, api.model, settings.userName, settings.userDescription, char, selectMessagesByRoomId(store.getState(), room.id), false, false, null);
+
+    return res;
+}
+
+export async function callGeminiAPI(apiKey: string, model: string, userName: string, userDescription: string, character: Character, messages: Message[], isProactive = false, forceSummary = false, customSystemPrompt = null): Promise<ChatResponse | null> {
     let contents = [];
     for (const msg of messages) {
         const role = msg.authorId == 0 ? "user" : "model";
