@@ -8,9 +8,9 @@ import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import MessageList from './Message';
 import { messagesActions } from '../../entities/message/slice';
 import { Avatar } from '../../utils/Avatar';
+import { SendMessage } from '../../services/LLMcaller';
 import type { Sticker } from '../../entities/character/types';
 import { StickerPanel } from './StickerPanel';
-import { SendMessage } from '../../services/LLMcaller';
 
 interface MainChatProps {
   room: Room | null;
@@ -227,7 +227,6 @@ function MainChat({ room }: MainChatProps) {
               <InputArea
                 room={room}
                 isWaitingForResponse={isWaitingForResponse}
-                setIsWaitingForResponse={setIsWaitingForResponse}
                 stickerToSend={stickerToSend}
                 onToggleUserStickerPanel={handleToggleStickerPanel}
                 onStickerClear={handleCancelSticker}
@@ -270,13 +269,9 @@ export interface InputAreaProps {
 
   // (선택) 커스텀 스티커 패널 렌더링
   renderUserStickerPanel?: () => React.ReactNode;
-
-  // 콜백
-  setIsWaitingForResponse: (isWaiting: boolean) => void;
 }
 
 export function InputArea({
-  room,
   isWaitingForResponse,
   imageToSend,
   stickerToSend,
@@ -286,12 +281,10 @@ export function InputArea({
   onSendMessage,
   onStickerClear,
   renderUserStickerPanel,
-  setIsWaitingForResponse
 }: InputAreaProps) {
   const [text, setText] = useState("");
   const [showInputOptions, setInputOptions] = useState(false);
   const hasImage = !!imageToSend;
-  const dispatch = useDispatch<AppDispatch>();
 
   const placeholder = useMemo(() => {
     if (hasImage) return "캡션 추가...";
@@ -406,7 +399,7 @@ export function InputArea({
             <button
               id="send-message-btn"
               type="button"
-              onClick={() => handleSend()}
+              onClick={handleSend}
               className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               disabled={isWaitingForResponse || (!text.trim() && !stickerToSend)}
               title="Send"
