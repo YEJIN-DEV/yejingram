@@ -41,7 +41,7 @@ export async function SendMessage(room: Room) {
                     }
                 }
             });
-        })
+        });
 }
 
 export async function LLMSend(room: Room, char: Character) {
