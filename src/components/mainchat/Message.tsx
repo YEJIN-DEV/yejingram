@@ -3,13 +3,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
 import type { Message as MessageType } from '../../entities/message/types';
-import type { Character } from '../../entities/character/types';
-
 // Lucide Icons
 import { Calendar, Edit3, Trash2, RefreshCw, Music } from 'lucide-react';
 import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
+import { Avatar } from '../../utils/Avatar';
 
 // Helper function for date formatting
 const formatDateSeparator = (date: Date): string => {
@@ -60,17 +59,6 @@ const MessageList: React.FC<MessageListProps> = ({
   const animatedMessageIds = useRef(new Set<string>());
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   let typingCharacterId = null; // Ensure typingCharacterId is a string or null
-
-  const renderAvatar = useCallback((character: Character | null | undefined, size: 'sm' | 'md' | 'lg') => {
-    if (!character) return null;
-    return (
-      <img
-        src={character.avatar || 'default-avatar.png'} // Use character.avatar
-        alt={character.name}
-        className={`rounded-full object-cover ${size === 'sm' ? 'w-8 h-8' : size === 'md' ? 'w-10 h-10' : 'w-12 h-12'}`}
-      />
-    );
-  }, []);
 
   const toggleStickerSize = useCallback((messageId: string) => {
     // This should dispatch an action to update expandedStickers in Redux state
@@ -270,9 +258,9 @@ const MessageList: React.FC<MessageListProps> = ({
         const showSenderInfo = !isMe && i === groupInfo.startIndex;
 
         if (!isMe) {
-          const senderCharacter = allCharacters.find(c => c.id.toString() === msg.authorId);
+          const senderCharacter = allCharacters.find(c => c.id === msg.authorId);
           if (senderCharacter) {
-            avatarElement = showSenderInfo ? renderAvatar(senderCharacter, 'sm') : null;
+            avatarElement = showSenderInfo ? <Avatar char={senderCharacter} size="sm" /> : null;
           }
         }
 

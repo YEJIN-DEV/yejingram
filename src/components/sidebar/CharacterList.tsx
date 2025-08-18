@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import type { Character } from '../../entities/character/types';
-import { Bot, Plus, Edit3, Trash2 } from 'lucide-react';
+import { Plus, Edit3, Trash2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectAllRooms } from '../../entities/room/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import { charactersActions } from '../../entities/character/slice';
 import RoomList from './RoomList';
 import type { Room } from '../../entities/room/types';
+import { Avatar } from '../../utils/Avatar';
 
 interface CharacterListProps {
     character: Character;
@@ -38,19 +39,6 @@ function CharacterList({
     const lastMessageContent =
         lastMessage?.type === 'image' ? '이미지를 보냈습니다' :
             lastMessage?.content ?? '대화를 시작해보세요';
-
-    const renderAvatar = (char: Character, size: 'md' | 'sm' = 'md') => {
-        const sizeClasses = { sm: 'w-10 h-10 text-sm', md: 'w-12 h-12 text-base', lg: 'w-16 h-16 text-lg' }[size];
-        if (char?.avatar && char.avatar.startsWith('data:image')) {
-            return <img src={char.avatar} alt={char.name} className={`${sizeClasses} rounded-full object-cover`} />;
-        }
-        const initial = char.name[0] || <Bot />;
-        return (
-            <div className={`${sizeClasses} bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-medium`}>
-                {initial}
-            </div>
-        );
-    };
 
     return (
         <div className="character-group">
@@ -96,7 +84,7 @@ function CharacterList({
                 </div>
 
                 <div className="flex items-center space-x-3 md:space-x-4">
-                    {renderAvatar(character, 'md')}
+                    <Avatar char={character} size="md" />
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                             <h3 className="font-semibold text-white text-sm truncate">{character.name}</h3>

@@ -1,13 +1,13 @@
 import type { Room } from '../../entities/room/types';
 import { Menu, Bot, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Send, Smile, X, Plus, ImageIcon } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import type { Character } from '../../entities/character/types';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { useMemo, useState } from 'react';
 import type { AppDispatch, RootState } from '../../app/store';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import MessageList from './Message';
 import { messagesActions, sendMessage } from '../../entities/message/slice';
+import { Avatar } from '../../utils/Avatar';
 
 interface MainChatProps {
   room: Room | null;
@@ -24,20 +24,6 @@ function MainChat({ room }: MainChatProps) {
   );
 
   const messages = useSelector((state: RootState) => room ? selectMessagesByRoomId(state, room.id) : []);
-
-  const renderAvatar = (char: Character, size: 'md' | 'sm' = 'md') => {
-    const sizeClasses = { sm: 'w-10 h-10 text-sm', md: 'w-12 h-12 text-base', lg: 'w-16 h-16 text-lg' }[size];
-    if (char?.avatar && char.avatar.startsWith('data:image')) {
-      return <img src={char.avatar} alt={char.name} className={`${sizeClasses} rounded-full object-cover`} />;
-    }
-    const initial = char.name[0] || <Bot />;
-    return (
-      <div className={`${sizeClasses} bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-medium`}>
-        {initial}
-      </div>
-    );
-  };
-
 
   // TODO: Implement proper state management for messagesRoom and messages
   // For now, using placeholder values or deriving from `room` if possible.
@@ -159,7 +145,7 @@ function MainChat({ room }: MainChatProps) {
                 <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" /* onClick={toggleSidebar} */>
                   <Menu className="h-5 w-5 text-gray-300" />
                 </button>
-                {renderAvatar(character, 'sm')}
+                <Avatar char={character} size="sm" />
                 <div>
                   <h2 className="font-semibold text-white text-base md:text-lg">{messages.name}</h2>
                   <p className="text-xs md:text-sm text-gray-400 flex items-center">
