@@ -2,6 +2,7 @@ export interface ChatResponse {
     messages: {
         delay: number;      // 밀리초 단위 지연시간
         content: string;    // 메시지 내용
+        sticker?: string;   // 스티커 (옵션)
     }[];
     reactionDelay: number; // 반응 지연시간 (ms)
     characterState: {

@@ -9,47 +9,72 @@ import type { ChatResponse } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
 
-export async function SendMessage(room: Room) {
-    const dispatch = store.dispatch;
+export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
     const memberChars = room.memberIds.map(id => selectCharacterById(store.getState(), id));
 
-    const messagePromises = memberChars.map(char => {
-        if (!char) return Promise.resolve(null);
-        return LLMSend(room, char);
-    });
-
-    Promise.all(messagePromises)
-        .then(results => {
-            results.forEach((res, i) => {
-                const char = memberChars[i];
-                if (res && char) {
-                    if (res.messages && Array.isArray(res.messages)) {
-                        let totalDelay = 0;
-                        res.messages.forEach((msg: { delay: number, content: string }) => {
-                            totalDelay += msg.delay;
-                            setTimeout(() => {
-                                dispatch(messagesActions.upsertOne({
-                                    id: crypto.randomUUID(),
-                                    roomId: room.id,
-                                    authorId: char.id,
-                                    content: msg.content,
-                                    createdAt: new Date().toISOString(),
-                                    type: 'TEXT'
-                                }));
-                            }, totalDelay);
-                        });
-                    }
-                }
-            });
-        });
+    for (const char of memberChars) {
+        if (char) {
+            await LLMSend(room, char, setTypingCharacterId);
+        }
+    }
 }
 
-export async function LLMSend(room: Room, char: Character) {
+export async function LLMSend(room: Room, char: Character, setTypingCharacterId: (id: number | null) => void) {
+    const dispatch = store.dispatch;
     const api = selectCurrentApiConfig(store.getState());
     const settings = selectAllSettings(store.getState());
-    const res = await callGeminiAPI(api.apiKey, api.model, settings.userName, settings.userDescription, char, selectMessagesByRoomId(store.getState(), room.id), false, false, null);
+    
+    try {
+        const res = await callGeminiAPI(api.apiKey, api.model, settings.userName, settings.userDescription, char, selectMessagesByRoomId(store.getState(), room.id), false, false, null);
 
-    return res;
+        if (res && res.messages && Array.isArray(res.messages) && res.messages.length > 0) {
+            await sleep(res.reactionDelay || 1000);
+            setTypingCharacterId(char.id);
+            
+            for (const messagePart of res.messages) {
+                await sleep(messagePart.delay || 1000);
+
+                const message: Message = {
+                    id: crypto.randomUUID(),
+                    roomId: room.id,
+                    authorId: char.id,
+                    content: messagePart.content,
+                    createdAt: new Date().toISOString(),
+                    type: messagePart.sticker ? 'STICKER' : 'TEXT',
+                };
+
+                if (messagePart.sticker) {
+                    const foundSticker = char.stickers?.find(s => s.id == messagePart.sticker || s.name === messagePart.sticker);
+                    if (foundSticker) {
+                        message.sticker = foundSticker;
+                    }
+                }
+                
+                dispatch(messagesActions.upsertOne(message));
+            }
+        } else if (res && res.error) {
+            dispatch(messagesActions.upsertOne({
+                id: crypto.randomUUID(),
+                roomId: room.id,
+                authorId: char.id,
+                content: `Error: ${res.error}`,
+                createdAt: new Date().toISOString(),
+                type: 'TEXT',
+            }));
+        }
+    } catch (error) {
+        console.error("Error in LLMSend:", error);
+        dispatch(messagesActions.upsertOne({
+            id: crypto.randomUUID(),
+            roomId: room.id,
+            authorId: char.id,
+            content: "An unexpected error occurred.",
+            createdAt: new Date().toISOString(),
+            type: 'TEXT',
+        }));
+    } finally {
+        setTypingCharacterId(null);
+    }
 }
 
 export async function callGeminiAPI(apiKey: string, model: string, userName: string, userDescription: string, character: Character, messages: Message[], isProactive = false, forceSummary = false, customSystemPrompt = null): Promise<ChatResponse | null> {
@@ -239,4 +264,8 @@ ${guidelines.replace(/{character.name}/g, character.name).replace('{timeContext}
         console.error("Gemini API 호출 중 오류 발생:", error);
         return { error: `응답 처리 중 오류가 발생했습니다: ${error.message}` };
     }
+}
+
+function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }

@@ -18,6 +18,7 @@ interface MainChatProps {
 
 function MainChat({ room }: MainChatProps) {
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [typingCharacterId, setTypingCharacterId] = useState<number | null>(null);
   const [showStickerPanel, setShowStickerPanel] = useState(false);
   const [stickerToSend, setStickerToSend] = useState<Sticker | null>(null);
 
@@ -74,7 +75,7 @@ function MainChat({ room }: MainChatProps) {
       return;
     }
 
-    SendMessage(room).then(() => {
+    SendMessage(room, setTypingCharacterId).then(() => {
       setIsWaitingForResponse(false);
     });
   };
@@ -219,7 +220,7 @@ function MainChat({ room }: MainChatProps) {
             </header>
 
             <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
-              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} currentUserId={0} />
+              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} />
               <div id="messages-end-ref"></div>
             </div>
 

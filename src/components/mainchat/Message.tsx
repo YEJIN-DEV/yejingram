@@ -49,6 +49,7 @@ interface MessageListProps {
   messages: MessageType[];
   room: Room;
   isWaitingForResponse: boolean; // Assuming this is passed as a prop
+  typingCharacterId: number | null;
   currentUserId: number; // Assuming current user ID is available to determine isMe
 }
 
@@ -56,6 +57,7 @@ const MessageList: React.FC<MessageListProps> = ({
   messages,
   room,
   isWaitingForResponse,
+  typingCharacterId,
   currentUserId,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -63,7 +65,6 @@ const MessageList: React.FC<MessageListProps> = ({
   const animatedMessageIds = useRef(new Set<string>());
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [expandedStickers, setExpandedStickers] = useState<Set<string>>(new Set());
-  let typingCharacterId = null; // Ensure typingCharacterId is a string or null
 
   const toggleStickerSize = useCallback((messageId: string) => {
     setExpandedStickers(prev => {
