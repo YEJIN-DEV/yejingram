@@ -1,3 +1,10 @@
+export interface Sticker {
+    id: string;
+    name: string;
+    data: string;
+    type: string;
+}
+
 export interface Character {
     id: number
     name: string
@@ -11,7 +18,7 @@ export interface Character {
     proactiveEnabled: boolean
     messageCountSinceLastSummary: number
     media: string[]
-    stickers: string[]
+    stickers: Sticker[]
 }
 
 export const defaultCharacters = [

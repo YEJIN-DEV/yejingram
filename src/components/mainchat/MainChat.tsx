@@ -6,11 +6,12 @@ import { useMemo, useState } from 'react';
 import { store, type AppDispatch, type RootState } from '../../app/store';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import MessageList from './Message';
-import { messagesActions, sendMessage } from '../../entities/message/slice';
+import { messagesActions } from '../../entities/message/slice';
 import { Avatar } from '../../utils/Avatar';
 import { selectAllSettings, selectCurrentApiConfig } from '../../entities/setting/selectors';
 import { callGeminiAPI } from '../../services/LLMcaller';
-import type { Character } from '../../entities/character/types';
+import type { Character, Sticker } from '../../entities/character/types';
+import { StickerPanel } from './StickerPanel';
 
 interface MainChatProps {
   room: Room | null;
@@ -18,6 +19,11 @@ interface MainChatProps {
 
 function MainChat({ room }: MainChatProps) {
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [showStickerPanel, setShowStickerPanel] = useState(false);
+  const [stickerToSend, setStickerToSend] = useState<Sticker | null>(null);
+
+  const dispatch = useDispatch<AppDispatch>();
+
   const characterId = room?.type === 'Direct' && Array.isArray(room?.memberIds) && room.memberIds.length > 0
     ? room.memberIds[0]
     : null;
@@ -27,9 +33,81 @@ function MainChat({ room }: MainChatProps) {
   );
 
   const messages = useSelector((state: RootState) => room ? selectMessagesByRoomId(state, room.id) : []);
+  const memberChars = useSelector((state: RootState) =>
+    room?.memberIds.map(id => selectCharacterById(state, id))
+  );
 
-  // TODO: Implement proper state management for messagesRoom and messages
-  // For now, using placeholder values or deriving from `room` if possible.
+  const handleToggleStickerPanel = () => {
+    setShowStickerPanel(prev => !prev);
+  };
+
+  const handleSelectSticker = (sticker: Sticker) => {
+    setStickerToSend(sticker);
+    setShowStickerPanel(false);
+  };
+
+  const handleCancelSticker = () => {
+    setStickerToSend(null);
+  };
+
+  const handleSendMessage = (text: string) => {
+    if (!room) return;
+    if (!text.trim() && !stickerToSend) return;
+
+    setIsWaitingForResponse(true);
+
+    const messageType = stickerToSend ? 'STICKER' : 'TEXT';
+
+    dispatch(messagesActions.upsertOne({
+      id: crypto.randomUUID(),
+      roomId: room.id,
+      authorId: 0, // Assuming current user ID is '0'
+      content: text,
+      createdAt: new Date().toISOString(),
+      type: messageType,
+      sticker: stickerToSend || undefined,
+    }));
+
+    setStickerToSend(null);
+
+    if (!memberChars) {
+      setIsWaitingForResponse(false);
+      return;
+    }
+
+    const messagePromises = memberChars.map(char => {
+      if (!char) return Promise.resolve(null);
+      return sendMessage(room, char);
+    });
+
+    Promise.all(messagePromises)
+      .then(results => {
+        results.forEach((res, i) => {
+          const char = memberChars[i];
+          if (res && char) {
+            if (res.messages && Array.isArray(res.messages)) {
+              let totalDelay = 0;
+              res.messages.forEach((msg: { delay: number, content: string }) => {
+                totalDelay += msg.delay;
+                setTimeout(() => {
+                  dispatch(messagesActions.upsertOne({
+                    id: crypto.randomUUID(),
+                    roomId: room.id,
+                    authorId: char.id,
+                    content: msg.content,
+                    createdAt: new Date().toISOString(),
+                    type: 'TEXT'
+                  }));
+                }, totalDelay);
+              });
+            }
+          }
+        });
+      })
+      .finally(() => {
+        setIsWaitingForResponse(false);
+      });
+  };
 
   if (!(room && character)) {
     return (
@@ -92,12 +170,12 @@ function MainChat({ room }: MainChatProps) {
             </header>
 
             <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
-              {this.renderMessages()}
+              {/* {this.renderMessages()} */}
               <div id="messages-end-ref"></div>
             </div>
 
             <div className="p-4 bg-gray-900 border-t border-gray-800">
-              {this.renderInputArea()}
+              {/* {this.renderInputArea()} */}
             </div>
           </>
         ) : room.type == "Group" ? (
@@ -133,12 +211,12 @@ function MainChat({ room }: MainChatProps) {
             </header>
 
             <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
-              {this.renderMessages()}
+              {/* {this.renderMessages()} */}
               <div id="messages-end-ref"></div>
             </div>
 
             <div className="p-4 bg-gray-900 border-t border-gray-800">
-              {this.renderInputArea()}
+              {/* {this.renderInputArea()} */}
             </div>
           </>
         ) : room.type == "Direct" && messages ? (
@@ -176,7 +254,25 @@ function MainChat({ room }: MainChatProps) {
             </div>
 
             <div className="p-4 bg-gray-900 border-t border-gray-800">
-              <InputArea room={room} isWaitingForResponse={isWaitingForResponse} setIsWaitingForResponse={setIsWaitingForResponse} />
+              <InputArea 
+                room={room} 
+                isWaitingForResponse={isWaitingForResponse} 
+                setIsWaitingForResponse={setIsWaitingForResponse}
+                stickerToSend={stickerToSend}
+                onToggleUserStickerPanel={handleToggleStickerPanel}
+                onStickerClear={handleCancelSticker}
+                onSendMessage={handleSendMessage}
+                renderUserStickerPanel={() =>
+                  showStickerPanel && character && (
+                    <StickerPanel
+                        characterId={character.id}
+                        stickers={character.stickers}
+                        onSelectSticker={handleSelectSticker}
+                        onClose={handleToggleStickerPanel}
+                    />
+                  )
+                }
+              />
             </div>
           </>
         ) : null}
@@ -189,22 +285,17 @@ type ImageToSend = {
   dataUrl: string;
 };
 
-type StickerToSend = {
-  data: string;
-  stickerName: string;
-};
-
 export interface InputAreaProps {
   room: Room;
   isWaitingForResponse: boolean;
   imageToSend?: ImageToSend | null;
-  stickerToSend?: StickerToSend | null;
+  stickerToSend?: Sticker | null;
 
   // 이벤트 핸들러들
   onOpenImageUpload?: () => void;
   onCancelImagePreview?: () => void;
   onToggleUserStickerPanel?: () => void;
-  onSendMessageWithSticker?: (text: string) => void;
+  onSendMessage: (text: string) => void;
   onStickerClear?: () => void;
 
   // (선택) 커스텀 스티커 패널 렌더링
@@ -222,19 +313,14 @@ export function InputArea({
   onOpenImageUpload,
   onCancelImagePreview,
   onToggleUserStickerPanel,
-  onSendMessageWithSticker,
+  onSendMessage,
   onStickerClear,
   renderUserStickerPanel,
   setIsWaitingForResponse
 }: InputAreaProps) {
   const [text, setText] = useState("");
   const [showInputOptions, setInputOptions] = useState(false);
-  const dispatch = useDispatch<AppDispatch>();
   const hasImage = !!imageToSend;
-
-  const memberChars = useSelector((state: RootState) =>
-    room.memberIds.map(id => selectCharacterById(state, id))
-  );
 
   const placeholder = useMemo(() => {
     if (hasImage) return "캡션 추가...";
@@ -243,7 +329,7 @@ export function InputArea({
   }, [hasImage, stickerToSend]);
 
   const handleSend = () => {
-    if (onSendMessageWithSticker) onSendMessageWithSticker(text.trim());
+    onSendMessage(text.trim());
     setText("");
   };
 
@@ -302,10 +388,10 @@ export function InputArea({
             <div className="mb-2 p-2 bg-gray-700 rounded-lg flex items-center gap-2 text-sm text-gray-300">
               <img
                 src={stickerToSend.data}
-                alt={stickerToSend.stickerName}
+                alt={stickerToSend.name}
                 className="w-6 h-6 rounded object-cover"
               />
-              <span>스티커: {stickerToSend.stickerName}</span>
+              <span>스티커: {stickerToSend.name}</span>
               <button
                 type="button"
                 onClick={onStickerClear}
@@ -326,6 +412,12 @@ export function InputArea({
             disabled={isWaitingForResponse}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
           />
 
           {/* 우측 액션 버튼들 */}
@@ -343,56 +435,9 @@ export function InputArea({
             <button
               id="send-message-btn"
               type="button"
-              onClick={() => {
-                if (!text.trim()) return;
-                setIsWaitingForResponse(true);
-                dispatch(messagesActions.upsertOne(
-                  {
-                    id: crypto.randomUUID(),
-                    roomId: room.id,
-                    authorId: 0, // Assuming current user ID is '0'
-                    content: text,
-                    createdAt: new Date().toISOString(),
-                    type: 'TEXT'
-                  }
-                ))
-                setText('');
-
-                const messagePromises = memberChars.map(char => {
-                  if (!char) return Promise.resolve(null);
-                  return sendMessage(room, char);
-                });
-
-                Promise.all(messagePromises)
-                  .then(results => {
-                    results.forEach((res, i) => {
-                      const char = memberChars[i];
-                      if (res && char) {
-                        if (res.messages && Array.isArray(res.messages)) {
-                          let totalDelay = 0;
-                          res.messages.forEach((msg: { delay: number, content: string }) => {
-                            totalDelay += msg.delay;
-                            setTimeout(() => {
-                              dispatch(messagesActions.upsertOne({
-                                id: crypto.randomUUID(),
-                                roomId: room.id,
-                                authorId: char.id,
-                                content: msg.content,
-                                createdAt: new Date().toISOString(),
-                                type: 'TEXT'
-                              }));
-                            }, totalDelay);
-                          });
-                        }
-                      }
-                    });
-                  })
-                  .finally(() => {
-                    setIsWaitingForResponse(false);
-                  });
-              }}
+              onClick={handleSend}
               className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              disabled={isWaitingForResponse || !text.trim()}
+              disabled={isWaitingForResponse || (!text.trim() && !stickerToSend)}
               title="Send"
             >
               <Send className="w-4 h-4" />

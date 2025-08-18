@@ -4,7 +4,7 @@ import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
 import type { Message as MessageType } from '../../entities/message/types';
 // Lucide Icons
-import { Calendar, Edit3, Trash2, RefreshCw, Music } from 'lucide-react';
+import { Calendar, Edit3, Trash2, RefreshCw } from 'lucide-react';
 import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
@@ -58,13 +58,20 @@ const MessageList: React.FC<MessageListProps> = ({
   const allCharacters = useSelector((state: RootState) => charactersAdapter.getSelectors().selectAll(state.characters));
   const animatedMessageIds = useRef(new Set<string>());
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [expandedStickers, setExpandedStickers] = useState<Set<string>>(new Set());
   let typingCharacterId = null; // Ensure typingCharacterId is a string or null
 
   const toggleStickerSize = useCallback((messageId: string) => {
-    // This should dispatch an action to update expandedStickers in Redux state
-    console.log(`Toggle sticker size for message: ${messageId}`);
-    // Example: dispatch(messageActions.toggleStickerExpansion(messageId));
-  }, [dispatch]);
+    setExpandedStickers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  }, []);
 
   // Effect to handle animations (simplified for now)
   useEffect(() => {
@@ -135,92 +142,42 @@ const MessageList: React.FC<MessageListProps> = ({
           }
 
           // Normal message rendering
-          if (msg.type === 'STICKER') { // Use MessageType enum
-            // The original code had complex stickerData logic.
-            // For now, I'll assume msg.content holds the sticker identifier
-            // and that sticker data (like dataUrl, type) needs to be fetched from character.stickers
-            let stickerData: any = null; // Placeholder for richer sticker data
+          if (msg.type === 'STICKER' && msg.sticker) { // Use MessageType enum
+            const stickerData = msg.sticker;
 
-            const character = allCharacters.find(c => c.id === msg.authorId); // Assuming authorId is characterId for stickers
-            if (character && character.stickers) {
-              stickerData = character.stickers.find((s: any) => { // Assuming s is an object with id, name, dataUrl, type
-                return s.id == msg.content || s.name === msg.content || s.name.replace(/\.[^/.]+$/, "") === String(msg.content).replace(/\.[^/.]+$/, "");
-              });
-            }
+            const isExpanded = expandedStickers.has(msg.id);
+            const sizeClass = isExpanded ? 'max-w-4xl' : 'max-w-xs';
+            const heightStyle = isExpanded ? { maxHeight: '720px' } : { maxHeight: '240px' };
 
-            if (stickerData) {
-              const isVideo = stickerData.type && (stickerData.type.startsWith('video/') || stickerData.type === 'video/mp4' || stickerData.type === 'video/webm');
-              const isAudio = stickerData.type && stickerData.type.startsWith('audio/');
 
-              let stickerElement;
-              const isExpanded = false; // This state needs to be managed in Redux or locally
-              const sizeClass = isExpanded ? 'max-w-4xl' : 'max-w-xs';
-              const heightStyle = isExpanded ? { maxHeight: '720px' } : { maxHeight: '240px' };
+            const imgSrc = stickerData.data;
+            const stickerName = stickerData.name || '스티커';
+            const stickerElement = (
+              <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
+                <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain`} style={heightStyle} />
+              </div>
+            );
 
-              if (isAudio) {
-                const audioSrc = stickerData.data || stickerData.dataUrl;
-                const stickerName = stickerData.stickerName || stickerData.name || '오디오';
-                stickerElement = (
-                  <div className="bg-gray-700 p-3 rounded-2xl max-w-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
-                        <Music className="w-6 h-6 text-gray-300" />
-                      </div>
-                      <div>
-                        <div className="text-sm text-white font-medium">{stickerName}</div>
-                        <audio controls className="mt-1 h-8">
-                          <source src={audioSrc} type={stickerData.type} />
-                        </audio>
-                      </div>
-                    </div>
-                  </div>
-                );
-              } else if (isVideo) {
-                const videoSrc = stickerData.data || stickerData.dataUrl;
-                stickerElement = (
-                  <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
-                    <video className={`${sizeClass} rounded-2xl`} style={heightStyle} controls muted loop autoPlay>
-                      <source src={videoSrc} type={stickerData.type} />
-                    </video>
-                  </div>
-                );
-              } else {
-                const imgSrc = stickerData.data || stickerData.dataUrl;
-                const stickerName = stickerData.stickerName || stickerData.name || '스티커';
-                stickerElement = (
-                  <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
-                    <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain`} style={heightStyle} />
-                  </div>
-                );
-              }
 
-              // Assuming text content for sticker is in msg.content if it's not just a sticker
-              const hasTextMessage = msg.content && msg.content.trim() && !msg.content.includes('[스티커:');
+            const hasTextMessage = msg.content && msg.content.trim();
 
-              if (hasTextMessage) {
-                return (
-                  <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                    <div className={`px-4 py-2 rounded-2xl text-sm md:text-base leading-relaxed ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-100'} mb-2`}>
-                      <div className="break-words">{msg.content}</div>
-                    </div>
-                    {stickerElement}
-                  </div>
-                );
-              } else {
-                return stickerElement;
-              }
-            } else {
+            if (hasTextMessage) {
               return (
-                <div className="px-4 py-2 rounded-2xl text-sm md:text-base leading-relaxed bg-gray-700 text-gray-400 italic">
-                  [삭제된 스티커: {msg.content}]
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                  <div className={`px-4 py-2 rounded-2xl text-sm md:text-base leading-relaxed ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-100'} mb-2`}>
+                    <div className="break-words">{msg.content}</div>
+                  </div>
+                  {stickerElement}
                 </div>
               );
+            } else {
+              return stickerElement;
             }
           } else if (msg.type === 'IMAGE') { // Use MessageType enum
             // Assuming msg.content holds the image URL
             const imageUrl = msg.content; // Or fetch from character.media if imageId is used
 
-            const isExpanded = false; // This state needs to be managed in Redux or locally
+            const isExpanded = expandedStickers.has(msg.id);
             const sizeClass = isExpanded ? 'max-w-4xl' : 'max-w-xs';
             const heightStyle = isExpanded ? { maxHeight: '720px' } : { maxHeight: '320px' };
 
