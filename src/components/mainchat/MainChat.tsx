@@ -3,11 +3,14 @@ import { Menu, Bot, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, S
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { useMemo, useState } from 'react';
-import type { AppDispatch, RootState } from '../../app/store';
+import { store, type AppDispatch, type RootState } from '../../app/store';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import MessageList from './Message';
 import { messagesActions, sendMessage } from '../../entities/message/slice';
 import { Avatar } from '../../utils/Avatar';
+import { selectAllSettings, selectCurrentApiConfig } from '../../entities/setting/selectors';
+import { callGeminiAPI } from '../../services/LLMcaller';
+import type { Character } from '../../entities/character/types';
 
 interface MainChatProps {
   room: Room | null;
@@ -147,7 +150,7 @@ function MainChat({ room }: MainChatProps) {
                 </button>
                 <Avatar char={character} size="sm" />
                 <div>
-                  <h2 className="font-semibold text-white text-base md:text-lg">{messages.name}</h2>
+                  <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
                   <p className="text-xs md:text-sm text-gray-400 flex items-center">
                     <MessageCircle className="w-3 h-3 mr-1.5" />
                     {room.name}
@@ -228,6 +231,10 @@ export function InputArea({
   const [showInputOptions, setInputOptions] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const hasImage = !!imageToSend;
+
+  const memberChars = useSelector((state: RootState) =>
+    room.memberIds.map(id => selectCharacterById(state, id))
+  );
 
   const placeholder = useMemo(() => {
     if (hasImage) return "캡션 추가...";
@@ -337,7 +344,8 @@ export function InputArea({
               id="send-message-btn"
               type="button"
               onClick={() => {
-                setIsWaitingForResponse(true)
+                if (!text.trim()) return;
+                setIsWaitingForResponse(true);
                 dispatch(messagesActions.upsertOne(
                   {
                     id: crypto.randomUUID(),
@@ -348,19 +356,43 @@ export function InputArea({
                     type: 'TEXT'
                   }
                 ))
-                room.memberIds.forEach(async memberId => {
-                  try {
-                    const result = await dispatch(sendMessage({ roomId: room.id, authorId: memberId })).unwrap()
-                    console.log('Message sent:', result);
-                  } catch (error) {
-                    console.error('Failed to send message:', error);
-                  }
+                setText('');
 
-                  setIsWaitingForResponse(false)
-                })
+                const messagePromises = memberChars.map(char => {
+                  if (!char) return Promise.resolve(null);
+                  return sendMessage(room, char);
+                });
+
+                Promise.all(messagePromises)
+                  .then(results => {
+                    results.forEach((res, i) => {
+                      const char = memberChars[i];
+                      if (res && char) {
+                        if (res.messages && Array.isArray(res.messages)) {
+                          let totalDelay = 0;
+                          res.messages.forEach((msg: { delay: number, content: string }) => {
+                            totalDelay += msg.delay;
+                            setTimeout(() => {
+                              dispatch(messagesActions.upsertOne({
+                                id: crypto.randomUUID(),
+                                roomId: room.id,
+                                authorId: char.id,
+                                content: msg.content,
+                                createdAt: new Date().toISOString(),
+                                type: 'TEXT'
+                              }));
+                            }, totalDelay);
+                          });
+                        }
+                      }
+                    });
+                  })
+                  .finally(() => {
+                    setIsWaitingForResponse(false);
+                  });
               }}
               className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              disabled={isWaitingForResponse}
+              disabled={isWaitingForResponse || !text.trim()}
               title="Send"
             >
               <Send className="w-4 h-4" />
@@ -373,6 +405,35 @@ export function InputArea({
       </div>
     </div>
   );
+}
+
+interface ChatResponse {
+  messages: {
+    delay: number;      // 밀리초 단위 지연시간
+    content: string;    // 메시지 내용
+  }[];
+  reactionDelay: number; // 반응 지연시간 (ms)
+  characterState: {
+    energy: number;     // 에너지 수준 (0~1)
+    mood: number;       // 기분 (0~1)
+    personality: {
+      agreeableness: number;      // 친화성
+      conscientiousness: number;  // 성실성
+      extroversion: number;       // 외향성
+      neuroticism: number;        // 신경성
+      openness: number;           // 개방성
+    };
+    socialBattery: number; // 사회적 배터리 (0~1)
+  };
+}
+
+
+export async function sendMessage(room: Room, char: Character): Promise<ChatResponse | null> {
+  const api = selectCurrentApiConfig(store.getState());
+  const settings = selectAllSettings(store.getState());
+  const res = await callGeminiAPI(api.apiKey, api.model, settings.userName, settings.userDescription, char, selectMessagesByRoomId(store.getState(), room.id), false, false, null);
+
+  return res;
 }
 
 export default MainChat;
