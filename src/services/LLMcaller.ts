@@ -125,7 +125,7 @@ export async function callGeminiAPI(apiKey: string, model: string, userName: str
     const prompts = selectPrompts(store.getState())
 
     // // 스티커 정보 준비
-    // const availableStickers = character.stickers?.map(sticker => `${sticker.id} (${sticker.name})`).join(', ') || 'none';
+    const availableStickers = character.stickers?.map(sticker => `${sticker.id} (${sticker.name})`).join(', ') || 'none';
 
     const guidelines = [
         prompts.main.memory_generation,
@@ -133,7 +133,7 @@ export async function callGeminiAPI(apiKey: string, model: string, userName: str
         prompts.main.message_writing,
         prompts.main.language,
         prompts.main.additional_instructions,
-        // prompts.main.sticker_usage?.replace('{availableStickers}', availableStickers) || ''
+        prompts.main.sticker_usage?.replace('{availableStickers}', availableStickers) || ''
     ].join('\n\n');
 
     const masterPrompt = `
