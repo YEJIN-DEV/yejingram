@@ -75,7 +75,10 @@ function CharacterList({
                         <Edit3 className="w-3 h-3" />
                     </button>
                     <button
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            dispatch(charactersActions.removeOne(character.id));
+                        }}
                         className="p-1 bg-gray-700 hover:bg-red-600 rounded text-gray-300 hover:text-white transition-colors"
                         title="삭제"
                     >
@@ -111,7 +114,7 @@ function CharacterList({
                 <div className="ml-6 space-y-1 pb-2">
                     {chatRooms.map(room => (
                         <div key={room.id}>
-                            <RoomList character={character} room={room} unreadCount={0} setRoom={setRoom} />
+                            <RoomList room={room} unreadCount={0} setRoom={setRoom} />
                         </div>
                     ))}
                 </div>

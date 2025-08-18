@@ -15,6 +15,7 @@ const charactersSlice = createSlice({
   reducers: {
     upsertMany: charactersAdapter.upsertMany,
     upsertOne: charactersAdapter.upsertOne,
+    removeOne: charactersAdapter.removeOne,
     openCharacterModal: (state, action: PayloadAction<string | number | null>) => {
       state.isCharacterModalOpen = true;
       state.editingCharacterId = action.payload;

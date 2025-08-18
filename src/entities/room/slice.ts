@@ -12,6 +12,7 @@ const roomsSlice = createSlice({
     reducers: {
         upsertOne: roomsAdapter.upsertOne,
         upsertMany: roomsAdapter.upsertMany,
+        removeOne: roomsAdapter.removeOne,
         addMembers(state, action: { payload: { roomId: string, memberIds: number[] } }) {
             const { roomId, memberIds } = action.payload
             const room = state.entities[roomId]

@@ -1,25 +1,23 @@
-import type { Character } from '../../entities/character/types';
 import { Trash2 } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
-import { selectAllRooms } from '../../entities/room/selectors';
 import type { Room } from '../../entities/room/types';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
+import { roomsActions } from '../../entities/room/slice';
 
 interface RoomListProps {
-    character: Character;
     room: Room;
     unreadCount: number;
     setRoom: (room: Room | null) => void;
 }
 
 function RoomList({
-    character,
     room,
     unreadCount,
     setRoom
 }: RoomListProps) {
     const lastMessage = useSelector((state: RootState) => selectMessagesByRoomId(state, room.id))[-1];
+    const dispatch = useDispatch();
 
     let lastMessageContent = '채팅을 시작해보세요';
     if (lastMessage) {
@@ -46,7 +44,7 @@ function RoomList({
                     <p className="text-xs text-gray-400 truncate">{lastMessageContent}</p>
                 </div>
             </div>
-            <button className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-red-600 hover:bg-red-700 rounded text-white" title="채팅방 삭제">
+            <button onClick={() => dispatch(roomsActions.removeOne(room.id))} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-red-600 hover:bg-red-700 rounded text-white" title="채팅방 삭제">
                 <Trash2 className="w-3 h-3" />
             </button>
         </div >
