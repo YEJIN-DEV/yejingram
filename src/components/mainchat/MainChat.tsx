@@ -355,6 +355,8 @@ export function InputArea({
                   } catch (error) {
                     console.error('Failed to send message:', error);
                   }
+
+                  setIsWaitingForResponse(false)
                 })
               }}
               className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
