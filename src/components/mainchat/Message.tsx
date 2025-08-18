@@ -1,15 +1,15 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
-import { messagesAdapter } from '../../entities/message/slice';
 import { charactersAdapter } from '../../entities/character/slice';
-import { roomsAdapter } from '../../entities/room/slice';
 import type { Message as MessageType } from '../../entities/message/types';
 import type { Character } from '../../entities/character/types';
-import type { Room } from '../../entities/room/types';
 
 // Lucide Icons
 import { Calendar, Edit3, Trash2, RefreshCw, Music } from 'lucide-react';
+import { messagesActions } from '../../entities/message/slice';
+
+import SenderName from './SenderName';
 
 // Helper function for date formatting
 const formatDateSeparator = (date: Date): string => {
@@ -44,46 +44,22 @@ const findMessageGroup = (messages: MessageType[], currentIndex: number): Messag
   };
 };
 
-interface MessageProps {
-  selectedChatId: string | null;
-  editingMessageId: string | null; // Assuming this is passed as a prop
+interface MessageListProps {
+  messages: MessageType[];
   isWaitingForResponse: boolean; // Assuming this is passed as a prop
-  typingCharacterId: string | null; // Assuming this is passed as a prop
-  currentUserId: string; // Assuming current user ID is available to determine isMe
+  currentUserId: number; // Assuming current user ID is available to determine isMe
 }
 
-const Message: React.FC<MessageProps> = ({
-  selectedChatId,
-  editingMessageId,
+const MessageList: React.FC<MessageListProps> = ({
+  messages,
   isWaitingForResponse,
-  typingCharacterId,
   currentUserId,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
-
-  const allMessages = useSelector((state: RootState) => messagesAdapter.getSelectors().selectAll(state.messages));
-  const messages = selectedChatId ? allMessages.filter(msg => msg.roomId === selectedChatId) : [];
-
   const allCharacters = useSelector((state: RootState) => charactersAdapter.getSelectors().selectAll(state.characters));
-  const allRooms = useSelector((state: RootState) => roomsAdapter.getSelectors().selectAll(state.rooms));
-
   const animatedMessageIds = useRef(new Set<string>());
-
-  // Helper functions that depend on Redux state
-  const getCurrentChatRoom = useCallback((): Room | undefined => {
-    if (!selectedChatId) return undefined;
-    return allRooms.find(room => room.id === selectedChatId);
-  }, [selectedChatId, allRooms]);
-
-  const isGroupChat = useCallback((chatId: string): boolean => {
-    const room = allRooms.find(r => r.id === chatId);
-    return room ? room.type === 'Group' : false; // Use 'Group' as per types.ts
-  }, [allRooms]);
-
-  const isOpenChat = useCallback((chatId: string): boolean => {
-    const room = allRooms.find(r => r.id === chatId);
-    return room ? room.type === 'Open' : false; // Use 'Open' as per types.ts
-  }, [allRooms]);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  let typingCharacterId = null; // Ensure typingCharacterId is a string or null
 
   const renderAvatar = useCallback((character: Character | null | undefined, size: 'sm' | 'md' | 'lg') => {
     if (!character) return null;
@@ -135,7 +111,7 @@ const Message: React.FC<MessageProps> = ({
 
         // Placeholder for message content rendering
         const renderMessageContent = () => {
-          if (editingMessageId === msg.id.toString()) { // Use msg.id for editing
+          if (editingMessageId === msg.id) { // Use msg.id for editing
             // Editing state
             return (
               <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
@@ -159,8 +135,12 @@ const Message: React.FC<MessageProps> = ({
                   ></textarea>
                 )}
                 <div className="flex items-center space-x-2 mt-2">
-                  <button data-id={msg.id.toString()} className="cancel-edit-btn text-xs text-gray-400 hover:text-white" onClick={() => console.log('Cancel edit', msg.id)}>취소</button>
-                  <button data-id={msg.id.toString()} className="save-edit-btn text-xs text-blue-400 hover:text-blue-300" onClick={() => console.log('Save edit', msg.id)}>저장</button>
+                  <button onClick={() => {
+                    console.log('Cancel edit', msg.id)
+                  }} data-id={msg.id.toString()} className="cancel-edit-btn text-xs text-gray-400 hover:text-white" >취소</button>
+                  <button onClick={() => {
+                    console.log('Save edit', msg.id)
+                  }} data-id={msg.id.toString()} className="save-edit-btn text-xs text-blue-400 hover:text-blue-300">저장</button>
                 </div>
               </div>
             );
@@ -286,20 +266,13 @@ const Message: React.FC<MessageProps> = ({
         const showUnread = isMe && lastUserMessage && msg.id === lastUserMessage.id && isWaitingForResponse && !typingCharacterId;
 
         let avatarElement = null;
-        let senderName = ''; // Initialize senderName
 
-        const selectedChatRoom = getCurrentChatRoom();
-        const isGroupOrOpenChat = isGroupChat(selectedChatId || '') || isOpenChat(selectedChatId || '');
         const showSenderInfo = !isMe && i === groupInfo.startIndex;
 
         if (!isMe) {
-          const senderCharacter = allCharacters.find(c => c.id.toString() === msg.authorId); // Assuming authorId is characterId
+          const senderCharacter = allCharacters.find(c => c.id.toString() === msg.authorId);
           if (senderCharacter) {
-            senderName = senderCharacter.name;
             avatarElement = showSenderInfo ? renderAvatar(senderCharacter, 'sm') : null;
-          } else {
-            // Fallback if sender is not a character (e.g., another user in a direct chat)
-            senderName = msg.authorId; // Use authorId as sender name if character not found
           }
         }
 
@@ -317,7 +290,7 @@ const Message: React.FC<MessageProps> = ({
             <div className={`group flex w-full items-start gap-3 ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'flex-row-reverse' : ''}`}>
               {!isMe && <div className="shrink-0 w-10 h-10 mt-1">{avatarElement}</div>}
               <div className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
-                {showSenderInfo && <p className="text-sm text-gray-400 mb-1">{senderName}</p>}
+                {showSenderInfo && <p className="text-sm text-gray-400 mb-1"><SenderName authorId={msg.authorId} /></p>}
                 <div className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
                   {showUnread && <span className="text-xs text-yellow-400 self-end mb-0.5">1</span>}
                   <div className="message-content-wrapper">
@@ -329,15 +302,22 @@ const Message: React.FC<MessageProps> = ({
                 {isLastInGroup && (
                   <div className={`flex items-center gap-2 mt-1.5 h-5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${isMe ? 'justify-end' : ''}`}>
                     {isMe && (msg.type === 'TEXT' || (msg.type === 'IMAGE' && msg.content)) && (
-                      <button data-id={msg.id.toString()} className="edit-msg-btn text-gray-500 hover:text-white" onClick={() => console.log('Edit message', msg.id)}>
+                      <button data-id={msg.id.toString()} onClick={() => {
+                        console.log('Edit message', msg.id)
+                        setEditingMessageId(msg.id)
+                      }} className="edit-msg-btn text-gray-500 hover:text-white">
                         <Edit3 className="w-3 h-3 pointer-events-none" />
                       </button>
                     )}
-                    <button data-id={msg.id.toString()} className="delete-msg-btn text-gray-500 hover:text-white" onClick={() => console.log('Delete message', msg.id)}>
+                    <button data-id={msg.id.toString()} onClick={() => {
+                      // Dispatch action to delete message
+                      dispatch(messagesActions.removeOne(msg.id))
+                      console.log('Delete message', msg.id)
+                    }} className="delete-msg-btn text-gray-500 hover:text-white">
                       <Trash2 className="w-3 h-3 pointer-events-none" />
                     </button>
                     {!isMe && (msg.type === 'TEXT' || msg.type === 'IMAGE') && i === messages.length - 1 && !isWaitingForResponse && (
-                      <button data-id={msg.id.toString()} className="reroll-msg-btn text-gray-500 hover:text-white" onClick={() => console.log('Reroll message', msg.id)}>
+                      <button data-id={msg.id.toString()} onClick={() => { console.log('Reroll message', msg.id) }} className="reroll-msg-btn text-gray-500 hover:text-white">
                         <RefreshCw className="w-3 h-3 pointer-events-none" />
                       </button>
                     )}
@@ -349,7 +329,7 @@ const Message: React.FC<MessageProps> = ({
         );
       })}
 
-      {typingCharacterId && typingCharacterId === selectedChatId && (
+      {typingCharacterId && (
         <div className="flex items-start gap-3 animate-slideUp">
           <div className="shrink-0 w-10 h-10 mt-1">
             {renderAvatar(allCharacters.find(c => c.id.toString() === typingCharacterId), 'sm')}
@@ -367,4 +347,4 @@ const Message: React.FC<MessageProps> = ({
   );
 };
 
-export default Message;
+export default MessageList;

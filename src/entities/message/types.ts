@@ -1,8 +1,8 @@
 export type MessageType = "TEXT" | "IMAGE" | "STICKER";
 export interface Message {
-    id: number;
+    id: string;
     roomId: string;
-    authorId: string;
+    authorId: number;
     content: string;
     type: MessageType;
     createdAt: string;

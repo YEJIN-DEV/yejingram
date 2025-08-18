@@ -1,15 +1,30 @@
 import type { Room } from '../../entities/room/types';
 import { Menu, Bot, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Send, Smile, X, Plus, ImageIcon } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import type { Character } from '../../entities/character/types';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { useMemo, useState } from 'react';
+import type { AppDispatch, RootState } from '../../app/store';
+import { selectMessagesByRoomId } from '../../entities/message/selectors';
+import MessageList from './Message';
+import { messagesActions, sendMessage } from '../../entities/message/slice';
 
 interface MainChatProps {
   room: Room | null;
 }
 
 function MainChat({ room }: MainChatProps) {
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const characterId = room?.type === 'Direct' && Array.isArray(room?.memberIds) && room.memberIds.length > 0
+    ? room.memberIds[0]
+    : null;
+
+  const character = useSelector((state: RootState) =>
+    characterId ? selectCharacterById(state, characterId) : null
+  );
+
+  const messages = useSelector((state: RootState) => room ? selectMessagesByRoomId(state, room.id) : []);
+
   const renderAvatar = (char: Character, size: 'md' | 'sm' = 'md') => {
     const sizeClasses = { sm: 'w-10 h-10 text-sm', md: 'w-12 h-12 text-base', lg: 'w-16 h-16 text-lg' }[size];
     if (char?.avatar && char.avatar.startsWith('data:image')) {
@@ -24,11 +39,10 @@ function MainChat({ room }: MainChatProps) {
   };
 
 
-  // TODO: Implement proper state management for selectedChatRoom and selectedChat
+  // TODO: Implement proper state management for messagesRoom and messages
   // For now, using placeholder values or deriving from `room` if possible.
-  const selectedChat = room?.type === 'Direct' && room.memberIds.length > 0 ? useSelector((state) => selectCharacterById(state, room.memberIds[0])) : null;
 
-  if (!room) {
+  if (!(room && character)) {
     return (
       <div className="flex-1 flex items-center justify-center text-center p-4">
         <button
@@ -53,132 +67,133 @@ function MainChat({ room }: MainChatProps) {
       </div>
     );
   }
-
-  return (
-    <>
-      {room.type == "Open" ? (
-        <>
-          <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" /* onClick={toggleSidebar} */>
-                <Menu className="h-5 w-5 text-gray-300" />
-              </button>
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-                <Globe className="w-6 h-6 text-white" />
+  else {
+    return (
+      <>
+        {room.type == "Open" ? (
+          <>
+            <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
+              <div className="flex items-center space-x-2 md:space-x-4">
+                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" /* onClick={toggleSidebar} */>
+                  <Menu className="h-5 w-5 text-gray-300" />
+                </button>
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <Globe className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
+                  <p className="text-xs md:text-sm text-gray-400 flex items-center">
+                    <Globe className="w-3 h-3 mr-1.5" />
+                    {/* TODO: Implement participant count for open chats */}
+                    0명 접속중
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
-                <p className="text-xs md:text-sm text-gray-400 flex items-center">
-                  <Globe className="w-3 h-3 mr-1.5" />
-                  {/* TODO: Implement participant count for open chats */}
-                  0명 접속중
-                </p>
+              <div className="flex items-center space-x-1 md:space-x-2">
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
+                  <Phone className="w-4 h-4 text-gray-300" />
+                </button>
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={startVideoCall} */}
+                  <Video className="w-4 h-4 text-gray-300" />
+                </button>
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
+                  <MoreHorizontal className="w-4 h-4 text-gray-300" />
+                </button>
               </div>
-            </div>
-            <div className="flex items-center space-x-1 md:space-x-2">
-              <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
-                <Phone className="w-4 h-4 text-gray-300" />
-              </button>
-              <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={startVideoCall} */}
-                <Video className="w-4 h-4 text-gray-300" />
-              </button>
-              <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
-                <MoreHorizontal className="w-4 h-4 text-gray-300" />
-              </button>
-            </div>
-          </header>
+            </header>
 
-          <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
-            {this.renderMessages()}
-            <div id="messages-end-ref"></div>
-          </div>
+            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
+              {this.renderMessages()}
+              <div id="messages-end-ref"></div>
+            </div>
 
-          <div className="p-4 bg-gray-900 border-t border-gray-800">
-            {this.renderInputArea()}
-          </div>
-        </>
-      ) : room.type == "Group" ? (
-        <>
-          <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" /* onClick={toggleSidebar} */>
-                <Menu className="h-5 w-5 text-gray-300" />
-              </button>
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
+            <div className="p-4 bg-gray-900 border-t border-gray-800">
+              {this.renderInputArea()}
+            </div>
+          </>
+        ) : room.type == "Group" ? (
+          <>
+            <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
+              <div className="flex items-center space-x-2 md:space-x-4">
+                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" /* onClick={toggleSidebar} */>
+                  <Menu className="h-5 w-5 text-gray-300" />
+                </button>
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
+                  <p className="text-xs md:text-sm text-gray-400 flex items-center">
+                    <Users className="w-3 h-3 mr-1.5" />
+                    {/* TODO: Implement participant count for group chats */}
+                    {room.memberIds.length}명 참여
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
-                <p className="text-xs md:text-sm text-gray-400 flex items-center">
-                  <Users className="w-3 h-3 mr-1.5" />
-                  {/* TODO: Implement participant count for group chats */}
-                  {room.memberIds.length}명 참여
-                </p>
+              <div className="flex items-center space-x-1 md:space-x-2">
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
+                  <Phone className="w-4 h-4 text-gray-300" />
+                </button>
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={startVideoCall} */}
+                  <Video className="w-4 h-4 text-gray-300" />
+                </button>
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
+                  <MoreHorizontal className="w-4 h-4 text-gray-300" />
+                </button>
               </div>
-            </div>
-            <div className="flex items-center space-x-1 md:space-x-2">
-              <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
-                <Phone className="w-4 h-4 text-gray-300" />
-              </button>
-              <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={startVideoCall} */}
-                <Video className="w-4 h-4 text-gray-300" />
-              </button>
-              <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
-                <MoreHorizontal className="w-4 h-4 text-gray-300" />
-              </button>
-            </div>
-          </header>
+            </header>
 
-          <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
-            {this.renderMessages()}
-            <div id="messages-end-ref"></div>
-          </div>
+            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
+              {this.renderMessages()}
+              <div id="messages-end-ref"></div>
+            </div>
 
-          <div className="p-4 bg-gray-900 border-t border-gray-800">
-            {this.renderInputArea()}
-          </div>
-        </>
-      ) : room.type == "Direct" && selectedChat ? (
-        <>
-          <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" /* onClick={toggleSidebar} */>
-                <Menu className="h-5 w-5 text-gray-300" />
-              </button>
-              {renderAvatar(selectedChat, 'sm')}
-              <div>
-                <h2 className="font-semibold text-white text-base md:text-lg">{selectedChat.name}</h2>
-                <p className="text-xs md:text-sm text-gray-400 flex items-center">
-                  <MessageCircle className="w-3 h-3 mr-1.5" />
-                  {room.name}
-                </p>
+            <div className="p-4 bg-gray-900 border-t border-gray-800">
+              {this.renderInputArea()}
+            </div>
+          </>
+        ) : room.type == "Direct" && messages ? (
+          <>
+            <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
+              <div className="flex items-center space-x-2 md:space-x-4">
+                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" /* onClick={toggleSidebar} */>
+                  <Menu className="h-5 w-5 text-gray-300" />
+                </button>
+                {renderAvatar(character, 'sm')}
+                <div>
+                  <h2 className="font-semibold text-white text-base md:text-lg">{messages.name}</h2>
+                  <p className="text-xs md:text-sm text-gray-400 flex items-center">
+                    <MessageCircle className="w-3 h-3 mr-1.5" />
+                    {room.name}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-1 md:space-x-2">
-              <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
-                <Phone className="w-4 h-4 text-gray-300" />
-              </button>
-              <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
-                <Video className="w-4 h-4 text-gray-300" />
-              </button>
-              <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
-                <MoreHorizontal className="w-4 h-4 text-gray-300" />
-              </button>
-            </div>
-          </header>
+              <div className="flex items-center space-x-1 md:space-x-2">
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
+                  <Phone className="w-4 h-4 text-gray-300" />
+                </button>
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
+                  <Video className="w-4 h-4 text-gray-300" />
+                </button>
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
+                  <MoreHorizontal className="w-4 h-4 text-gray-300" />
+                </button>
+              </div>
+            </header>
 
-          <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
-            {/* <Message selectedChatId={null} editingMessageId={null} isWaitingForResponse={false} typingCharacterId={null} currentUserId={''} /> */}
-            <div id="messages-end-ref"></div>
-          </div>
+            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
+              <MessageList messages={messages} isWaitingForResponse={isWaitingForResponse} currentUserId={0} />
+              <div id="messages-end-ref"></div>
+            </div>
 
-          <div className="p-4 bg-gray-900 border-t border-gray-800">
-            <InputArea showInputOptions={false} isWaitingForResponse={false} />
-          </div>
-        </>
-      ) : null}
-    </>
-  );
+            <div className="p-4 bg-gray-900 border-t border-gray-800">
+              <InputArea room={room} isWaitingForResponse={isWaitingForResponse} setIsWaitingForResponse={setIsWaitingForResponse} />
+            </div>
+          </>
+        ) : null}
+      </>
+    );
+  }
 }
 
 type ImageToSend = {
@@ -191,13 +206,12 @@ type StickerToSend = {
 };
 
 export interface InputAreaProps {
-  showInputOptions: boolean;
+  room: Room;
   isWaitingForResponse: boolean;
   imageToSend?: ImageToSend | null;
   stickerToSend?: StickerToSend | null;
 
   // 이벤트 핸들러들
-  onOpenInputOptions?: () => void;
   onOpenImageUpload?: () => void;
   onCancelImagePreview?: () => void;
   onToggleUserStickerPanel?: () => void;
@@ -206,23 +220,27 @@ export interface InputAreaProps {
 
   // (선택) 커스텀 스티커 패널 렌더링
   renderUserStickerPanel?: () => React.ReactNode;
+
+  // 콜백
+  setIsWaitingForResponse: (isWaiting: boolean) => void;
 }
 
 export function InputArea({
-  showInputOptions,
+  room,
   isWaitingForResponse,
   imageToSend,
   stickerToSend,
-  onOpenInputOptions,
   onOpenImageUpload,
   onCancelImagePreview,
   onToggleUserStickerPanel,
   onSendMessageWithSticker,
   onStickerClear,
-  renderUserStickerPanel
+  renderUserStickerPanel,
+  setIsWaitingForResponse
 }: InputAreaProps) {
   const [text, setText] = useState("");
-
+  const [showInputOptions, setInputOptions] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
   const hasImage = !!imageToSend;
 
   const placeholder = useMemo(() => {
@@ -277,7 +295,7 @@ export function InputArea({
           <button
             id="open-input-options-btn"
             type="button"
-            onClick={onOpenInputOptions}
+            onClick={() => setInputOptions((prev) => !prev)}
             className="p-3 bg-gray-800 hover:bg-gray-700 text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 h-[48px]"
             disabled={isWaitingForResponse}
           >
@@ -332,7 +350,27 @@ export function InputArea({
             <button
               id="send-message-btn"
               type="button"
-              onClick={handleSend}
+              onClick={() => {
+                setIsWaitingForResponse(true)
+                dispatch(messagesActions.upsertOne(
+                  {
+                    id: crypto.randomUUID(),
+                    roomId: room.id,
+                    authorId: 0, // Assuming current user ID is '0'
+                    content: text,
+                    createdAt: new Date().toISOString(),
+                    type: 'TEXT'
+                  }
+                ))
+                room.memberIds.forEach(async memberId => {
+                  try {
+                    const result = await dispatch(sendMessage({ roomId: room.id, authorId: memberId })).unwrap()
+                    console.log('Message sent:', result);
+                  } catch (error) {
+                    console.error('Failed to send message:', error);
+                  }
+                })
+              }}
               className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               disabled={isWaitingForResponse}
               title="Send"
