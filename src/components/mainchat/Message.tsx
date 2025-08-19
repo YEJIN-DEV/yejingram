@@ -390,7 +390,7 @@ const MessageList: React.FC<MessageListProps> = ({
           <div className="flex items-start gap-3 animate-slideUp">
             <div className="shrink-0 w-10 h-10 mt-1">
               {(() => {
-                const typingChar = allCharacters.find(c => c.id.toString() === typingCharacterId);
+                const typingChar = allCharacters.find(c => c.id === typingCharacterId);
                 return typingChar ? <Avatar char={typingChar} size="sm" /> : null;
               })()}
             </div>
