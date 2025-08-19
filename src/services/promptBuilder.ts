@@ -175,3 +175,73 @@ export function buildGeminiApiPayload(
         ]
     };
 }
+
+export function buildVertexApiPayload(
+    userName: string,
+    userDescription: string,
+    character: Character,
+    messages: Message[],
+    isProactive: boolean,
+): GeminiApiPayload {
+    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive);
+    const contents = buildContents(messages, isProactive);
+
+    return {
+        contents: contents,
+        systemInstruction: {
+            parts: [{ text: masterPrompt }]
+        },
+        generationConfig: {
+            temperature: 1.25,
+            topK: 40,
+            topP: 0.95,
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: "OBJECT",
+                properties: {
+                    "reactionDelay": { "type": "INTEGER" },
+                    "messages": {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "delay": { "type": "INTEGER" },
+                                "content": { "type": "STRING" },
+                                "sticker": { "type": "STRING" }
+                            },
+                            required: ["delay"]
+                        }
+                    },
+                    "characterState": {
+                        type: "OBJECT",
+                        properties: {
+                            "mood": { "type": "NUMBER" },
+                            "energy": { "type": "NUMBER" },
+                            "socialBattery": { "type": "NUMBER" },
+                            "personality": {
+                                type: "OBJECT",
+                                properties: {
+                                    "extroversion": { "type": "NUMBER" },
+                                    "openness": { "type": "NUMBER" },
+                                    "conscientiousness": { "type": "NUMBER" },
+                                    "agreeableness": { "type": "NUMBER" },
+                                    "neuroticism": { "type": "NUMBER" }
+                                },
+                                required: ["extroversion", "openness", "conscientiousness", "agreeableness", "neuroticism"]
+                            }
+                        },
+                        required: ["mood", "energy", "socialBattery", "personality"]
+                    },
+                    "newMemory": { "type": "STRING" }
+                },
+                required: ["reactionDelay", "messages"]
+            }
+        },
+        safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ]
+    };
+}

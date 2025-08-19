@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { SettingsState, ApiProvider, ApiConfig } from '../../entities/setting/types';
-import { Key, Cpu, Link, Plus, X } from 'lucide-react';
+import { Key, Cpu, Link, Plus, X, Briefcase, Globe } from 'lucide-react';
+import { initialApiConfigs } from '../../entities/setting/slice';
 
 interface ProviderSettingsProps {
     settings: SettingsState;
@@ -9,6 +10,10 @@ interface ProviderSettingsProps {
 
 const providerModels: Record<string, string[]> = {
     gemini: [
+        'gemini-2.5-pro',
+        'gemini-2.5-flash'
+    ],
+    vertexai: [
         'gemini-2.5-pro',
         'gemini-2.5-flash'
     ],
@@ -21,21 +26,11 @@ const providerModels: Record<string, string[]> = {
         'claude-3-haiku-20240307'
     ],
     openai: [
-        'gpt-5',
-        'gpt-5-mini',
-        'gpt-5-nano',
-        'o3',
-        'o4-mini',
-        'o3-pro',
         'gpt-4o',
         'gpt-4o-mini',
         'gpt-4.1'
     ],
-    grok: [
-        'grok-4',
-        'grok-3',
-        'grok-3-mini'
-    ],
+    grok: [],
     openrouter: [],
     customOpenAI: []
 };
@@ -43,17 +38,24 @@ const providerModels: Record<string, string[]> = {
 export function ProviderSettings({ settings, setSettings }: ProviderSettingsProps) {
     const [customModelInput, setCustomModelInput] = useState('');
     const provider = settings.apiProvider;
-    const config = settings.apiConfigs[provider];
+    const rawConfig = settings?.apiConfigs?.[provider] ?? initialApiConfigs[provider];
+    const config = {
+        ...rawConfig,
+        customModels: rawConfig.customModels || []
+    };
     const models = providerModels[provider] || [];
 
     const handleConfigChange = (key: keyof ApiConfig, value: any) => {
-        setSettings(prev => ({
-            ...prev,
-            apiConfigs: {
-                ...prev.apiConfigs,
-                [provider]: { ...prev.apiConfigs[provider], [key]: value }
-            }
-        }));
+        setSettings(prev => {
+            const currentProviderConfig = prev.apiConfigs[provider] ?? initialApiConfigs[provider]; // Use initial config as fallback
+            return {
+                ...prev,
+                apiConfigs: {
+                    ...prev.apiConfigs,
+                    [provider]: { ...currentProviderConfig, [key]: value }
+                }
+            };
+        });
     };
 
     const handleModelSelect = (model: string) => {
@@ -76,16 +78,53 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
     return (
         <div className="space-y-4">
-            <div>
-                <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Key className="w-4 h-4 mr-2" />API 키</label>
-                <input
-                    type="password"
-                    value={config.apiKey}
-                    onChange={e => handleConfigChange('apiKey', e.target.value)}
-                    placeholder="API 키를 입력하세요"
-                    className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm"
-                />
-            </div>
+            {provider !== 'vertexai' && (
+                <div>
+                    <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Key className="w-4 h-4 mr-2" />API 키</label>
+                    <input
+                        type="password"
+                        value={config.apiKey}
+                        onChange={e => handleConfigChange('apiKey', e.target.value)}
+                        placeholder="API 키를 입력하세요"
+                        className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm"
+                    />
+                </div>
+            )}
+
+            {provider === 'vertexai' && (
+                <>
+                    <div>
+                        <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Briefcase className="w-4 h-4 mr-2" />Project ID</label>
+                        <input
+                            type="text"
+                            value={config.projectId || ''}
+                            onChange={e => handleConfigChange('projectId', e.target.value)}
+                            placeholder="Vertex AI Project ID"
+                            className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Globe className="w-4 h-4 mr-2" />Location</label>
+                        <input
+                            type="text"
+                            value={config.location || ''}
+                            onChange={e => handleConfigChange('location', e.target.value)}
+                            placeholder="global"
+                            className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Key className="w-4 h-4 mr-2" />Access Token</label>
+                        <input
+                            type="password"
+                            value={config.accessToken || ''}
+                            onChange={e => handleConfigChange('accessToken', e.target.value)}
+                            placeholder="gcloud auth print-access-token"
+                            className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm"
+                        />
+                    </div>
+                </>
+            )}
 
             {provider === 'customOpenAI' && (
                 <div>
