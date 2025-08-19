@@ -336,7 +336,7 @@ export function InputArea({
         </div>
       )}
 
-      <div className="flex items-end space-x-3">
+      <div className="flex items-center space-x-3">
         {/* 플러스 버튼 (이미지 없을 때만) */}
         {!hasImage && (
           <button
@@ -374,7 +374,7 @@ export function InputArea({
           <textarea
             id="new-message-input"
             placeholder={placeholder}
-            className="w-full pl-4 pr-20 py-3 bg-gray-800 text-white rounded-2xl border border-gray-700 resize-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all duration-200 text-sm placeholder-gray-500"
+            className="w-full pl-4 pr-20 py-3 bg-gray-800 text-white rounded-2xl border border-gray-700 resize-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all duration-200 text-sm placeholder-gray-500 flex items-center"
             rows={1}
             style={{ minHeight: 48, maxHeight: 120 }}
             disabled={isWaitingForResponse}
