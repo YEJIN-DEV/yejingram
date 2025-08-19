@@ -7,7 +7,7 @@ import { messagesActions } from "../entities/message/slice";
 import type { ChatResponse, MessagePart } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
-import { buildGeminiApiPayload, buildVertexApiPayload } from "./promptBuilder";
+import { buildGeminiApiPayload } from "./promptBuilder";
 import type { ApiConfig } from "../entities/setting/types";
 
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
@@ -162,7 +162,7 @@ export async function callVertexAPI(
     isProactive = false
 ): Promise<ChatResponse> {
 
-    const payload = buildVertexApiPayload(userName, userDescription, character, messages, isProactive);
+    const payload = buildGeminiApiPayload(userName, userDescription, character, messages, isProactive);
     const url = VERTEX_AI_API_BASE_URL
         .replace(/{location}/g, api.location || 'us-central1')
         .replace("{projectId}", api.projectId || '')
