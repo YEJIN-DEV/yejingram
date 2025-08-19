@@ -5,4 +5,5 @@ export interface Room {
     memberIds: number[]
     lastMessageId: number | null
     type: RoomType
+    unreadCount: number
 }

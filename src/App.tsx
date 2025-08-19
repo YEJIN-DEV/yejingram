@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import Sidebar from './components/sidebar/Sidebar'
 import MainChat from './components/mainchat/MainChat'
@@ -9,12 +9,17 @@ import { ChevronLeft } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { type RootState } from './app/store'
+import { setActiveRoomId } from './utils/activeRoomTracker'
 
 function App() {
   const [roomId, setRoomId] = useState<string | null>(null)
   const room = useSelector((state: RootState) => roomId ? selectRoomById(state, roomId) : null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setActiveRoomId(roomId);
+  }, [roomId]);
 
   const toggleMobileSidebar = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);

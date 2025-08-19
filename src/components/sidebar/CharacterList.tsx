@@ -11,14 +11,12 @@ import { Avatar } from '../../utils/Avatar';
 interface CharacterListProps {
     character: Character;
     messagesByRoomId: Record<string, any[]>;
-    unreadCounts: Record<string, number>;
     setRoomId: (id: string | null) => void;
 }
 
 function CharacterList({
     character,
     messagesByRoomId,
-    unreadCounts,
     setRoomId
 }: CharacterListProps) {
     const chatRooms = useSelector(selectAllRooms).filter(r => r.memberIds?.includes(character.id)) || [];
@@ -32,7 +30,7 @@ function CharacterList({
         const msgs = messagesByRoomId[room.id] || [];
         const last = msgs.at(-1);
         if (last && (!lastMessage || last.id > lastMessage.id)) lastMessage = last;
-        totalUnreadCount += unreadCounts[room.id] || 0;
+        totalUnreadCount += room.unreadCount || 0;
     });
 
     const lastMessageContent =
@@ -55,7 +53,8 @@ function CharacterList({
                                 name: '새 채팅',
                                 memberIds: [character.id],
                                 lastMessageId: null,
-                                type: "Direct"
+                                type: "Direct",
+                                unreadCount: 0,
                             }));
                         }}
                         className="p-1 bg-gray-700 hover:bg-blue-600 rounded text-gray-300 hover:text-white transition-colors"
@@ -113,7 +112,7 @@ function CharacterList({
                 <div className="ml-6 space-y-1 pb-2">
                     {chatRooms.map(room => (
                         <div key={room.id}>
-                            <RoomList room={room} unreadCount={0} setRoomId={setRoomId} />
+                            <RoomList room={room} unreadCount={room.unreadCount || 0} setRoomId={setRoomId} />
                         </div>
                     ))}
                 </div>

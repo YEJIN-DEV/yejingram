@@ -32,7 +32,10 @@ function RoomList({
     return (
         <div className="chat-room-item group p-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-700 relative" data-chat-id={room.id}>
             <div className="flex items-center justify-between">
-                <div onClick={() => setRoomId(room.id)} className="flex-1 min-w-0">
+                <div onClick={() => {
+                    dispatch(roomsActions.resetUnread(room.id));
+                    setRoomId(room.id)
+                }} className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                         <h4 className="text-sm font-medium text-white truncate">{room.name}</h4>
                         <div className="flex items-center gap-2">
