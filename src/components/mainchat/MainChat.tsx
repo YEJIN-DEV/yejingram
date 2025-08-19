@@ -2,7 +2,7 @@ import type { Room } from '../../entities/room/types';
 import { Menu, Bot, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Send, Smile, X, Plus, ImageIcon } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { type AppDispatch, type RootState } from '../../app/store';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import MessageList from './Message';
@@ -17,6 +17,7 @@ interface MainChatProps {
 }
 
 function MainChat({ room }: MainChatProps) {
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [typingCharacterId, setTypingCharacterId] = useState<number | null>(null);
   const [showStickerPanel, setShowStickerPanel] = useState(false);
@@ -140,7 +141,7 @@ function MainChat({ room }: MainChatProps) {
               </div>
             </header>
 
-            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
+            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
               {/* {this.renderMessages()} */}
               <div id="messages-end-ref"></div>
             </div>
@@ -181,7 +182,7 @@ function MainChat({ room }: MainChatProps) {
               </div>
             </header>
 
-            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
+            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
               {/* {this.renderMessages()} */}
               <div id="messages-end-ref"></div>
             </div>
@@ -219,8 +220,8 @@ function MainChat({ room }: MainChatProps) {
               </div>
             </header>
 
-            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"> {/* ref={messagesContainerRef} */}
-              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} />
+            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
+              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} scrollRef={messagesContainerRef} />
               <div id="messages-end-ref"></div>
             </div>
 
