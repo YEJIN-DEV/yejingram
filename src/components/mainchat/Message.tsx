@@ -307,19 +307,19 @@ const MessageList: React.FC<MessageListProps> = ({
                     <div className="message-content-wrapper flex-1">
                       {renderMessageContent()}
                     </div>
-                    {isLastInGroup && (
-                      <div className="group flex items-end gap-1">
+
+                    <div className="group flex items-end gap-1">
+                      <div
+                        className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-2`}
+                      >
+
                         <div
-                          className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-2`}
+                          className={`flex items-center ${isMe ? 'flex-row-reverse' : ''
+                            } group`}
                         >
-                          {isLastInGroup && (
-                            <div
-                              className={`flex items-center ${isMe ? 'flex-row-reverse' : ''
-                                } group`}
-                            >
-                              {/* 버튼 컨테이너: 기본 가려짐 → hover 시 폭이 생기며 타임스탬프를 밀어냄 */}
-                              <div
-                                className={`
+                          {/* 버튼 컨테이너: 기본 가려짐 → hover 시 폭이 생기며 타임스탬프를 밀어냄 */}
+                          <div
+                            className={`
           flex items-center gap-2
           overflow-hidden
           max-w-0 opacity-0
@@ -327,59 +327,58 @@ const MessageList: React.FC<MessageListProps> = ({
           group-hover:max-w-28 group-hover:opacity-100
           ${isMe ? 'ml-2' : 'mr-2'}
         `}
+                          >
+                            {(msg.type === 'TEXT' || (msg.type === 'IMAGE' && msg.content)) && (
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={() => { setEditingMessageId(msg.id) }}
+                                className="edit-msg-btn text-gray-500 hover:text-white"
+                                aria-label="메시지 편집"
+                                title="편집"
                               >
-                                {(msg.type === 'TEXT' || (msg.type === 'IMAGE' && msg.content)) && (
-                                  <button
-                                    data-id={msg.id.toString()}
-                                    onClick={() => { setEditingMessageId(msg.id) }}
-                                    className="edit-msg-btn text-gray-500 hover:text-white"
-                                    aria-label="메시지 편집"
-                                    title="편집"
-                                  >
-                                    <Edit3 className="w-3 h-3 pointer-events-none" />
-                                  </button>
-                                )}
+                                <Edit3 className="w-3 h-3 pointer-events-none" />
+                              </button>
+                            )}
 
-                                <button
-                                  data-id={msg.id.toString()}
-                                  onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
-                                  className="delete-msg-btn text-gray-500 hover:text-white"
-                                  aria-label="메시지 삭제"
-                                  title="삭제"
-                                >
-                                  <Trash2 className="w-3 h-3 pointer-events-none" />
-                                </button>
+                            <button
+                              data-id={msg.id.toString()}
+                              onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
+                              className="delete-msg-btn text-gray-500 hover:text-white"
+                              aria-label="메시지 삭제"
+                              title="삭제"
+                            >
+                              <Trash2 className="w-3 h-3 pointer-events-none" />
+                            </button>
 
-                                {!isMe && (msg.type === 'TEXT' || msg.type === 'IMAGE') && i === messages.length - 1 && !isWaitingForResponse && (
-                                  <button
-                                    data-id={msg.id.toString()}
-                                    onClick={() => {
-                                      console.log('Reroll message', msg.id)
-                                      dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
-                                      SendMessage(room, setTypingCharacterId).then(() => {
-                                        setIsWaitingForResponse(false);
-                                      });
-                                    }}
-                                    className="reroll-msg-btn text-gray-500 hover:text-white"
-                                    aria-label="다시 생성"
-                                    title="다시 생성"
-                                  >
-                                    <RefreshCw className="w-3 h-3 pointer-events-none" />
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* 타임스탬프: 버튼이 펼쳐질 때 자연스럽게 옆으로 밀림 */}
-                              <p
-                                className="text-xs text-gray-500 shrink-0 self-end"
+                            {!isMe && (msg.type === 'TEXT' || msg.type === 'IMAGE') && i === messages.length - 1 && !isWaitingForResponse && (
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={() => {
+                                  console.log('Reroll message', msg.id)
+                                  dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
+                                  SendMessage(room, setTypingCharacterId).then(() => {
+                                    setIsWaitingForResponse(false);
+                                  });
+                                }}
+                                className="reroll-msg-btn text-gray-500 hover:text-white"
+                                aria-label="다시 생성"
+                                title="다시 생성"
                               >
-                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            </div>
-                          )}
+                                <RefreshCw className="w-3 h-3 pointer-events-none" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* 타임스탬프: 버튼이 펼쳐질 때 자연스럽게 옆으로 밀림 */}
+                          <p
+                            className="text-xs text-gray-500 shrink-0 self-end"
+                          >
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
                         </div>
+
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               </div>
