@@ -154,7 +154,6 @@ const MessageList: React.FC<MessageListProps> = ({
           })();
 
           const groupInfo = findMessageGroup(messages, i);
-          const isLastInGroup = i === groupInfo.endIndex;
 
           const hasAnimated = animatedMessageIds.current.has(msg.id.toString());
           const needsAnimation = !hasAnimated;
