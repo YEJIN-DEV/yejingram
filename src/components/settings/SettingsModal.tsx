@@ -55,6 +55,7 @@ function SettingsModal() {
                   <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Globe className="w-4 h-4 mr-2" />AI 제공업체</label>
                   <select id="settings-api-provider" value={localSettings.apiProvider} onChange={handleProviderChange} className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm">
                     <option value="gemini">Google Gemini</option>
+                    <option value="vertexai">Google Vertex AI</option>
                     <option value="claude">Anthropic Claude</option>
                     <option value="openai">OpenAI ChatGPT</option>
                     <option value="grok">xAI Grok</option>

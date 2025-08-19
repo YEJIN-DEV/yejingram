@@ -1,10 +1,13 @@
-export type ApiProvider = 'gemini' | 'claude' | 'openai' | 'grok' | 'openrouter' | 'customOpenAI';
+export type ApiProvider = 'gemini' | 'vertexai' | 'claude' | 'openai' | 'grok' | 'openrouter' | 'customOpenAI';
 
 export interface ApiConfig {
     apiKey: string;
     baseUrl?: string;
     model: string;
     customModels: string[];
+    projectId?: string;
+    location?: string;
+    accessToken?: string;
 }
 
 export interface MainPrompts {

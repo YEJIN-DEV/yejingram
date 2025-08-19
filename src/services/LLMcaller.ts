@@ -8,9 +8,10 @@ import type { ChatResponse, MessagePart } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
 import { buildGeminiApiPayload } from "./promptBuilder";
+import type { ApiConfig } from "../entities/setting/types";
 
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
-
+const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
 async function handleApiResponse(
     res: ChatResponse,
     room: Room,
@@ -83,14 +84,24 @@ export async function LLMSend(room: Room, char: Character, setTypingCharacterId:
     const messages = selectMessagesByRoomId(state, room.id);
 
     try {
-        const res = await callGeminiAPI(
-            api.apiKey,
-            api.model,
-            settings.userName,
-            settings.userDescription,
-            char,
-            messages
-        );
+        let res;
+        if (settings.apiProvider === 'vertexai') {
+            res = await callVertexAPI(
+                api,
+                settings.userName,
+                settings.userDescription,
+                char,
+                messages
+            );
+        } else {
+            res = await callGeminiAPI(
+                api,
+                settings.userName,
+                settings.userDescription,
+                char,
+                messages
+            );
+        }
         await handleApiResponse(res, room, char, dispatch, setTypingCharacterId);
     } catch (error) {
         handleError(error, room.id, char.id, dispatch);
@@ -100,8 +111,7 @@ export async function LLMSend(room: Room, char: Character, setTypingCharacterId:
 }
 
 export async function callGeminiAPI(
-    apiKey: string,
-    model: string,
+    api: ApiConfig,
     userName: string,
     userDescription: string,
     character: Character,
@@ -112,7 +122,7 @@ export async function callGeminiAPI(
     const payload = buildGeminiApiPayload(userName, userDescription, character, messages, isProactive);
 
     try {
-        const response = await fetch(`${GEMINI_API_BASE_URL}${model}:generateContent?key=${apiKey}`, {
+        const response = await fetch(`${GEMINI_API_BASE_URL}${api.model}:generateContent?key=${api.apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -139,6 +149,56 @@ export async function callGeminiAPI(
 
     } catch (error: unknown) {
         console.error("Gemini API 호출 중 오류 발생:", error);
+        throw error;
+    }
+}
+
+export async function callVertexAPI(
+    api: ApiConfig,
+    userName: string,
+    userDescription: string,
+    character: Character,
+    messages: Message[],
+    isProactive = false
+): Promise<ChatResponse> {
+
+    const payload = buildGeminiApiPayload(userName, userDescription, character, messages, isProactive);
+    const url = VERTEX_AI_API_BASE_URL
+        .replace(/{location}/g, api.location || 'us-central1')
+        .replace("{projectId}", api.projectId || '')
+        .replace("{model}", api.model);
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${api.accessToken}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("API Error:", data);
+            const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
+            throw new Error(errorMessage);
+        }
+
+        if (data.candidates && data.candidates.length > 0 && data.candidates[0].content?.parts[0]?.text) {
+            const rawResponseText = data.candidates[0].content.parts[0].text;
+            const parsed = JSON.parse(rawResponseText);
+            parsed.reactionDelay = Math.max(0, parsed.reactionDelay || 0);
+            return parsed;
+        } else {
+            const reason = data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || '알 수 없는 이유';
+            console.warn("API 응답에 유효한 content가 없습니다.", data);
+            throw new Error(reason);
+        }
+
+    } catch (error: unknown) {
+        console.error("Vertex AI API 호출 중 오류 발생:", error);
         throw error;
     }
 }

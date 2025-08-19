@@ -2,8 +2,9 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { SettingsState, ApiProvider, ApiConfig, Prompts } from './types';
 
-const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
+export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     gemini: { apiKey: '', model: 'gemini-2.5-pro', customModels: [] },
+    vertexai: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], projectId: '', location: 'global', accessToken: '' },
     claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [] },
     openai: { apiKey: '', model: 'gpt-5', customModels: [] },
     grok: { apiKey: '', model: 'grok-4', customModels: [] },
