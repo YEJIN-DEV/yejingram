@@ -14,9 +14,10 @@ import { StickerPanel } from './StickerPanel';
 
 interface MainChatProps {
   room: Room | null;
+  onToggleMobileSidebar: () => void;
 }
 
-function MainChat({ room }: MainChatProps) {
+function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [typingCharacterId, setTypingCharacterId] = useState<number | null>(null);
@@ -87,6 +88,7 @@ function MainChat({ room }: MainChatProps) {
         <button
           id="mobile-sidebar-toggle"
           className="absolute top-4 left-4 p-2 rounded-full hover:bg-gray-700 md:hidden"
+          onClick={onToggleMobileSidebar}
         >
           <Menu className="h-5 w-5 text-gray-300" />
         </button>
@@ -113,7 +115,7 @@ function MainChat({ room }: MainChatProps) {
           <>
             <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
               <div className="flex items-center space-x-2 md:space-x-4">
-                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" /* onClick={toggleSidebar} */>
+                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" onClick={onToggleMobileSidebar}>
                   <Menu className="h-5 w-5 text-gray-300" />
                 </button>
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -154,7 +156,7 @@ function MainChat({ room }: MainChatProps) {
           <>
             <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
               <div className="flex items-center space-x-2 md:space-x-4">
-                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" /* onClick={toggleSidebar} */>
+                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" onClick={onToggleMobileSidebar}>
                   <Menu className="h-5 w-5 text-gray-300" />
                 </button>
                 <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
@@ -195,7 +197,7 @@ function MainChat({ room }: MainChatProps) {
           <>
             <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
               <div className="flex items-center space-x-2 md:space-x-4">
-                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" /* onClick={toggleSidebar} */>
+                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" onClick={onToggleMobileSidebar}>
                   <Menu className="h-5 w-5 text-gray-300" />
                 </button>
                 <Avatar char={character} size="sm" />
