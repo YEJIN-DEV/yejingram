@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, Bot, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Send, Smile, X, Plus, ImageIcon } from 'lucide-react';
+import { Menu, Bot, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Send, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { useMemo, useState, useRef } from 'react';
@@ -7,6 +7,7 @@ import { type AppDispatch, type RootState } from '../../app/store';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import MessageList from './Message';
 import { messagesActions } from '../../entities/message/slice';
+import { roomsActions } from '../../entities/room/slice';
 import { Avatar } from '../../utils/Avatar';
 import { SendMessage } from '../../services/LLMcaller';
 import type { Sticker } from '../../entities/character/types';
@@ -23,6 +24,8 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   const [typingCharacterId, setTypingCharacterId] = useState<number | null>(null);
   const [showStickerPanel, setShowStickerPanel] = useState(false);
   const [stickerToSend, setStickerToSend] = useState<Sticker | null>(null);
+  const [isEditingRoomName, setIsEditingRoomName] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -38,6 +41,21 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   const memberChars = useSelector((state: RootState) =>
     room?.memberIds.map(id => selectCharacterById(state, id))
   );
+
+  const handleEditRoomName = () => {
+    if (!room) return;
+    setNewRoomName(room.name);
+    setIsEditingRoomName(true);
+  };
+
+  const handleSaveRoomName = () => {
+    if (!room || !newRoomName.trim()) return;
+    dispatch(roomsActions.upsertOne({
+      ...room,
+      name: newRoomName.trim(),
+    }));
+    setIsEditingRoomName(false);
+  };
 
   const handleToggleStickerPanel = () => {
     setShowStickerPanel(prev => !prev);
@@ -122,7 +140,31 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                   <Globe className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
+                  {isEditingRoomName ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newRoomName}
+                        onChange={(e) => setNewRoomName(e.target.value)}
+                        className="bg-gray-700 text-white text-base md:text-lg font-semibold rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); handleSaveRoomName(); } if (e.key === 'Escape') setIsEditingRoomName(false); }}
+                      />
+                      <button onClick={handleSaveRoomName} className="p-1 text-green-400 hover:text-green-300">
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-400 hover:text-red-300">
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="group flex items-center gap-2">
+                      <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
+                      <button onClick={handleEditRoomName} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-white">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                   <p className="text-xs md:text-sm text-gray-400 flex items-center">
                     <Globe className="w-3 h-3 mr-1.5" />
                     {/* TODO: Implement participant count for open chats */}
@@ -163,7 +205,31 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                   <Users className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
+                  {isEditingRoomName ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newRoomName}
+                        onChange={(e) => setNewRoomName(e.target.value)}
+                        className="bg-gray-700 text-white text-base md:text-lg font-semibold rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); handleSaveRoomName(); } if (e.key === 'Escape') setIsEditingRoomName(false); }}
+                      />
+                      <button onClick={handleSaveRoomName} className="p-1 text-green-400 hover:text-green-300">
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-400 hover:text-red-300">
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="group flex items-center gap-2">
+                      <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
+                      <button onClick={handleEditRoomName} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-white">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                   <p className="text-xs md:text-sm text-gray-400 flex items-center">
                     <Users className="w-3 h-3 mr-1.5" />
                     {/* TODO: Implement participant count for group chats */}
@@ -203,10 +269,34 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 <Avatar char={character} size="sm" />
                 <div>
                   <h2 className="font-semibold text-white text-base md:text-lg">{character.name}</h2>
-                  <p className="text-xs md:text-sm text-gray-400 flex items-center">
-                    <MessageCircle className="w-3 h-3 mr-1.5" />
-                    {room.name}
-                  </p>
+                  {isEditingRoomName ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="text"
+                        value={newRoomName}
+                        onChange={(e) => setNewRoomName(e.target.value)}
+                        className="bg-gray-700 text-white text-xs md:text-sm rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); handleSaveRoomName(); } if (e.key === 'Escape') setIsEditingRoomName(false); }}
+                      />
+                      <button onClick={handleSaveRoomName} className="p-1 text-green-400 hover:text-green-300">
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-400 hover:text-red-300">
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="group flex items-center gap-2" >
+                      <p className="text-xs md:text-sm text-gray-400 flex items-center">
+                        <MessageCircle className="w-3 h-3 mr-1.5" />
+                        {room.name}
+                      </p>
+                      <button onClick={handleEditRoomName} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-white">
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center space-x-1 md:space-x-2">
