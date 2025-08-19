@@ -23,14 +23,14 @@ export async function LLMSend(room: Room, char: Character, setTypingCharacterId:
     const dispatch = store.dispatch;
     const api = selectCurrentApiConfig(store.getState());
     const settings = selectAllSettings(store.getState());
-    
+
     try {
         const res = await callGeminiAPI(api.apiKey, api.model, settings.userName, settings.userDescription, char, selectMessagesByRoomId(store.getState(), room.id), false, false, null);
 
         if (res && res.messages && Array.isArray(res.messages) && res.messages.length > 0) {
             await sleep(res.reactionDelay || 1000);
             setTypingCharacterId(char.id);
-            
+
             for (const messagePart of res.messages) {
                 await sleep(messagePart.delay || 1000);
 
@@ -49,18 +49,9 @@ export async function LLMSend(room: Room, char: Character, setTypingCharacterId:
                         message.sticker = foundSticker;
                     }
                 }
-                
+
                 dispatch(messagesActions.upsertOne(message));
             }
-        } else if (res && res.error) {
-            dispatch(messagesActions.upsertOne({
-                id: crypto.randomUUID(),
-                roomId: room.id,
-                authorId: char.id,
-                content: `Error: ${res.error}`,
-                createdAt: new Date().toISOString(),
-                type: 'TEXT',
-            }));
         }
     } catch (error) {
         console.error("Error in LLMSend:", error);
@@ -68,7 +59,7 @@ export async function LLMSend(room: Room, char: Character, setTypingCharacterId:
             id: crypto.randomUUID(),
             roomId: room.id,
             authorId: char.id,
-            content: "An unexpected error occurred.",
+            content: `답변이 생성되지 않았습니다. (이유: ${error instanceof Error ? error.message : String(error)})`,
             createdAt: new Date().toISOString(),
             type: 'TEXT',
         }));
@@ -77,7 +68,7 @@ export async function LLMSend(room: Room, char: Character, setTypingCharacterId:
     }
 }
 
-export async function callGeminiAPI(apiKey: string, model: string, userName: string, userDescription: string, character: Character, messages: Message[], isProactive = false, forceSummary = false, customSystemPrompt = null): Promise<ChatResponse | null> {
+export async function callGeminiAPI(apiKey: string, model: string, userName: string, userDescription: string, character: Character, messages: Message[], isProactive = false, forceSummary = false, customSystemPrompt = null): Promise<ChatResponse> {
     let contents = [];
     for (const msg of messages) {
         const role = msg.authorId == 0 ? "user" : "model";
@@ -257,12 +248,12 @@ ${guidelines.replace(/{character.name}/g, character.name).replace('{timeContext}
         } else {
             const reason = data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || '알 수 없는 이유';
             console.warn("API 응답에 유효한 content가 없습니다.", data);
-            throw new Error(`답변이 생성되지 않았습니다. (이유: ${reason})`);
+            throw new Error(reason);
         }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Gemini API 호출 중 오류 발생:", error);
-        return { error: `응답 처리 중 오류가 발생했습니다: ${error.message}` };
+        throw error;
     }
 }
 
