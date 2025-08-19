@@ -32,7 +32,6 @@ export const messagesActions = {
             dispatch(messagesSlice.actions.upsertOne(message));
 
             const activeRoomId = getActiveRoomId();
-            console.log("Active Room ID:", activeRoomId, "Message Room ID:", message.roomId);
             if (message.roomId && message.roomId !== activeRoomId) {
                 dispatch(roomsActions.incrementUnread(message.roomId));
             }

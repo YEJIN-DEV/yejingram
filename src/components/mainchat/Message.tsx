@@ -93,6 +93,17 @@ const MessageList: React.FC<MessageListProps> = ({
     // For now, just ensuring the ref is cleared or managed
   }, [messages]);
 
+  // Force scroll to bottom when room changes
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      // Use requestAnimationFrame to wait for the DOM to be updated
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+      });
+    }
+  }, [room.id, scrollRef]);
+
   const BOTTOM_THRESHOLD = 120; // ✅ 여유 넉넉히
 
   // 새 메시지가 추가되면 (길이 변화) 바닥이면 내려가기

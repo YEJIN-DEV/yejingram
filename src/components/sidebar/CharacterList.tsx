@@ -30,7 +30,6 @@ function CharacterList({
     chatRooms.forEach(room => {
         const last = selectMessagesByRoomId(state, room.id).slice(-1)[0];
         if (last && (!lastMessage || last.createdAt > lastMessage.createdAt)) lastMessage = last;
-        console.log("Room ID:", room.id, "Last Message:", lastMessage);
         totalUnreadCount += room.unreadCount || 0;
     });
 
