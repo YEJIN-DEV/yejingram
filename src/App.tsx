@@ -6,9 +6,13 @@ import SettingsModal from './components/settings/SettingsModal'
 import PromptModal from './components/settings/PromptModal'
 import CharacterModal from './components/character/CharacterModal'
 import { ChevronLeft } from 'lucide-react'
+import { useSelector } from 'react-redux'
+import { selectRoomById } from './entities/room/selectors'
+import { type RootState } from './app/store'
 
 function App() {
-  const [room, setRoom] = useState(null)
+  const [roomId, setRoomId] = useState<string | null>(null)
+  const room = useSelector((state: RootState) => roomId ? selectRoomById(state, roomId) : null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -28,7 +32,7 @@ function App() {
           </button>
 
           <div id="sidebar-content" className={`flex h-full flex-col overflow-hidden ${isSidebarCollapsed ? 'md:hidden' : ''}`}>
-            <Sidebar setRoom={setRoom} />
+            <Sidebar setRoomId={setRoomId} />
           </div>
         </aside>
 

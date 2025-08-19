@@ -3,15 +3,14 @@ import { Settings, Bot, Plus } from 'lucide-react';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
-import type { Room } from '../../entities/room/types';
 import { openSettingsModal } from '../../entities/setting/slice';
 import { charactersActions } from '../../entities/character/slice';
 
 interface SidebarProps {
-    setRoom: (room: Room | null) => void;
+    setRoomId: (id: string | null) => void;
 }
 
-function Sidebar({ setRoom }: SidebarProps) {
+function Sidebar({ setRoomId }: SidebarProps) {
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const [searchQuery, setSearchQuery] = useState('');
@@ -65,7 +64,7 @@ function Sidebar({ setRoom }: SidebarProps) {
                             character={char}
                             messagesByRoomId={messagesByRoomId}
                             unreadCounts={unreadCounts}
-                            setRoom={setRoom}
+                            setRoomId={setRoomId}
                         />
                     ))}
                 </div>

@@ -6,21 +6,20 @@ import { selectAllRooms } from '../../entities/room/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import { charactersActions } from '../../entities/character/slice';
 import RoomList from './RoomList';
-import type { Room } from '../../entities/room/types';
 import { Avatar } from '../../utils/Avatar';
 
 interface CharacterListProps {
     character: Character;
     messagesByRoomId: Record<string, any[]>;
     unreadCounts: Record<string, number>;
-    setRoom: (room: Room | null) => void;
+    setRoomId: (id: string | null) => void;
 }
 
 function CharacterList({
     character,
     messagesByRoomId,
     unreadCounts,
-    setRoom
+    setRoomId
 }: CharacterListProps) {
     const chatRooms = useSelector(selectAllRooms).filter(r => r.memberIds?.includes(character.id)) || [];
     const [isExpanded, setIsExpanded] = useState(false);
@@ -114,7 +113,7 @@ function CharacterList({
                 <div className="ml-6 space-y-1 pb-2">
                     {chatRooms.map(room => (
                         <div key={room.id}>
-                            <RoomList room={room} unreadCount={0} setRoom={setRoom} />
+                            <RoomList room={room} unreadCount={0} setRoomId={setRoomId} />
                         </div>
                     ))}
                 </div>
