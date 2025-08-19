@@ -304,7 +304,7 @@ const MessageList: React.FC<MessageListProps> = ({
                   {showSenderInfo && <p className="text-sm text-gray-400 mb-1"><SenderName authorId={msg.authorId} /></p>}
                   <div className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
                     {showUnread && <span className="text-xs text-yellow-400 self-end mb-0.5">1</span>}
-                    <div className="message-content-wrapper">
+                    <div className="message-content-wrapper flex-1">
                       {renderMessageContent()}
                     </div>
                     {isLastInGroup && (
