@@ -202,7 +202,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 </button>
                 <Avatar char={character} size="sm" />
                 <div>
-                  <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
+                  <h2 className="font-semibold text-white text-base md:text-lg">{character.name}</h2>
                   <p className="text-xs md:text-sm text-gray-400 flex items-center">
                     <MessageCircle className="w-3 h-3 mr-1.5" />
                     {room.name}

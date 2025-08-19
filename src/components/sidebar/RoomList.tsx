@@ -11,24 +11,22 @@ interface RoomListProps {
     setRoom: (room: Room | null) => void;
 }
 
+function getLastMessageContent(state: RootState, roomId: string) {
+    const messages = selectMessagesByRoomId(state, roomId);
+    if (messages.length === 0) return '채팅을 시작해보세요';
+
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.type === 'IMAGE') return '이미지를 보냈습니다';
+    if (lastMessage.type === 'STICKER') return '스티커를 보냈습니다';
+    return lastMessage.content;
+}
+
 function RoomList({
     room,
     unreadCount,
     setRoom
 }: RoomListProps) {
-    const lastMessage = useSelector((state: RootState) => selectMessagesByRoomId(state, room.id))[-1];
     const dispatch = useDispatch();
-
-    let lastMessageContent = '채팅을 시작해보세요';
-    if (lastMessage) {
-        if (lastMessage.type === 'IMAGE') {
-            lastMessageContent = '이미지를 보냈습니다';
-        } else if (lastMessage.type === 'STICKER') {
-            lastMessageContent = '스티커를 보냈습니다';
-        } else {
-            lastMessageContent = lastMessage.content;
-        }
-    }
 
     return (
         <div className="chat-room-item group p-2 rounded-lg cursor-pointer transition-all duration-200 ${isSelected ? 'bg-blue-600' : 'hover:bg-gray-700'} relative" data-chat-id="${chatRoom.id}">
@@ -41,7 +39,7 @@ function RoomList({
                             {/* <span className="text-xs text-gray-400 shrink-0">${postMessage?.time || ''}</span> */}
                         </div>
                     </div>
-                    <p className="text-xs text-gray-400 truncate">{lastMessageContent}</p>
+                    <p className="text-xs text-gray-400 truncate">{getLastMessageContent(useSelector((state: RootState) => state), room.id)}</p>
                 </div>
             </div>
             <button onClick={() => dispatch(roomsActions.removeOne(room.id))} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-red-600 hover:bg-red-700 rounded text-white" title="채팅방 삭제">
