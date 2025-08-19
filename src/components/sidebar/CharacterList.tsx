@@ -1,22 +1,22 @@
 import { useState } from 'react';
+import type { RootState } from '../../app/store';
 import type { Character } from '../../entities/character/types';
-import { Plus, Edit3, Trash2 } from 'lucide-react';
+import { Plus, Edit3, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectAllRooms } from '../../entities/room/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import { charactersActions } from '../../entities/character/slice';
+import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import RoomList from './RoomList';
 import { Avatar } from '../../utils/Avatar';
 
 interface CharacterListProps {
     character: Character;
-    messagesByRoomId: Record<string, any[]>;
     setRoomId: (id: string | null) => void;
 }
 
 function CharacterList({
     character,
-    messagesByRoomId,
     setRoomId
 }: CharacterListProps) {
     const chatRooms = useSelector(selectAllRooms).filter(r => r.memberIds?.includes(character.id)) || [];
@@ -25,11 +25,12 @@ function CharacterList({
 
     let lastMessage: any = null;
     let totalUnreadCount = 0;
+    const state = useSelector((state: RootState) => state);
 
     chatRooms.forEach(room => {
-        const msgs = messagesByRoomId[room.id] || [];
-        const last = msgs.at(-1);
-        if (last && (!lastMessage || last.id > lastMessage.id)) lastMessage = last;
+        const last = selectMessagesByRoomId(state, room.id).slice(-1)[0];
+        if (last && (!lastMessage || last.createdAt > lastMessage.createdAt)) lastMessage = last;
+        console.log("Room ID:", room.id, "Last Message:", lastMessage);
         totalUnreadCount += room.unreadCount || 0;
     });
 
@@ -95,8 +96,12 @@ function CharacterList({
                                         {totalUnreadCount}
                                     </span>
                                 )}
-                                <span className="text-xs text-gray-500 shrink-0">{lastMessage?.time || ''}</span>
-                                <i className={`w-4 h-4 text-gray-400 lucide lucide-chevron-${isExpanded ? 'down' : 'right'}`} />
+                                <span className="text-xs text-gray-500 shrink-0">{new Date(lastMessage?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || ''}</span>
+                                {isExpanded ? (
+                                    <ChevronDown className={`w-4 h-4 text-gray-400`} />
+                                ) : (
+                                    <ChevronRight className={`w-4 h-4 text-gray-400`} />
+                                )}
                             </div>
                         </div>
                         <p className={`text-xs md:text-sm truncate ${lastMessage?.isError ? 'text-red-400' : 'text-gray-400'}`}>

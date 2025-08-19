@@ -13,12 +13,7 @@ interface RoomListProps {
 
 function getLastMessageContent(state: RootState, roomId: string) {
     const messages = selectMessagesByRoomId(state, roomId);
-    if (messages.length === 0) return '채팅을 시작해보세요';
-
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage.type === 'IMAGE') return '이미지를 보냈습니다';
-    if (lastMessage.type === 'STICKER') return '스티커를 보냈습니다';
-    return lastMessage.content;
+    return messages[messages.length - 1];
 }
 
 function RoomList({
@@ -40,10 +35,14 @@ function RoomList({
                         <h4 className="text-sm font-medium text-white truncate">{room.name}</h4>
                         <div className="flex items-center gap-2">
                             {unreadCount > 0 && <span className="bg-red-500 text-white text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full leading-none">{unreadCount}</span>}
-                            {/* <span className="text-xs text-gray-400 shrink-0">${postMessage?.time || ''}</span> */}
+                            <span className="text-xs text-gray-400 shrink-0">{new Date(lastMessage?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || ''}</span>
                         </div>
                     </div>
-                    <p className="text-xs text-gray-400 truncate">{lastMessage}</p>
+                    <p className="text-xs text-gray-400 truncate">{
+                        lastMessage?.type === 'IMAGE' ? '이미지를 보냈습니다' :
+                            lastMessage?.type === 'STICKER' ? '스티커를 보냈습니다' :
+                                lastMessage?.content || '채팅을 시작해보세요'
+                    }</p>
                 </div>
             </div>
             <button onClick={() => dispatch(roomsActions.removeOne(room.id))} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-red-600 hover:bg-red-700 rounded text-white" title="채팅방 삭제">

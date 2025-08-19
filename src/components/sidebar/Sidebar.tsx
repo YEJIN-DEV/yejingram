@@ -15,11 +15,6 @@ function Sidebar({ setRoomId }: SidebarProps) {
     const characters = useSelector(selectAllCharacters);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // TODO: messages/unreadCounts가 Redux에 있다면 selector로 가져오세요.
-    // 여기선 예시로 빈 값
-    const messagesByRoomId: Record<string, any[]> = {};
-    const unreadCounts: Record<string, number> = {};
-
     const filteredCharacters = characters.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -62,8 +57,6 @@ function Sidebar({ setRoomId }: SidebarProps) {
                         <CharacterList
                             key={char.id}
                             character={char}
-                            messagesByRoomId={messagesByRoomId}
-                            unreadCounts={unreadCounts}
                             setRoomId={setRoomId}
                         />
                     ))}
