@@ -1,9 +1,11 @@
+export interface MessagePart {
+    delay: number;      // 밀리초 단위 지연시간
+    content: string;    // 메시지 내용
+    sticker?: string;   // 스티커 (옵션)
+}
+
 export interface ChatResponse {
-    messages: {
-        delay: number;      // 밀리초 단위 지연시간
-        content: string;    // 메시지 내용
-        sticker?: string;   // 스티커 (옵션)
-    }[];
+    messages: MessagePart[];
     reactionDelay: number; // 반응 지연시간 (ms)
     characterState: {
         energy: number;     // 에너지 수준 (0~1)
@@ -17,4 +19,29 @@ export interface ChatResponse {
         };
         socialBattery: number; // 사회적 배터리 (0~1)
     };
+}
+
+export interface GeminiApiPayload {
+    contents: {
+        role: string;
+        parts: {
+            text: string;
+        }[];
+    }[];
+    systemInstruction: {
+        parts: {
+            text: string;
+        }[];
+    };
+    generationConfig: {
+        temperature: number;
+        topK: number;
+        topP: number;
+        responseMimeType: string;
+        responseSchema: any; 
+    };
+    safetySettings: {
+        category: string;
+        threshold: string;
+    }[];
 }
