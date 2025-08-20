@@ -115,6 +115,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
     }));
 
     const imageToSendUrl = imageToSend?.dataUrl;
+    const stickerToSendName = stickerToSend?.name;
     setStickerToSend(null);
     setImageToSend(null);
     if (fileInputRef.current) {
@@ -126,7 +127,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
       return;
     }
 
-    SendMessage(room, setTypingCharacterId, imageToSendUrl).then(() => {
+    SendMessage(room, setTypingCharacterId, imageToSendUrl, stickerToSendName).then(() => {
       setIsWaitingForResponse(false);
     });
   };

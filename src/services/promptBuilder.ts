@@ -89,25 +89,37 @@ ${guidelines}
 `;
 }
 
-function buildContents(messages: Message[], isProactive: boolean, image?: string) {
+function buildContents(messages: Message[], isProactive: boolean, image?: string, sticker?: string) {
     const contents = messages.map(msg => {
         const role = msg.authorId === 0 ? "user" : "model";
         const parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; })[] = [{ text: msg.content || "(No content provided)" }];
         return { role, parts };
     });
 
-    if (image) {
+    if (image || sticker) {
         const lastUserMessage = contents.slice().reverse().find(c => c.role === 'user');
         if (lastUserMessage) {
-            const mimeType = image.match(/data:(.*);base64,/)?.[1];
-            const base64Data = image.split(',')[1];
-            if (mimeType && base64Data) {
-                lastUserMessage.parts.push({ 
-                    inline_data: {
-                        mime_type: mimeType,
-                        data: base64Data
+            if (image) {
+                const mimeType = image.match(/data:(.*);base64,/)?.[1];
+                const base64Data = image.split(',')[1];
+                if (mimeType && base64Data) {
+                    lastUserMessage.parts.push({ 
+                        inline_data: {
+                            mime_type: mimeType,
+                            data: base64Data
+                        }
+                    });
+                }
+            }
+            if (sticker) {
+                if ('text' in lastUserMessage.parts[0]) {
+                    const lastText = lastUserMessage.parts[0].text;
+                    if (lastText == "(No content provided)") {
+                        lastUserMessage.parts[0].text = `[사용자가 "${sticker}" 스티커를 보냄]`;
+                    } else {
+                        lastUserMessage.parts[0].text = `[사용자가 "${sticker}" 스티커를 보냄] ` + lastText;
                     }
-                });
+                }
             }
         }
     }
@@ -129,9 +141,10 @@ export function buildGeminiApiPayload(
     messages: Message[],
     isProactive: boolean,
     image?: string,
+    sticker?: string
 ): GeminiApiPayload {
     const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive);
-    const contents = buildContents(messages, isProactive, image);
+    const contents = buildContents(messages, isProactive, image, sticker);
 
     return {
         contents: contents,
