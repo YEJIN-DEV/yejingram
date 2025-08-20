@@ -1,4 +1,4 @@
-import { createSlice, createEntityAdapter } from '@reduxjs/toolkit'
+import { createSlice, createEntityAdapter, type PayloadAction } from '@reduxjs/toolkit'
 import type { Room } from './types'
 
 export const roomsAdapter = createEntityAdapter<Room, string>({
@@ -32,6 +32,9 @@ const roomsSlice = createSlice({
                 const set = new Set([...(room.memberIds ?? []), ...memberIds])
                 room.memberIds = [...set]
             }
+        },
+        importRooms: (state, action: PayloadAction<Room[]>) => {
+            roomsAdapter.upsertMany(state, action); // 호출만
         }
     }
 })

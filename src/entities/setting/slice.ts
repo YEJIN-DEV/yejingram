@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createEntityAdapter, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { SettingsState, ApiProvider, ApiConfig, Prompts } from './types';
 
@@ -43,6 +43,10 @@ const initialState: SettingsState = {
     randomMessageFrequencyMax: 60,
 };
 
+export const settingsAdapter = createEntityAdapter<SettingsState, string>({
+    selectId: () => 'settings', // There will only be one settings object
+})
+
 const settingsSlice = createSlice({
     name: 'settings',
     initialState,
@@ -75,19 +79,11 @@ const settingsSlice = createSlice({
         resetPrompts: (state) => {
             state.prompts = initialState.prompts;
         },
+        importSettings: (state, action: PayloadAction<SettingsState>) => {
+            return action.payload;
+        }
     },
 });
 
-export const {
-    openSettingsModal,
-    closeSettingsModal,
-    openPromptModal,
-    closePromptModal,
-    setSettings,
-    setApiProvider,
-    setApiConfig,
-    setPrompts,
-    resetPrompts,
-} = settingsSlice.actions;
-
+export const settingsActions = settingsSlice.actions
 export default settingsSlice.reducer;

@@ -1,4 +1,4 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
+import { configureStore, combineReducers, type Action } from '@reduxjs/toolkit';
 import localforage from 'localforage';
 import {
     persistReducer,
@@ -28,12 +28,22 @@ const persistConfig = {
     whitelist: ['characters', 'rooms', 'messages', 'settings'],
 };
 
-const rootReducer = combineReducers({
+const appReducer = combineReducers({
     characters: characterReducer,
     rooms: roomReducer,
     settings: settingsReducer,
     messages: messageReducer,
 });
+
+export const RESET_ALL = 'app/resetAll' as const;
+export const resetAll = () => ({ type: RESET_ALL } as const);
+
+const rootReducer = (state: ReturnType<typeof appReducer> | undefined, action: Action) => {
+    if (action.type === RESET_ALL) {
+        state = undefined;                 // ← 모든 slice가 initialState로
+    }
+    return appReducer(state, action);
+};
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 

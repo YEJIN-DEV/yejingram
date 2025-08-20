@@ -3,7 +3,7 @@ import { Settings, Bot, Plus } from 'lucide-react';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
-import { openSettingsModal } from '../../entities/setting/slice';
+import { settingsActions } from '../../entities/setting/slice';
 import { charactersActions } from '../../entities/character/slice';
 
 interface SidebarProps {
@@ -27,7 +27,7 @@ function Sidebar({ setRoomId }: SidebarProps) {
                         <h1 className="text-xl md:text-2xl font-bold text-white mb-1">예진그램</h1>
                         <p className="text-xs md:text-sm text-gray-400">상대를 초대/대화 하세요</p>
                     </div>
-                    <button id="open-settings-modal" onClick={() => dispatch(openSettingsModal())} className="p-2 md:p-2.5 rounded-full bg-gray-800 hover:bg-gray-700 transition-all duration-200">
+                    <button id="open-settings-modal" onClick={() => dispatch(settingsActions.openSettingsModal())} className="p-2 md:p-2.5 rounded-full bg-gray-800 hover:bg-gray-700 transition-all duration-200">
                         <Settings className="w-5 h-5 text-gray-300" />
                     </button>
                 </div>

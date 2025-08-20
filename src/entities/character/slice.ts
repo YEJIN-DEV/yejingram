@@ -48,7 +48,11 @@ const charactersSlice = createSlice({
         }
       }
     },
+    importCharacters: (state, action: PayloadAction<Character[]>) => {
+      charactersAdapter.upsertMany(state, action.payload); // 호출만
+    },
   },
 })
+
 export const charactersActions = charactersSlice.actions
 export default charactersSlice.reducer

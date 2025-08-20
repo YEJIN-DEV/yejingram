@@ -2,7 +2,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { X, ChevronDown, RotateCcw, Download, Upload } from 'lucide-react';
 import { selectIsPromptModalOpen, selectPrompts } from '../../entities/setting/selectors';
-import { closePromptModal, setPrompts } from '../../entities/setting/slice';
+import { settingsActions } from '../../entities/setting/slice';
 import type { Prompts } from '../../entities/setting/types';
 
 const mainPromptSections = {
@@ -34,11 +34,11 @@ function PromptModal() {
     }
 
     const handleClose = () => {
-        dispatch(closePromptModal());
+        dispatch(settingsActions.closePromptModal());
     };
 
     const handleSave = () => {
-        dispatch(setPrompts(localPrompts));
+        dispatch(settingsActions.setPrompts(localPrompts));
         handleClose();
     };
 
