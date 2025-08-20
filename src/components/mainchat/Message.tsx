@@ -249,9 +249,9 @@ const MessageList: React.FC<MessageListProps> = ({
               } else {
                 return stickerElement;
               }
-            } else if (msg.type === 'IMAGE') { // Use MessageType enum
+            } else if (msg.type === 'IMAGE' && msg.image?.dataUrl) { // Use MessageType enum
               // Assuming msg.content holds the image URL
-              const imageUrl = msg.content; // Or fetch from character.media if imageId is used
+              const imageUrl = msg.image?.dataUrl; // Or fetch from character.media if imageId is used
 
               const isExpanded = expandedStickers.has(msg.id);
               const sizeClass = isExpanded ? 'max-w-4xl' : 'max-w-xs';

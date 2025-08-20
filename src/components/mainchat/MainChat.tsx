@@ -26,6 +26,8 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   const [stickerToSend, setStickerToSend] = useState<Sticker | null>(null);
   const [isEditingRoomName, setIsEditingRoomName] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
+  const [imageToSend, setImageToSend] = useState<ImageToSend | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -70,13 +72,36 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
     setStickerToSend(null);
   };
 
+  const handleOpenImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleCancelImagePreview = () => {
+    setImageToSend(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageToSend({ dataUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+    setInputOptions
+  };
+
   const handleSendMessage = (text: string) => {
     if (!room) return;
-    if (!text.trim() && !stickerToSend) return;
+    if (!text.trim() && !stickerToSend && !imageToSend) return;
 
     setIsWaitingForResponse(true);
 
-    const messageType = stickerToSend ? 'STICKER' : 'TEXT';
+    const messageType = stickerToSend ? 'STICKER' : imageToSend ? 'IMAGE' : 'TEXT';
 
     dispatch(messagesActions.upsertOne({
       id: crypto.randomUUID(),
@@ -86,16 +111,22 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
       createdAt: new Date().toISOString(),
       type: messageType,
       sticker: stickerToSend || undefined,
+      image: imageToSend || undefined,
     }));
 
+    const imageToSendUrl = imageToSend?.dataUrl;
     setStickerToSend(null);
+    setImageToSend(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
     if (!memberChars) {
       setIsWaitingForResponse(false);
       return;
     }
 
-    SendMessage(room, setTypingCharacterId).then(() => {
+    SendMessage(room, setTypingCharacterId, imageToSendUrl).then(() => {
       setIsWaitingForResponse(false);
     });
   };
@@ -318,10 +349,14 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
             </div>
 
             <div className="p-4 bg-gray-900 border-t border-gray-800">
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
               <InputArea
                 room={room}
                 isWaitingForResponse={isWaitingForResponse}
                 stickerToSend={stickerToSend}
+                imageToSend={imageToSend}
+                onOpenImageUpload={handleOpenImageUpload}
+                onCancelImagePreview={handleCancelImagePreview}
                 onToggleUserStickerPanel={handleToggleStickerPanel}
                 onStickerClear={handleCancelSticker}
                 onSendMessage={handleSendMessage}
@@ -344,9 +379,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   }
 }
 
-type ImageToSend = {
-  dataUrl: string;
-};
+import type { ImageToSend } from '../../entities/message/types';
 
 export interface InputAreaProps {
   room: Room;
@@ -418,8 +451,11 @@ export function InputArea({
         <div className="absolute bottom-full left-0 mb-2 w-48 bg-gray-700 rounded-xl shadow-lg p-2 animate-fadeIn">
           <button
             type="button"
-            onClick={onOpenImageUpload}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-lg hover:bg-gray-600"
+            onClick={() => {
+              onOpenImageUpload?.();
+              setInputOptions((prev) => !prev);
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-lg hover:bg-gray-600 text-white"
           >
             <ImageIcon className="w-4 h-4" /> 사진 업로드
           </button>

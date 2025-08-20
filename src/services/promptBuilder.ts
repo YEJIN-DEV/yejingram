@@ -89,12 +89,28 @@ ${guidelines}
 `;
 }
 
-function buildContents(messages: Message[], isProactive: boolean) {
+function buildContents(messages: Message[], isProactive: boolean, image?: string) {
     const contents = messages.map(msg => {
         const role = msg.authorId === 0 ? "user" : "model";
-        const parts = [{ text: msg.content || "(No content provided)" }];
+        const parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; })[] = [{ text: msg.content || "(No content provided)" }];
         return { role, parts };
     });
+
+    if (image) {
+        const lastUserMessage = contents.slice().reverse().find(c => c.role === 'user');
+        if (lastUserMessage) {
+            const mimeType = image.match(/data:(.*);base64,/)?.[1];
+            const base64Data = image.split(',')[1];
+            if (mimeType && base64Data) {
+                lastUserMessage.parts.push({ 
+                    inline_data: {
+                        mime_type: mimeType,
+                        data: base64Data
+                    }
+                });
+            }
+        }
+    }
 
     if (isProactive && contents.length === 0) {
         contents.push({
@@ -112,9 +128,10 @@ export function buildGeminiApiPayload(
     character: Character,
     messages: Message[],
     isProactive: boolean,
+    image?: string,
 ): GeminiApiPayload {
     const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive);
-    const contents = buildContents(messages, isProactive);
+    const contents = buildContents(messages, isProactive, image);
 
     return {
         contents: contents,

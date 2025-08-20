@@ -65,17 +65,17 @@ function handleError(error: unknown, roomId: string, charId: number, dispatch: A
 }
 
 
-export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
+export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void, image?: string) {
     const memberChars = room.memberIds.map(id => selectCharacterById(store.getState(), id));
 
     for (const char of memberChars) {
         if (char) {
-            await LLMSend(room, char, setTypingCharacterId);
+            await LLMSend(room, char, setTypingCharacterId, image);
         }
     }
 }
 
-export async function LLMSend(room: Room, char: Character, setTypingCharacterId: (id: number | null) => void) {
+export async function LLMSend(room: Room, char: Character, setTypingCharacterId: (id: number | null) => void, image?: string) {
     const state = store.getState();
     const dispatch = store.dispatch;
 
@@ -91,7 +91,9 @@ export async function LLMSend(room: Room, char: Character, setTypingCharacterId:
                 settings.userName,
                 settings.userDescription,
                 char,
-                messages
+                messages,
+                false,
+                image
             );
         } else {
             res = await callGeminiAPI(
@@ -99,7 +101,9 @@ export async function LLMSend(room: Room, char: Character, setTypingCharacterId:
                 settings.userName,
                 settings.userDescription,
                 char,
-                messages
+                messages,
+                false,
+                image
             );
         }
         await handleApiResponse(res, room, char, dispatch, setTypingCharacterId);
@@ -116,10 +120,11 @@ export async function callGeminiAPI(
     userDescription: string,
     character: Character,
     messages: Message[],
-    isProactive = false
+    isProactive = false,
+    image?: string
 ): Promise<ChatResponse> {
 
-    const payload = buildGeminiApiPayload(userName, userDescription, character, messages, isProactive);
+    const payload = buildGeminiApiPayload(userName, userDescription, character, messages, isProactive, image);
 
     try {
         const response = await fetch(`${GEMINI_API_BASE_URL}${api.model}:generateContent?key=${api.apiKey}`, {
@@ -159,10 +164,11 @@ export async function callVertexAPI(
     userDescription: string,
     character: Character,
     messages: Message[],
-    isProactive = false
+    isProactive = false,
+    image?: string
 ): Promise<ChatResponse> {
 
-    const payload = buildGeminiApiPayload(userName, userDescription, character, messages, isProactive);
+    const payload = buildGeminiApiPayload(userName, userDescription, character, messages, isProactive, image);
     const url = VERTEX_AI_API_BASE_URL
         .replace(/{location}/g, api.location || 'us-central1')
         .replace("{projectId}", api.projectId || '')

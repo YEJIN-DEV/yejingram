@@ -1,6 +1,11 @@
 import type { Sticker } from "../character/types";
 
 export type MessageType = "TEXT" | "IMAGE" | "STICKER";
+
+export type ImageToSend = {
+    dataUrl: string;
+};
+
 export interface Message {
     id: string;
     roomId: string;
@@ -9,4 +14,5 @@ export interface Message {
     type: MessageType;
     createdAt: string;
     sticker?: Sticker;
+    image?: ImageToSend;
 }
