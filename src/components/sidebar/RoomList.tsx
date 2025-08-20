@@ -35,7 +35,7 @@ function RoomList({
                         <h4 className="text-sm font-medium text-white truncate">{room.name}</h4>
                         <div className="flex items-center gap-2">
                             {unreadCount > 0 && <span className="bg-red-500 text-white text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full leading-none">{unreadCount}</span>}
-                            <span className="text-xs text-gray-400 shrink-0">{new Date(lastMessage?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || ''}</span>
+                            <span className="text-xs text-gray-400 shrink-0">{lastMessage?.createdAt ? new Date(lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
                         </div>
                     </div>
                     <p className="text-xs text-gray-400 truncate">{

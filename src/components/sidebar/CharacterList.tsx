@@ -95,7 +95,7 @@ function CharacterList({
                                         {totalUnreadCount}
                                     </span>
                                 )}
-                                <span className="text-xs text-gray-500 shrink-0">{new Date(lastMessage?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || ''}</span>
+                                <span className="text-xs text-gray-500 shrink-0">{lastMessage?.createdAt ? new Date(lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
                                 {isExpanded ? (
                                     <ChevronDown className={`w-4 h-4 text-gray-400`} />
                                 ) : (
