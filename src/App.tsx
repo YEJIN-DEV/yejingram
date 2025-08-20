@@ -10,6 +10,9 @@ import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
+import CreateGroupChatModal from './components/modals/CreateGroupChatModal';
+import CreateOpenChatModal from './components/modals/CreateOpenChatModal';
+import EditGroupChatModal from './components/modals/EditGroupChatModal';
 
 function App() {
   const [roomId, setRoomId] = useState<string | null>(null)
@@ -37,7 +40,7 @@ function App() {
           </button>
 
           <div id="sidebar-content" className={`flex h-full flex-col overflow-hidden ${isSidebarCollapsed ? 'md:hidden' : ''}`}>
-            <Sidebar setRoomId={setRoomId} />
+            <Sidebar setRoomId={setRoomId} roomId={roomId} />
           </div>
         </aside>
 
@@ -46,6 +49,9 @@ function App() {
           <SettingsModal />
           <PromptModal />
           <CharacterModal />
+          <CreateGroupChatModal />
+          <CreateOpenChatModal />
+          <EditGroupChatModal />
         </main>
 
         <div id="sidebar-backdrop" onClick={() => setIsMobileSidebarOpen(false)} className={`fixed inset-0 z-20 bg-black/50 backdrop-blur-xs md:hidden ${isMobileSidebarOpen ? 'block' : 'hidden'}`}></div>

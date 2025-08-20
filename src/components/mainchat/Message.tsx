@@ -274,7 +274,7 @@ const MessageList: React.FC<MessageListProps> = ({
                   {captionTag}
                 </div>
               );
-            } else { // TEXT type
+            } else if (msg.type === 'TEXT') { // TEXT type
               return (
                 <div className={`px-4 py-2 rounded-2xl text-sm md:text-base leading-relaxed ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-100'}`}>
                   <div className="break-words">{msg.content}</div>
@@ -308,7 +308,14 @@ const MessageList: React.FC<MessageListProps> = ({
                   </div>
                 </div>
               )}
-              <div className={`group flex w-full items-start gap-3 ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'flex-row-reverse' : ''}`}>
+              {msg.type === 'SYSTEM' && (
+                <div className="flex justify-center my-4">
+                  <div className="flex items-center text-xs text-gray-300 bg-gray-800/80 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-md">
+                    {msg.content}
+                  </div>
+                </div>
+              )}
+              {msg.type !== 'SYSTEM' && <div className={`group flex w-full items-start gap-3 ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'flex-row-reverse' : ''}`}>
                 {!isMe && <div className="shrink-0 w-10 h-10 mt-1">{avatarElement}</div>}
                 <div className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
                   {showSenderInfo && <p className="text-sm text-gray-400 mb-1"><SenderName authorId={msg.authorId} /></p>}
@@ -391,7 +398,7 @@ const MessageList: React.FC<MessageListProps> = ({
                     </div>
                   </div>
                 </div>
-              </div>
+              </div>}
             </React.Fragment>
           );
         })}

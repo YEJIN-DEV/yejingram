@@ -9,6 +9,7 @@ interface RoomListProps {
     room: Room;
     unreadCount: number;
     setRoomId: (id: string | null) => void;
+    isSelected: boolean;
 }
 
 function getLastMessageContent(state: RootState, roomId: string) {
@@ -19,13 +20,14 @@ function getLastMessageContent(state: RootState, roomId: string) {
 function RoomList({
     room,
     unreadCount,
-    setRoomId
+    setRoomId,
+    isSelected
 }: RoomListProps) {
     const dispatch = useDispatch();
     const lastMessage = useSelector((state: RootState) => getLastMessageContent(state, room.id));
 
     return (
-        <div className="chat-room-item group p-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-700 relative" data-chat-id={room.id}>
+        <div className={`chat-room-item group p-2 rounded-lg cursor-pointer transition-all duration-200 ${isSelected ? 'bg-blue-600' : 'hover:bg-gray-700'} relative`} data-chat-id={room.id}>
             <div className="flex items-center justify-between">
                 <div onClick={() => {
                     dispatch(roomsActions.resetUnread(room.id));

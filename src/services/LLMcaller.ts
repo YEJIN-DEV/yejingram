@@ -1,9 +1,10 @@
 import { store, type AppDispatch } from "../app/store";
-import { selectCharacterById } from "../entities/character/selectors";
+import { selectCharacterById, selectAllCharacters } from "../entities/character/selectors";
 import type { Message } from "../entities/message/types";
 import type { Room } from "../entities/room/types";
 import { selectAllSettings, selectCurrentApiConfig } from "../entities/setting/selectors";
 import { messagesActions } from "../entities/message/slice";
+import { roomsActions } from "../entities/room/slice";
 import type { ChatResponse, MessagePart } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
@@ -215,4 +216,212 @@ export async function callVertexAPI(
 
 function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void, image?: string) {
+    const state = store.getState();
+    const allCharacters = selectAllCharacters(state);
+    const participants = room.memberIds.map(id => allCharacters.find(c => c.id === id)).filter((c): c is Character => !!c);
+
+    if (participants.length === 0) return;
+
+    const settings = room.groupSettings;
+    if (!settings) return;
+
+    const { responseFrequency, maxRespondingCharacters, responseDelay } = settings;
+
+    if (Math.random() > responseFrequency) {
+        return;
+    }
+
+    const activeParticipants = participants.filter(p => {
+        const participantSettings = settings.participantSettings?.[p.id];
+        if (participantSettings?.isActive === false) return false;
+        const responseProbability = participantSettings?.responseProbability || 0.9;
+        return Math.random() <= responseProbability;
+    });
+
+    if (activeParticipants.length === 0) return;
+
+    const shuffledParticipants = [...activeParticipants].sort(() => 0.5 - Math.random());
+
+    const respondingCount = Math.min(
+        Math.floor(Math.random() * maxRespondingCharacters) + 1,
+        shuffledParticipants.length
+    );
+    const respondingCharacters = shuffledParticipants.slice(0, respondingCount);
+
+    for (let i = 0; i < respondingCharacters.length; i++) {
+        const character = respondingCharacters[i];
+        if (i > 0) {
+            await sleep(responseDelay + (Math.random() * 300 - 150));
+        }
+        await LLMSendGroup(room, character, setTypingCharacterId, participants, image);
+    }
+}
+
+async function LLMSendGroup(room: Room, char: Character, setTypingCharacterId: (id: number | null) => void, allParticipants: Character[], image?: string) {
+    const state = store.getState();
+    const dispatch = store.dispatch;
+
+    const api = selectCurrentApiConfig(state);
+    const settings = selectAllSettings(state);
+    const messages = selectMessagesByRoomId(state, room.id);
+
+    const otherParticipants = allParticipants.filter(p => p.id !== char.id);
+    const participantDetails = otherParticipants.map(p => {
+        const basicInfo = p.prompt ? p.prompt.split('\n').slice(0, 3).join(' ').replace(/[#*]/g, '').trim() : '';
+        return `- ${p.name}: ${basicInfo || 'Character'}`;
+    }).join('\n');
+
+    const groupPrompt = settings.prompts.main.group_chat_context;
+    const groupContext = groupPrompt
+        .replace(/{participantCount}/g, (allParticipants.length + 1).toString())
+        .replace(/{userName}/g, settings.userName)
+        .replace(/{participantDetails}/g, participantDetails)
+        .replace(/{characterName}/g, char.name);
+
+    const finalUserDescription = settings.userDescription + '\n' + groupContext;
+
+    try {
+        let res;
+        if (settings.apiProvider === 'vertexai') {
+            res = await callVertexAPI(
+                api,
+                settings.userName,
+                finalUserDescription,
+                char,
+                messages,
+                false,
+                image
+            );
+        } else {
+            res = await callGeminiAPI(
+                api,
+                settings.userName,
+                finalUserDescription,
+                char,
+                messages,
+                false,
+                image
+            );
+        }
+        await handleApiResponse(res, room, char, dispatch, setTypingCharacterId);
+    } catch (error) {
+        handleError(error, room.id, char.id, dispatch);
+    } finally {
+        setTypingCharacterId(null);
+    }
+}
+
+export async function SendOpenChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void, image?: string) {
+    const state = store.getState();
+    const dispatch = store.dispatch;
+    const allCharacters = selectAllCharacters(state);
+    
+    const currentParticipantIds = room.currentParticipants || [];
+    const remainingParticipantIds: number[] = [];
+    for (const participantId of currentParticipantIds) {
+        if (Math.random() > 0.1) { 
+            remainingParticipantIds.push(participantId);
+        } else {
+            const character = allCharacters.find(c => c.id === participantId);
+            if (character) {
+                dispatch(messagesActions.upsertOne({
+                    id: crypto.randomUUID(),
+                    roomId: room.id,
+                    authorId: 0,
+                    content: `${character.name}님이 나갔습니다.`,
+                    createdAt: new Date().toISOString(),
+                    type: 'SYSTEM',
+                }));
+            }
+        }
+    }
+
+    const newJoinerIds: number[] = [];
+    const nonParticipantChars = allCharacters.filter(c => !currentParticipantIds.includes(c.id));
+    for (const char of nonParticipantChars) {
+        if (Math.random() < 0.1) { 
+            newJoinerIds.push(char.id);
+            dispatch(messagesActions.upsertOne({
+                id: crypto.randomUUID(),
+                roomId: room.id,
+                authorId: 0,
+                content: `${char.name}님이 들어왔습니다.`,
+                createdAt: new Date().toISOString(),
+                type: 'SYSTEM',
+            }));
+        }
+    }
+
+    const finalParticipantIds = [...remainingParticipantIds, ...newJoinerIds];
+    dispatch(roomsActions.upsertOne({ ...room, currentParticipants: finalParticipantIds }));
+    
+    const participants = finalParticipantIds.map(id => allCharacters.find(c => c.id === id)).filter((c): c is Character => !!c);
+
+    if (participants.length === 0) return;
+
+    const respondingCharacters = participants.filter(() => Math.random() < 0.5).slice(0, 2);
+
+    for (let i = 0; i < respondingCharacters.length; i++) {
+        const character = respondingCharacters[i];
+        if (i > 0) {
+            await sleep(500 + Math.random() * 500);
+        }
+        await LLMSendOpen(room, character, setTypingCharacterId, participants, image);
+    }
+}
+
+async function LLMSendOpen(room: Room, char: Character, setTypingCharacterId: (id: number | null) => void, allParticipants: Character[], image?: string) {
+    const state = store.getState();
+    const dispatch = store.dispatch;
+
+    const api = selectCurrentApiConfig(state);
+    const settings = selectAllSettings(state);
+    const messages = selectMessagesByRoomId(state, room.id);
+
+    const otherParticipants = allParticipants.filter(p => p.id !== char.id);
+    const participantDetails = otherParticipants.map(p => {
+        const basicInfo = p.prompt ? p.prompt.split('\n').slice(0, 3).join(' ').replace(/[#*]/g, '').trim() : '';
+        return `- ${p.name}: ${basicInfo || 'Character'}`;
+    }).join('\n');
+
+    const openPrompt = settings.prompts.main.open_chat_context;
+    const openContext = openPrompt
+        .replace(/{userName}/g, settings.userName)
+        .replace(/{participantDetails}/g, participantDetails)
+        .replace(/{characterName}/g, char.name);
+    
+    const finalUserDescription = settings.userDescription + '\n' + openContext;
+
+    try {
+        let res;
+        if (settings.apiProvider === 'vertexai') {
+            res = await callVertexAPI(
+                api,
+                settings.userName,
+                finalUserDescription,
+                char,
+                messages,
+                false,
+                image
+            );
+        } else {
+            res = await callGeminiAPI(
+                api,
+                settings.userName,
+                finalUserDescription,
+                char,
+                messages,
+                false,
+                image
+            );
+        }
+        await handleApiResponse(res, room, char, dispatch, setTypingCharacterId);
+    } catch (error) {
+        handleError(error, room.id, char.id, dispatch);
+    } finally {
+        setTypingCharacterId(null);
+    }
 }

@@ -13,13 +13,15 @@ import { Avatar } from '../../utils/Avatar';
 interface CharacterListProps {
     character: Character;
     setRoomId: (id: string | null) => void;
+    selectedRoomId: string | null;
 }
 
 function CharacterList({
     character,
-    setRoomId
+    setRoomId,
+    selectedRoomId
 }: CharacterListProps) {
-    const chatRooms = useSelector(selectAllRooms).filter(r => r.memberIds?.includes(character.id)) || [];
+    const chatRooms = useSelector(selectAllRooms).filter(r => r.memberIds?.includes(character.id) && r.type === 'Direct') || [];
     const [isExpanded, setIsExpanded] = useState(false);
     const dispatch = useDispatch();
 
@@ -34,8 +36,9 @@ function CharacterList({
     });
 
     const lastMessageContent =
-        lastMessage?.type === 'image' ? '이미지를 보냈습니다' :
-            lastMessage?.content ?? '대화를 시작해보세요';
+        lastMessage?.type === 'IMAGE' ? '이미지를 보냈습니다' :
+            lastMessage?.type === 'STICKER' ? '스티커를 보냈습니다' :
+                lastMessage?.content ?? '대화를 시작해보세요';
 
     return (
         <div className="character-group">
@@ -116,7 +119,7 @@ function CharacterList({
                 <div className="ml-6 space-y-1 pb-2">
                     {chatRooms.map(room => (
                         <div key={room.id}>
-                            <RoomList room={room} unreadCount={room.unreadCount || 0} setRoomId={setRoomId} />
+                            <RoomList room={room} unreadCount={room.unreadCount || 0} setRoomId={setRoomId} isSelected={selectedRoomId === room.id} />
                         </div>
                     ))}
                 </div>

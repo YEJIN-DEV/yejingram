@@ -5,15 +5,24 @@ import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
 import { settingsActions } from '../../entities/setting/slice';
 import { charactersActions } from '../../entities/character/slice';
+import { selectAllRooms } from '../../entities/room/selectors';
+import GroupChatList from './GroupChatList';
+import OpenChatList from './OpenChatList';
+import type { Room } from '../../entities/room/types';
 
 interface SidebarProps {
     setRoomId: (id: string | null) => void;
+    roomId: string | null;
 }
 
-function Sidebar({ setRoomId }: SidebarProps) {
+function Sidebar({ setRoomId, roomId }: SidebarProps) {
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
+    const rooms = useSelector(selectAllRooms);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const groupChats = rooms.filter((r: Room) => r.type === 'Group');
+    const openChats = rooms.filter((r: Room) => r.type === 'Open');
 
     const filteredCharacters = characters.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -53,11 +62,14 @@ function Sidebar({ setRoomId }: SidebarProps) {
                 </div>
 
                 <div className="space-y-1 px-3 pb-4">
+                    <OpenChatList rooms={openChats} setRoomId={setRoomId} selectedRoomId={roomId} />
+                    <GroupChatList rooms={groupChats} setRoomId={setRoomId} selectedRoomId={roomId} />
                     {filteredCharacters.map((char) => (
                         <CharacterList
                             key={char.id}
                             character={char}
                             setRoomId={setRoomId}
+                            selectedRoomId={roomId}
                         />
                     ))}
                 </div>

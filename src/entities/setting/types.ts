@@ -32,6 +32,10 @@ export interface Prompts {
 export interface SettingsState {
     isModalOpen: boolean;
     isPromptModalOpen: boolean;
+    isCreateGroupChatModalOpen: boolean;
+    isCreateOpenChatModalOpen: boolean;
+    isEditGroupChatModalOpen: boolean;
+    editingRoomId: string | null;
     apiProvider: ApiProvider;
     apiConfigs: Record<ApiProvider, ApiConfig>;
     fontScale: number;

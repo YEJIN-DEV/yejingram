@@ -1,6 +1,6 @@
 import type { Sticker } from "../character/types";
 
-export type MessageType = "TEXT" | "IMAGE" | "STICKER";
+export type MessageType = "TEXT" | "IMAGE" | "STICKER" | "SYSTEM";
 
 export type ImageToSend = {
     dataUrl: string;

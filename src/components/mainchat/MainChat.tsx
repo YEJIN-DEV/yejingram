@@ -9,7 +9,7 @@ import MessageList from './Message';
 import { messagesActions } from '../../entities/message/slice';
 import { roomsActions } from '../../entities/room/slice';
 import { Avatar } from '../../utils/Avatar';
-import { SendMessage } from '../../services/LLMcaller';
+import { SendMessage, SendGroupChatMessage, SendOpenChatMessage } from '../../services/LLMcaller';
 import type { Sticker } from '../../entities/character/types';
 import { StickerPanel } from './StickerPanel';
 
@@ -103,16 +103,18 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
 
     const messageType = stickerToSend ? 'STICKER' : imageToSend ? 'IMAGE' : 'TEXT';
 
-    dispatch(messagesActions.upsertOne({
+    const userMessage = {
       id: crypto.randomUUID(),
       roomId: room.id,
       authorId: 0, // Assuming current user ID is '0'
       content: text,
       createdAt: new Date().toISOString(),
-      type: messageType,
+      type: messageType as 'TEXT' | 'STICKER' | 'IMAGE',
       sticker: stickerToSend || undefined,
-      image: imageToSend || undefined,
-    }));
+      image: imageToSend ? { dataUrl: imageToSend.dataUrl } : undefined,
+    };
+
+    dispatch(messagesActions.upsertOne(userMessage));
 
     const imageToSendUrl = imageToSend?.dataUrl;
     const stickerToSendName = stickerToSend?.name;
@@ -127,12 +129,21 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
       return;
     }
 
-    SendMessage(room, setTypingCharacterId, imageToSendUrl, stickerToSendName).then(() => {
+    let responsePromise;
+    if (room.type === 'Group') {
+      responsePromise = SendGroupChatMessage(room, setTypingCharacterId, imageToSendUrl);
+    } else if (room.type === 'Open') {
+      responsePromise = SendOpenChatMessage(room, setTypingCharacterId, imageToSendUrl);
+    } else {
+      responsePromise = SendMessage(room, setTypingCharacterId, imageToSendUrl, stickerToSendName);
+    }
+
+    responsePromise.then(() => {
       setIsWaitingForResponse(false);
     });
   };
 
-  if (!(room && character)) {
+  if (!room) {
     return (
       <div className="flex-1 flex items-center justify-center text-center p-4">
         <button
@@ -199,8 +210,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                   )}
                   <p className="text-xs md:text-sm text-gray-400 flex items-center">
                     <Globe className="w-3 h-3 mr-1.5" />
-                    {/* TODO: Implement participant count for open chats */}
-                    0명 접속중
+                    {room.currentParticipants?.length || 0}명 접속중
                   </p>
                 </div>
               </div>
@@ -218,12 +228,23 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
             </header>
 
             <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
-              {/* {this.renderMessages()} */}
+              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} scrollRef={messagesContainerRef} />
               <div id="messages-end-ref"></div>
             </div>
 
             <div className="p-4 bg-gray-900 border-t border-gray-800">
-              {/* {this.renderInputArea()} */}
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+              <InputArea
+                room={room}
+                isWaitingForResponse={isWaitingForResponse}
+                stickerToSend={stickerToSend}
+                imageToSend={imageToSend}
+                onOpenImageUpload={handleOpenImageUpload}
+                onCancelImagePreview={handleCancelImagePreview}
+                onToggleUserStickerPanel={handleToggleStickerPanel}
+                onStickerClear={handleCancelSticker}
+                onSendMessage={handleSendMessage}
+              />
             </div>
           </>
         ) : room.type == "Group" ? (
@@ -264,7 +285,6 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                   )}
                   <p className="text-xs md:text-sm text-gray-400 flex items-center">
                     <Users className="w-3 h-3 mr-1.5" />
-                    {/* TODO: Implement participant count for group chats */}
                     {room.memberIds.length}명 참여
                   </p>
                 </div>
@@ -283,15 +303,26 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
             </header>
 
             <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
-              {/* {this.renderMessages()} */}
+              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} scrollRef={messagesContainerRef} />
               <div id="messages-end-ref"></div>
             </div>
 
             <div className="p-4 bg-gray-900 border-t border-gray-800">
-              {/* {this.renderInputArea()} */}
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+              <InputArea
+                room={room}
+                isWaitingForResponse={isWaitingForResponse}
+                stickerToSend={stickerToSend}
+                imageToSend={imageToSend}
+                onOpenImageUpload={handleOpenImageUpload}
+                onCancelImagePreview={handleCancelImagePreview}
+                onToggleUserStickerPanel={handleToggleStickerPanel}
+                onStickerClear={handleCancelSticker}
+                onSendMessage={handleSendMessage}
+              />
             </div>
           </>
-        ) : room.type == "Direct" && messages ? (
+        ) : room.type == "Direct" && character && messages ? (
           <>
             <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
               <div className="flex items-center space-x-2 md:space-x-4">
