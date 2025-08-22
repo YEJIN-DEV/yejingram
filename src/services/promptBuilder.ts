@@ -26,12 +26,16 @@ function buildTimeContext(messages: Message[], isProactive: boolean) {
     return timeContext;
 }
 
-function buildGuidelinesPrompt(prompts: any, character: Character, messages: Message[], isProactive: boolean): string {
+function buildGuidelinesPrompt(prompts: any, character: Character, messages: Message[], isProactive: boolean, useStructuredOutput: boolean): string {
     const availableStickers = character.stickers?.map(sticker => `${sticker.id} (${sticker.name})`).join(', ') || 'none';
+    const messageWritingStyle = useStructuredOutput
+        ? prompts.main.message_writing_structured
+        : prompts.main.message_writing_unstructured;
+
     const guidelines = [
         prompts.main.memory_generation,
         prompts.main.character_acting,
-        prompts.main.message_writing,
+        messageWritingStyle,
         prompts.main.language,
         prompts.main.additional_instructions,
         prompts.main.sticker_usage?.replace('{availableStickers}', availableStickers) || ''
@@ -45,10 +49,11 @@ function buildMasterPrompt(
     userDescription: string,
     character: Character,
     messages: Message[],
-    isProactive: boolean
+    isProactive: boolean,
+    useStructuredOutput: boolean
 ): string {
     const prompts = selectPrompts(store.getState());
-    const guidelines = buildGuidelinesPrompt(prompts, character, messages, isProactive);
+    const guidelines = buildGuidelinesPrompt(prompts, character, messages, isProactive, useStructuredOutput);
 
     return `# System Rules
 ${prompts.main.system_rules}
@@ -103,7 +108,7 @@ function buildContents(messages: Message[], isProactive: boolean, image?: string
                 const mimeType = image.match(/data:(.*);base64,/)?.[1];
                 const base64Data = image.split(',')[1];
                 if (mimeType && base64Data) {
-                    lastUserMessage.parts.push({ 
+                    lastUserMessage.parts.push({
                         inline_data: {
                             mime_type: mimeType,
                             data: base64Data
@@ -140,63 +145,69 @@ export function buildGeminiApiPayload(
     character: Character,
     messages: Message[],
     isProactive: boolean,
+    useStructuredOutput: boolean,
     image?: string,
     sticker?: string
 ): GeminiApiPayload {
-    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive);
+    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput);
     const contents = buildContents(messages, isProactive, image, sticker);
+
+    const generationConfig: any = {
+        temperature: 1.25,
+        topK: 40,
+        topP: 0.95,
+    };
+
+    if (useStructuredOutput) {
+        generationConfig.responseMimeType = "application/json";
+        generationConfig.responseSchema = {
+            type: "OBJECT",
+            properties: {
+                "reactionDelay": { "type": "INTEGER" },
+                "messages": {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            "delay": { "type": "INTEGER" },
+                            "content": { "type": "STRING" },
+                            "sticker": { "type": "STRING" }
+                        },
+                        required: ["delay"]
+                    }
+                },
+                "characterState": {
+                    type: "OBJECT",
+                    properties: {
+                        "mood": { "type": "NUMBER" },
+                        "energy": { "type": "NUMBER" },
+                        "socialBattery": { "type": "NUMBER" },
+                        "personality": {
+                            type: "OBJECT",
+                            properties: {
+                                "extroversion": { "type": "NUMBER" },
+                                "openness": { "type": "NUMBER" },
+                                "conscientiousness": { "type": "NUMBER" },
+                                "agreeableness": { "type": "NUMBER" },
+                                "neuroticism": { "type": "NUMBER" }
+                            },
+                            required: ["extroversion", "openness", "conscientiousness", "agreeableness", "neuroticism"]
+                        }
+                    },
+                    required: ["mood", "energy", "socialBattery", "personality"]
+                },
+                "newMemory": { "type": "STRING" }
+            },
+            required: ["reactionDelay", "messages"]
+        };
+    }
 
     return {
         contents: contents,
         systemInstruction: {
             parts: [{ text: masterPrompt }]
         },
-        generationConfig: {
-            temperature: 1.25,
-            topK: 40,
-            topP: 0.95,
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: "OBJECT",
-                properties: {
-                    "reactionDelay": { "type": "INTEGER" },
-                    "messages": {
-                        type: "ARRAY",
-                        items: {
-                            type: "OBJECT",
-                            properties: {
-                                "delay": { "type": "INTEGER" },
-                                "content": { "type": "STRING" },
-                                "sticker": { "type": "STRING" }
-                            },
-                            required: ["delay"]
-                        }
-                    },
-                    "characterState": {
-                        type: "OBJECT",
-                        properties: {
-                            "mood": { "type": "NUMBER" },
-                            "energy": { "type": "NUMBER" },
-                            "socialBattery": { "type": "NUMBER" },
-                            "personality": {
-                                type: "OBJECT",
-                                properties: {
-                                    "extroversion": { "type": "NUMBER" },
-                                    "openness": { "type": "NUMBER" },
-                                    "conscientiousness": { "type": "NUMBER" },
-                                    "agreeableness": { "type": "NUMBER" },
-                                    "neuroticism": { "type": "NUMBER" }
-                                },
-                                required: ["extroversion", "openness", "conscientiousness", "agreeableness", "neuroticism"]
-                            }
-                        },
-                        required: ["mood", "energy", "socialBattery", "personality"]
-                    },
-                    "newMemory": { "type": "STRING" }
-                },
-                required: ["reactionDelay", "messages"]
-            }
-        },
+        generationConfig: generationConfig,
         safetySettings: [
             { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
             { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },

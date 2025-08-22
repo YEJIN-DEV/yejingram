@@ -15,7 +15,8 @@ export interface MainPrompts {
     role_and_objective: string;
     memory_generation: string;
     character_acting: string;
-    message_writing: string;
+    message_writing_structured: string;
+    message_writing_unstructured: string;
     language: string;
     additional_instructions: string;
     sticker_usage: string;
@@ -47,4 +48,5 @@ export interface SettingsState {
     randomMessageFrequencyMin: number;
     randomMessageFrequencyMax: number;
     prompts: Prompts;
+    useStructuredOutput: boolean;
 }

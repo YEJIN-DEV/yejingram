@@ -7,7 +7,7 @@ export interface MessagePart {
 export interface ChatResponse {
     messages: MessagePart[];
     reactionDelay: number; // 반응 지연시간 (ms)
-    characterState: {
+    characterState?: {
         energy: number;     // 에너지 수준 (0~1)
         mood: number;       // 기분 (0~1)
         personality: {
@@ -24,9 +24,14 @@ export interface ChatResponse {
 export interface GeminiApiPayload {
     contents: {
         role: string;
-        parts: {
+        parts: ({
             text: string;
-        }[];
+        } | {
+            inline_data: {
+                mime_type: string;
+                data: string;
+            };
+        })[];
     }[];
     systemInstruction: {
         parts: {
@@ -38,7 +43,7 @@ export interface GeminiApiPayload {
         topK: number;
         topP: number;
         responseMimeType: string;
-        responseSchema: any; 
+        responseSchema: any;
     };
     safetySettings: {
         category: string;
