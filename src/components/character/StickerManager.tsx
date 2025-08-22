@@ -1,20 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { Plus, CheckSquare, CheckCircle, Trash2, Edit3 } from 'lucide-react';
-import type { RootState } from '../../app/store';
-import { selectEditingCharacterId } from '../../entities/character/selectors';
-import { selectCharacterById } from '../../entities/character/selectors';
-import { charactersActions } from '../../entities/character/slice';
 import type { Sticker } from '../../entities/character/types';
 
-export function StickerManager() {
-    const dispatch = useDispatch();
-    const editingCharacterId = useSelector(selectEditingCharacterId);
-    const character = useSelector((state: RootState) =>
-        editingCharacterId ? selectCharacterById(state, editingCharacterId) : null
-    );
-    const stickers = character?.stickers || [];
+interface StickerManagerProps {
+    stickers: Sticker[];
+    onStickersChange: (stickers: Sticker[]) => void;
+}
 
+export function StickerManager({ stickers, onStickersChange }: StickerManagerProps) {
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedStickers, setSelectedStickers] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -25,7 +18,7 @@ export function StickerManager() {
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
-        if (!files || !editingCharacterId) return;
+        if (!files) return;
 
         for (const file of Array.from(files)) {
             const reader = new FileReader();
@@ -37,28 +30,29 @@ export function StickerManager() {
                     data,
                     type: file.type,
                 };
-                dispatch(charactersActions.addSticker({ characterId: editingCharacterId, sticker: newSticker }));
+                onStickersChange([...stickers, newSticker]);
             };
             reader.readAsDataURL(file);
         }
     };
 
     const handleDeleteSelected = () => {
-        if (!editingCharacterId || selectedStickers.length === 0) return;
+        if (selectedStickers.length === 0) return;
         if (confirm(`선택한 스티커 ${selectedStickers.length}개를 삭제하시겠습니까?`)) {
-            selectedStickers.forEach(stickerId => {
-                dispatch(charactersActions.deleteSticker({ characterId: editingCharacterId, stickerId }));
-            });
+            const newStickers = stickers.filter(s => !selectedStickers.includes(s.id));
+            onStickersChange(newStickers);
             setSelectedStickers([]);
             setSelectionMode(false);
         }
     };
 
     const handleEditName = (stickerId: string, currentName: string) => {
-        if (!editingCharacterId) return;
         const newName = prompt('새 스티커 이름을 입력하세요:', currentName);
         if (newName && newName.trim() !== '') {
-            dispatch(charactersActions.editStickerName({ characterId: editingCharacterId, stickerId, newName: newName.trim() }));
+            const newStickers = stickers.map(s =>
+                s.id === stickerId ? { ...s, name: newName.trim() } : s
+            );
+            onStickersChange(newStickers);
         }
     };
 

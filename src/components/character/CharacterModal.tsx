@@ -4,7 +4,7 @@ import { X, Image, Upload, Download, Sparkles, MessageSquarePlus, ChevronDown } 
 import { selectIsCharacterModalOpen, selectEditingCharacterId, selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
 import type { RootState } from '../../app/store';
-import type { Character } from '../../entities/character/types';
+import type { Character, Sticker } from '../../entities/character/types';
 import { AttributeSliders } from './AttributeSliders';
 import { MemoryManager } from './MemoryManager';
 import { StickerManager } from './StickerManager';
@@ -133,6 +133,10 @@ function CharacterModal() {
         const newMemories = [...(char.memories || [])];
         newMemories.splice(index, 1);
         setChar(prev => ({ ...prev, memories: newMemories }));
+    };
+
+    const handleStickersChange = (stickers: Sticker[]) => {
+        setChar(prev => ({ ...prev, stickers }));
     };
 
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -279,7 +283,7 @@ function CharacterModal() {
                                         <h4 className="text-sm font-medium text-gray-300">스티커</h4>
                                         <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
                                     </summary>
-                                    <StickerManager stickers={char.stickers || []} />
+                                    <StickerManager stickers={char.stickers || []} onStickersChange={handleStickersChange} />
                                 </details>
                                 <details className="group border-t border-gray-700 pt-2">
                                     <summary className="flex items-center justify-between cursor-pointer list-none py-2">
