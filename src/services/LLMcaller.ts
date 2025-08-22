@@ -73,12 +73,10 @@ async function callApi(
     character: Character,
     messages: Message[],
     isProactive: boolean,
-    image?: string,
-    sticker?: string,
     userDescription?: string
 ): Promise<ChatResponse> {
     const { apiProvider } = settings;
-    const payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, image, settings.useStructuredOutput ? undefined : sticker);
+    const payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput);
 
     let url: string;
     let headers: HeadersInit;
@@ -153,8 +151,6 @@ async function LLMSend(
     room: Room,
     char: Character,
     setTypingCharacterId: (id: number | null) => void,
-    image?: string,
-    sticker?: string,
     allParticipants?: Character[],
 ) {
     const state = store.getState();
@@ -203,8 +199,6 @@ async function LLMSend(
             char,
             messages,
             false,
-            image,
-            sticker,
             finalUserDescription
         );
         await handleApiResponse(res, room, char, dispatch, setTypingCharacterId);
@@ -216,17 +210,17 @@ async function LLMSend(
 }
 
 
-export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void, image?: string, sticker?: string) {
+export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
     const memberChars = room.memberIds.map(id => selectCharacterById(store.getState(), id));
 
     for (const char of memberChars) {
         if (char) {
-            await LLMSend(room, char, setTypingCharacterId, image, sticker);
+            await LLMSend(room, char, setTypingCharacterId);
         }
     }
 }
 
-export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void, image?: string) {
+export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
     const state = store.getState();
     const allCharacters = selectAllCharacters(state);
     const participants = room.memberIds.map(id => allCharacters.find(c => c.id === id)).filter((c): c is Character => !!c);
@@ -264,11 +258,11 @@ export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id
         if (i > 0) {
             await sleep(responseDelay + (Math.random() * 300 - 150));
         }
-        await LLMSend(room, character, setTypingCharacterId, image, undefined, participants);
+        await LLMSend(room, character, setTypingCharacterId, participants);
     }
 }
 
-export async function SendOpenChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void, image?: string) {
+export async function SendOpenChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
     const state = store.getState();
     const dispatch = store.dispatch;
     const allCharacters = selectAllCharacters(state);
@@ -323,6 +317,6 @@ export async function SendOpenChatMessage(room: Room, setTypingCharacterId: (id:
         if (i > 0) {
             await sleep(500 + Math.random() * 500);
         }
-        await LLMSend(room, character, setTypingCharacterId, image, undefined, participants);
+        await LLMSend(room, character, setTypingCharacterId, participants);
     }
 }

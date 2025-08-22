@@ -102,40 +102,38 @@ ${guidelines}
 `;
 }
 
-function buildContents(messages: Message[], isProactive: boolean, image?: string, sticker?: string) {
+function buildContents(messages: Message[], isProactive: boolean) {
     const contents = messages.map(msg => {
         const role = msg.authorId === 0 ? "user" : "model";
-        const parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; })[] = [{ text: msg.content || "(No content provided)" }];
-        return { role, parts };
-    });
+        const parts: ({ text: string; } |
+        { inline_data: { mime_type: string; data: string; }; })[] = [{ text: msg.content }];
 
-    if (image || sticker) {
-        const lastUserMessage = contents.slice().reverse().find(c => c.role === 'user');
-        if (lastUserMessage) {
-            if (image) {
-                const mimeType = image.match(/data:(.*);base64,/)?.[1];
-                const base64Data = image.split(',')[1];
-                if (mimeType && base64Data) {
-                    lastUserMessage.parts.push({
-                        inline_data: {
-                            mime_type: mimeType,
-                            data: base64Data
-                        }
-                    });
-                }
-            }
-            if (sticker) {
-                if ('text' in lastUserMessage.parts[0]) {
-                    const lastText = lastUserMessage.parts[0].text;
-                    if (lastText == "(No content provided)") {
-                        lastUserMessage.parts[0].text = `[사용자가 "${sticker}" 스티커를 보냄]`;
-                    } else {
-                        lastUserMessage.parts[0].text = `[사용자가 "${sticker}" 스티커를 보냄] ` + lastText;
+        if (msg.image) {
+            const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
+            const base64Data = msg.image.dataUrl.split(',')[1];
+            if (mimeType && base64Data) {
+                parts.push({
+                    inline_data: {
+                        mime_type: mimeType,
+                        data: base64Data
                     }
+                });
+            }
+        }
+
+        if (msg.sticker) {
+            if ('text' in msg) {
+                const lastText = msg.text;
+                if (lastText == "(No content provided)") {
+                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄]`;
+                } else {
+                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄] ` + lastText;
                 }
             }
         }
-    }
+        return { role, parts };
+    });
+
 
     if (isProactive && contents.length === 0) {
         contents.push({
@@ -153,12 +151,10 @@ export function buildGeminiApiPayload(
     character: Character,
     messages: Message[],
     isProactive: boolean,
-    useStructuredOutput: boolean,
-    image?: string,
-    sticker?: string
+    useStructuredOutput: boolean
 ): GeminiApiPayload {
     const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput);
-    const contents = buildContents(messages, isProactive, image, sticker);
+    const contents = buildContents(messages, isProactive);
 
     const generationConfig: any = {
         temperature: 1.25,
