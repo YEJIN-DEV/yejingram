@@ -94,6 +94,18 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
     }
   };
 
+  const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const file = Array.from(event.clipboardData.items).find(item => item.type.startsWith('image/'))?.getAsFile();
+    if (file) {
+      event.preventDefault();
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageToSend({ dataUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSendMessage = (text: string) => {
     if (!room) return;
     if (!text.trim() && !stickerToSend && !imageToSend) return;
@@ -243,6 +255,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 onToggleUserStickerPanel={handleToggleStickerPanel}
                 onStickerClear={handleCancelSticker}
                 onSendMessage={handleSendMessage}
+                onPaste={handlePaste}
               />
             </div>
           </>
@@ -318,6 +331,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 onToggleUserStickerPanel={handleToggleStickerPanel}
                 onStickerClear={handleCancelSticker}
                 onSendMessage={handleSendMessage}
+                onPaste={handlePaste}
               />
             </div>
           </>
@@ -391,6 +405,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 onToggleUserStickerPanel={handleToggleStickerPanel}
                 onStickerClear={handleCancelSticker}
                 onSendMessage={handleSendMessage}
+                onPaste={handlePaste}
                 renderUserStickerPanel={() =>
                   showStickerPanel && character && (
                     <StickerPanel
@@ -424,6 +439,7 @@ export interface InputAreaProps {
   onToggleUserStickerPanel?: () => void;
   onSendMessage: (text: string) => void;
   onStickerClear?: () => void;
+  onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
 
   // (선택) 커스텀 스티커 패널 렌더링
   renderUserStickerPanel?: () => React.ReactNode;
@@ -438,6 +454,7 @@ export function InputArea({
   onToggleUserStickerPanel,
   onSendMessage,
   onStickerClear,
+  onPaste,
   renderUserStickerPanel,
 }: InputAreaProps) {
   const [text, setText] = useState("");
@@ -543,6 +560,7 @@ export function InputArea({
                 handleSend();
               }
             }}
+            onPaste={onPaste}
           />
 
           {/* 우측 액션 버튼들 */}
