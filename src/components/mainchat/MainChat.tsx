@@ -92,7 +92,6 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
       };
       reader.readAsDataURL(file);
     }
-    setInputOptions
   };
 
   const handleSendMessage = (text: string) => {
