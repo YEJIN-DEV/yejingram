@@ -1,17 +1,24 @@
+export interface Sticker {
+    id: string;
+    name: string;
+    data: string;
+    type: string;
+}
+
 export interface Character {
     id: number
     name: string
     prompt: string
     avatar: string | null
-    responseTime: string
-    thinkingTime: string
-    reactivity: string
-    tone: string
+    responseTime: number
+    thinkingTime: number
+    reactivity: number
+    tone: number
     memories: string[]
     proactiveEnabled: boolean
     messageCountSinceLastSummary: number
     media: string[]
-    stickers: string[]
+    stickers: Sticker[]
 }
 
 export const defaultCharacters = [
@@ -20,10 +27,10 @@ export const defaultCharacters = [
         name: '한서연',
         prompt: `### Basic Information\n- Name: Han Seo-yeon\n- Nationality/Ethnicity: Korean\n- Occupation: Student\n- Gender: Female\n\n### Personality Traits\n- MBTI Type: ESTJ\n- Intelligence: Lacking, but kind\n- Social Status: Popular with people with diverse social networks, she thrives on her unique sociability\n- Personality: Bright and cute, easy to get along with\n- Interpersonal Skills: Her honest personality and attractive appearance make her easy to get along with, especially with men.`,
         avatar: null,
-        responseTime: '1',
-        thinkingTime: '10',
-        reactivity: '1',
-        tone: '10',
+        responseTime: 1,
+        thinkingTime: 10,
+        reactivity: 1,
+        tone: 10,
         memories: [],
         proactiveEnabled: true,
         messageCountSinceLastSummary: 0,

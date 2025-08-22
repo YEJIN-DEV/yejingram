@@ -27,13 +27,13 @@ export const selectRoomMembers = (roomId: string) => createSelector(
 )
 
 // 3) 메시지에 author(캐릭터) 붙이기(denormalize)
-export const selectMessageWithAuthor = (messageId: string) => createSelector(
+export const selectMessageWithAuthor = (_messageId: string) => createSelector(
     [msgsSel.selectById, charsSel.selectEntities],
     (msg, charMap) => (msg ? { ...msg, author: charMap[msg.authorId] } : undefined)
 )
 
 // 4) 방의 마지막 메시지(rooms.lastMessageId 활용)
-export const selectRoomLastMessage = (roomId: string) => createSelector(
+export const selectRoomLastMessage = (_roomId: string) => createSelector(
     [roomsSel.selectById, msgsSel.selectEntities],
     (room, msgMap) => (room?.lastMessageId ? msgMap[room.lastMessageId] : undefined)
 )

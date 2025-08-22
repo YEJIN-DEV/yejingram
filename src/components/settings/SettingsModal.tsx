@@ -1,11 +1,11 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsSettingsModalOpen, selectAllSettings } from '../../entities/setting/selectors';
-import { closeSettingsModal, setSettings, openPromptModal } from '../../entities/setting/slice';
-import { RootState } from '../../app/store';
 import { useEffect, useState } from 'react';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
 import { X, ChevronDown, Globe, FilePenLine, Type, User, BrainCircuit, MessageSquarePlus, Shuffle, Download, Upload } from 'lucide-react';
 import { ProviderSettings } from './ProviderSettings';
+import { backupStateToFile, restoreStateFromFile } from '../../utils/backup';
+import { settingsActions } from '../../entities/setting/slice';
 
 function SettingsModal() {
   const dispatch = useDispatch();
@@ -13,6 +13,27 @@ function SettingsModal() {
   const settings = useSelector(selectAllSettings);
 
   const [localSettings, setLocalSettings] = useState<SettingsState>(settings);
+  const importBackup = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+
+    input.onchange = async (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      if (!file) return;
+
+      try {
+        await restoreStateFromFile(file);
+        alert("백업 파일이 성공적으로 불러와졌습니다.");
+      } catch (err) {
+        console.error(err);
+        alert("백업 파일 불러오기 실패");
+      }
+    };
+
+    input.click();
+  }
 
   useEffect(() => {
     setLocalSettings(settings);
@@ -23,11 +44,11 @@ function SettingsModal() {
   }
 
   const handleClose = () => {
-    dispatch(closeSettingsModal());
+    dispatch(settingsActions.closeSettingsModal());
   };
 
   const handleSave = () => {
-    dispatch(setSettings(localSettings));
+    dispatch(settingsActions.setSettings(localSettings));
     handleClose();
   };
 
@@ -55,6 +76,7 @@ function SettingsModal() {
                   <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Globe className="w-4 h-4 mr-2" />AI 제공업체</label>
                   <select id="settings-api-provider" value={localSettings.apiProvider} onChange={handleProviderChange} className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm">
                     <option value="gemini">Google Gemini</option>
+                    <option value="vertexai">Google Vertex AI</option>
                     <option value="claude">Anthropic Claude</option>
                     <option value="openai">OpenAI ChatGPT</option>
                     <option value="grok">xAI Grok</option>
@@ -64,7 +86,7 @@ function SettingsModal() {
                 </div>
                 <ProviderSettings settings={localSettings} setSettings={setLocalSettings} />
                 <div>
-                  <button id="open-prompt-modal" onClick={() => dispatch(openPromptModal())} className="w-full mt-2 py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                  <button id="open-prompt-modal" onClick={() => dispatch(settingsActions.openPromptModal())} className="w-full mt-2 py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
                     <FilePenLine className="w-4 h-4" /> 프롬프트 수정
                   </button>
                 </div>
@@ -160,10 +182,10 @@ function SettingsModal() {
             </summary>
             <div className="content-wrapper">
               <div className="content-inner pt-4 space-y-2">
-                <button id="backup-data-btn" className="w-full py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                <button onClick={backupStateToFile} id="backup-data-btn" className="w-full py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
                   <Download className="w-4 h-4" /> 백업하기
                 </button>
-                <button id="restore-data-btn" className="w-full py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                <button onClick={importBackup} id="restore-data-btn" className="w-full py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
                   <Upload className="w-4 h-4" /> 불러오기
                 </button>
               </div>

@@ -1,56 +1,44 @@
 import { useState } from 'react';
+import type { RootState } from '../../app/store';
 import type { Character } from '../../entities/character/types';
-import { Bot, Plus, Edit3, Trash2 } from 'lucide-react';
+import { Plus, Edit3, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectAllRooms } from '../../entities/room/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import { charactersActions } from '../../entities/character/slice';
+import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import RoomList from './RoomList';
-import type { Room } from '../../entities/room/types';
+import { Avatar } from '../../utils/Avatar';
 
 interface CharacterListProps {
     character: Character;
-    messagesByRoomId: Record<string, any[]>;
-    unreadCounts: Record<string, number>;
-    setRoom: (room: Room | null) => void;
+    setRoomId: (id: string | null) => void;
+    selectedRoomId: string | null;
 }
 
 function CharacterList({
     character,
-    messagesByRoomId,
-    unreadCounts,
-    setRoom
+    setRoomId,
+    selectedRoomId
 }: CharacterListProps) {
-    const chatRooms = useSelector(selectAllRooms).filter(r => r.memberIds?.includes(character.id)) || [];
+    const chatRooms = useSelector(selectAllRooms).filter(r => r.memberIds?.includes(character.id) && r.type === 'Direct') || [];
     const [isExpanded, setIsExpanded] = useState(false);
     const dispatch = useDispatch();
 
     let lastMessage: any = null;
     let totalUnreadCount = 0;
+    const state = useSelector((state: RootState) => state);
 
     chatRooms.forEach(room => {
-        const msgs = messagesByRoomId[room.id] || [];
-        const last = msgs.at(-1);
-        if (last && (!lastMessage || last.id > lastMessage.id)) lastMessage = last;
-        totalUnreadCount += unreadCounts[room.id] || 0;
+        const last = selectMessagesByRoomId(state, room.id).slice(-1)[0];
+        if (last && (!lastMessage || last.createdAt > lastMessage.createdAt)) lastMessage = last;
+        totalUnreadCount += room.unreadCount || 0;
     });
 
     const lastMessageContent =
-        lastMessage?.type === 'image' ? '이미지를 보냈습니다' :
-            lastMessage?.content ?? '대화를 시작해보세요';
-
-    const renderAvatar = (char: Character, size: 'md' | 'sm' = 'md') => {
-        const sizeClasses = { sm: 'w-10 h-10 text-sm', md: 'w-12 h-12 text-base', lg: 'w-16 h-16 text-lg' }[size];
-        if (char?.avatar && char.avatar.startsWith('data:image')) {
-            return <img src={char.avatar} alt={char.name} className={`${sizeClasses} rounded-full object-cover`} />;
-        }
-        const initial = char.name[0] || <Bot />;
-        return (
-            <div className={`${sizeClasses} bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-medium`}>
-                {initial}
-            </div>
-        );
-    };
+        lastMessage?.type === 'IMAGE' ? '이미지를 보냈습니다' :
+            lastMessage?.type === 'STICKER' ? '스티커를 보냈습니다' :
+                lastMessage?.content ?? '대화를 시작해보세요';
 
     return (
         <div className="character-group">
@@ -68,7 +56,8 @@ function CharacterList({
                                 name: '새 채팅',
                                 memberIds: [character.id],
                                 lastMessageId: null,
-                                type: "Direct"
+                                type: "Direct",
+                                unreadCount: 0,
                             }));
                         }}
                         className="p-1 bg-gray-700 hover:bg-blue-600 rounded text-gray-300 hover:text-white transition-colors"
@@ -87,7 +76,10 @@ function CharacterList({
                         <Edit3 className="w-3 h-3" />
                     </button>
                     <button
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            dispatch(charactersActions.removeOne(character.id));
+                        }}
                         className="p-1 bg-gray-700 hover:bg-red-600 rounded text-gray-300 hover:text-white transition-colors"
                         title="삭제"
                     >
@@ -96,7 +88,7 @@ function CharacterList({
                 </div>
 
                 <div className="flex items-center space-x-3 md:space-x-4">
-                    {renderAvatar(character, 'md')}
+                    <Avatar char={character} size="md" />
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                             <h3 className="font-semibold text-white text-sm truncate">{character.name}</h3>
@@ -106,8 +98,12 @@ function CharacterList({
                                         {totalUnreadCount}
                                     </span>
                                 )}
-                                <span className="text-xs text-gray-500 shrink-0">{lastMessage?.time || ''}</span>
-                                <i className={`w-4 h-4 text-gray-400 lucide lucide-chevron-${isExpanded ? 'down' : 'right'}`} />
+                                <span className="text-xs text-gray-500 shrink-0">{lastMessage?.createdAt ? new Date(lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                                {isExpanded ? (
+                                    <ChevronDown className={`w-4 h-4 text-gray-400`} />
+                                ) : (
+                                    <ChevronRight className={`w-4 h-4 text-gray-400`} />
+                                )}
                             </div>
                         </div>
                         <p className={`text-xs md:text-sm truncate ${lastMessage?.isError ? 'text-red-400' : 'text-gray-400'}`}>
@@ -123,7 +119,7 @@ function CharacterList({
                 <div className="ml-6 space-y-1 pb-2">
                     {chatRooms.map(room => (
                         <div key={room.id}>
-                            <RoomList character={character} room={room} unreadCount={0} setRoom={setRoom} />
+                            <RoomList room={room} unreadCount={room.unreadCount || 0} setRoomId={setRoomId} isSelected={selectedRoomId === room.id} />
                         </div>
                     ))}
                 </div>

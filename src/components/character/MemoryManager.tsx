@@ -1,4 +1,3 @@
-import React from 'react';
 import { PlusCircle, Trash2 } from 'lucide-react';
 
 interface MemoryManagerProps {

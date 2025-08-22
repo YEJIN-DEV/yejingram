@@ -1,12 +1,12 @@
 import { createSlice, createEntityAdapter } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { Character } from "./types";
+import type { Character, Sticker } from "./types";
 import { defaultCharacters } from "./types";
 
 export const charactersAdapter = createEntityAdapter<Character>()
 const initialState = charactersAdapter.getInitialState({
   isCharacterModalOpen: false,
-  editingCharacterId: null as string | number | null,
+  editingCharacterId: null as number | null,
 })
 
 const charactersSlice = createSlice({
@@ -15,7 +15,8 @@ const charactersSlice = createSlice({
   reducers: {
     upsertMany: charactersAdapter.upsertMany,
     upsertOne: charactersAdapter.upsertOne,
-    openCharacterModal: (state, action: PayloadAction<string | number | null>) => {
+    removeOne: charactersAdapter.removeOne,
+    openCharacterModal: (state, action: PayloadAction<number | null>) => {
       state.isCharacterModalOpen = true;
       state.editingCharacterId = action.payload;
     },
@@ -23,7 +24,35 @@ const charactersSlice = createSlice({
       state.isCharacterModalOpen = false;
       state.editingCharacterId = null;
     },
+    addSticker: (state, action: PayloadAction<{ characterId: number; sticker: Sticker }>) => {
+      const { characterId, sticker } = action.payload;
+      const character = state.entities[characterId];
+      if (character) {
+        character.stickers.push(sticker);
+      }
+    },
+    deleteSticker: (state, action: PayloadAction<{ characterId: number; stickerId: string }>) => {
+      const { characterId, stickerId } = action.payload;
+      const character = state.entities[characterId];
+      if (character) {
+        character.stickers = character.stickers.filter(s => s.id !== stickerId);
+      }
+    },
+    editStickerName: (state, action: PayloadAction<{ characterId: number; stickerId: string; newName: string }>) => {
+      const { characterId, stickerId, newName } = action.payload;
+      const character = state.entities[characterId];
+      if (character) {
+        const sticker = character.stickers.find(s => s.id === stickerId);
+        if (sticker) {
+          sticker.name = newName;
+        }
+      }
+    },
+    importCharacters: (state, action: PayloadAction<Character[]>) => {
+      charactersAdapter.upsertMany(state, action.payload); // 호출만
+    },
   },
 })
+
 export const charactersActions = charactersSlice.actions
 export default charactersSlice.reducer

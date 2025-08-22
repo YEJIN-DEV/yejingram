@@ -3,23 +3,26 @@ import { Settings, Bot, Plus } from 'lucide-react';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
-import type { Room } from '../../entities/room/types';
-import { openSettingsModal } from '../../entities/setting/slice';
+import { settingsActions } from '../../entities/setting/slice';
 import { charactersActions } from '../../entities/character/slice';
+import { selectAllRooms } from '../../entities/room/selectors';
+import GroupChatList from './GroupChatList';
+import OpenChatList from './OpenChatList';
+import type { Room } from '../../entities/room/types';
 
 interface SidebarProps {
-    setRoom: (room: Room | null) => void;
+    setRoomId: (id: string | null) => void;
+    roomId: string | null;
 }
 
-function Sidebar({ setRoom }: SidebarProps) {
+function Sidebar({ setRoomId, roomId }: SidebarProps) {
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
+    const rooms = useSelector(selectAllRooms);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // TODO: messages/unreadCounts가 Redux에 있다면 selector로 가져오세요.
-    // 여기선 예시로 빈 값
-    const messagesByRoomId: Record<string, any[]> = {};
-    const unreadCounts: Record<string, number> = {};
+    const groupChats = rooms.filter((r: Room) => r.type === 'Group');
+    const openChats = rooms.filter((r: Room) => r.type === 'Open');
 
     const filteredCharacters = characters.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -33,7 +36,7 @@ function Sidebar({ setRoom }: SidebarProps) {
                         <h1 className="text-xl md:text-2xl font-bold text-white mb-1">예진그램</h1>
                         <p className="text-xs md:text-sm text-gray-400">상대를 초대/대화 하세요</p>
                     </div>
-                    <button id="open-settings-modal" onClick={() => dispatch(openSettingsModal())} className="p-2 md:p-2.5 rounded-full bg-gray-800 hover:bg-gray-700 transition-all duration-200">
+                    <button id="open-settings-modal" onClick={() => dispatch(settingsActions.openSettingsModal())} className="p-2 md:p-2.5 rounded-full bg-gray-800 hover:bg-gray-700 transition-all duration-200">
                         <Settings className="w-5 h-5 text-gray-300" />
                     </button>
                 </div>
@@ -59,13 +62,14 @@ function Sidebar({ setRoom }: SidebarProps) {
                 </div>
 
                 <div className="space-y-1 px-3 pb-4">
+                    <OpenChatList rooms={openChats} setRoomId={setRoomId} selectedRoomId={roomId} />
+                    <GroupChatList rooms={groupChats} setRoomId={setRoomId} selectedRoomId={roomId} />
                     {filteredCharacters.map((char) => (
                         <CharacterList
                             key={char.id}
                             character={char}
-                            messagesByRoomId={messagesByRoomId}
-                            unreadCounts={unreadCounts}
-                            setRoom={setRoom}
+                            setRoomId={setRoomId}
+                            selectedRoomId={roomId}
                         />
                     ))}
                 </div>

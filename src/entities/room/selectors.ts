@@ -8,7 +8,7 @@ export const {
 } = roomsAdapter.getSelectors((state: RootState) => state.rooms);
 
 export const selectRoomsByCharacterId = createSelector(
-    [selectAllRooms, (state: RootState, characterId: number) => characterId],
+    [selectAllRooms, (_state: RootState, characterId: number) => characterId],
     (rooms, characterId) => {
         return rooms.filter(room => room.memberIds?.includes(characterId));
     }

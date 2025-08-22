@@ -13,6 +13,26 @@ export const selectIsPromptModalOpen = createSelector(
     (settings) => settings.isPromptModalOpen
 );
 
+export const selectIsCreateGroupChatModalOpen = createSelector(
+    [selectSettingsState],
+    (settings) => settings.isCreateGroupChatModalOpen
+);
+
+export const selectIsCreateOpenChatModalOpen = createSelector(
+    [selectSettingsState],
+    (settings) => settings.isCreateOpenChatModalOpen
+);
+
+export const selectIsEditGroupChatModalOpen = createSelector(
+    [selectSettingsState],
+    (settings) => settings.isEditGroupChatModalOpen
+);
+
+export const selectEditingRoomId = createSelector(
+    [selectSettingsState],
+    (settings) => settings.editingRoomId
+);
+
 export const selectPrompts = createSelector(
     [selectSettingsState],
     (settings) => settings.prompts

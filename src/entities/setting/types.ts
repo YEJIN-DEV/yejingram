@@ -1,10 +1,13 @@
-export type ApiProvider = 'gemini' | 'claude' | 'openai' | 'grok' | 'openrouter' | 'customOpenAI';
+export type ApiProvider = 'gemini' | 'vertexai' | 'claude' | 'openai' | 'grok' | 'openrouter' | 'customOpenAI';
 
 export interface ApiConfig {
     apiKey: string;
     baseUrl?: string;
     model: string;
     customModels: string[];
+    projectId?: string;
+    location?: string;
+    accessToken?: string;
 }
 
 export interface MainPrompts {
@@ -12,7 +15,8 @@ export interface MainPrompts {
     role_and_objective: string;
     memory_generation: string;
     character_acting: string;
-    message_writing: string;
+    message_writing_structured: string;
+    message_writing_unstructured: string;
     language: string;
     additional_instructions: string;
     sticker_usage: string;
@@ -29,6 +33,10 @@ export interface Prompts {
 export interface SettingsState {
     isModalOpen: boolean;
     isPromptModalOpen: boolean;
+    isCreateGroupChatModalOpen: boolean;
+    isCreateOpenChatModalOpen: boolean;
+    isEditGroupChatModalOpen: boolean;
+    editingRoomId: string | null;
     apiProvider: ApiProvider;
     apiConfigs: Record<ApiProvider, ApiConfig>;
     fontScale: number;
@@ -40,4 +48,5 @@ export interface SettingsState {
     randomMessageFrequencyMin: number;
     randomMessageFrequencyMax: number;
     prompts: Prompts;
+    useStructuredOutput: boolean;
 }
