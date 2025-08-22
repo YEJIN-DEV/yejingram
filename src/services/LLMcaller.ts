@@ -78,7 +78,7 @@ async function callApi(
     userDescription?: string
 ): Promise<ChatResponse> {
     const { apiProvider } = settings;
-    const payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, image, sticker);
+    const payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, image, settings.useStructuredOutput ? undefined : sticker);
 
     let url: string;
     let headers: HeadersInit;
