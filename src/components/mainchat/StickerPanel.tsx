@@ -1,5 +1,5 @@
 
-import type { Character, Sticker } from '../../entities/character/types';
+import type { Sticker } from '../../entities/character/types';
 import { Plus, X, Edit3, Music, Smile } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { charactersActions } from '../../entities/character/slice';

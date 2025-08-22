@@ -127,8 +127,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
 
     dispatch(messagesActions.upsertOne(userMessage));
 
-    const imageToSendUrl = imageToSend?.dataUrl;
-    const stickerToSendName = stickerToSend?.name;
+    
     setStickerToSend(null);
     setImageToSend(null);
     if (fileInputRef.current) {
@@ -142,11 +141,11 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
 
     let responsePromise;
     if (room.type === 'Group') {
-      responsePromise = SendGroupChatMessage(room, setTypingCharacterId, imageToSendUrl);
+      responsePromise = SendGroupChatMessage(room, setTypingCharacterId);
     } else if (room.type === 'Open') {
-      responsePromise = SendOpenChatMessage(room, setTypingCharacterId, imageToSendUrl);
+      responsePromise = SendOpenChatMessage(room, setTypingCharacterId);
     } else {
-      responsePromise = SendMessage(room, setTypingCharacterId, imageToSendUrl, stickerToSendName);
+      responsePromise = SendMessage(room, setTypingCharacterId);
     }
 
     responsePromise.then(() => {

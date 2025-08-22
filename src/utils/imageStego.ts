@@ -91,7 +91,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
         const img = new Image();
         // 로컬 업로드 data URL이면 crossOrigin 불필요. 외부 URL이면 필요할 수 있음.
         img.onload = () => resolve(img);
-        img.onerror = (e) => reject(new Error("이미지를 불러올 수 없습니다."));
+        img.onerror = () => reject(new Error("이미지를 불러올 수 없습니다."));
         img.src = src;
     });
 }

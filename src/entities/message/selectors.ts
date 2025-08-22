@@ -8,7 +8,7 @@ export const {
 } = messagesAdapter.getSelectors((state: RootState) => state.messages);
 
 export const selectMessagesByRoomId = createSelector(
-    [selectAllMessages, (state: RootState, roomId: string) => roomId],
+    [selectAllMessages, (_state: RootState, roomId: string) => roomId],
     (messages, roomId) => {
         return messages.filter(message => message.roomId === roomId);
     }

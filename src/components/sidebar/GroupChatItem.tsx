@@ -72,7 +72,7 @@ function GroupChatItem({ room, setRoomId, isSelected }: GroupChatItemProps) {
                         <h4 className="font-medium text-white truncate">{room.name}</h4>
                         {lastMessage && <span className="text-xs text-gray-500 ml-2">{lastMessage?.createdAt ? new Date(lastMessage?.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : ''}</span>}
                     </div>
-                    <p className="text-sm text-gray-400 truncate">{participants.map(p => p.name).join(', ')}</p>
+                    <p className="text-sm text-gray-400 truncate">{participants.map(p => p?.name).filter(Boolean).join(', ')}</p>
                     <p className="text-xs text-gray-500 truncate mt-1">{lastMessageContent}</p>
                 </div>
             </div>

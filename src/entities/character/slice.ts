@@ -6,7 +6,7 @@ import { defaultCharacters } from "./types";
 export const charactersAdapter = createEntityAdapter<Character>()
 const initialState = charactersAdapter.getInitialState({
   isCharacterModalOpen: false,
-  editingCharacterId: null as string | number | null,
+  editingCharacterId: null as number | null,
 })
 
 const charactersSlice = createSlice({
@@ -16,7 +16,7 @@ const charactersSlice = createSlice({
     upsertMany: charactersAdapter.upsertMany,
     upsertOne: charactersAdapter.upsertOne,
     removeOne: charactersAdapter.removeOne,
-    openCharacterModal: (state, action: PayloadAction<string | number | null>) => {
+    openCharacterModal: (state, action: PayloadAction<number | null>) => {
       state.isCharacterModalOpen = true;
       state.editingCharacterId = action.payload;
     },

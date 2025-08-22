@@ -105,7 +105,7 @@ const settingsSlice = createSlice({
         resetPrompts: (state) => {
             state.prompts = initialState.prompts;
         },
-        importSettings: (state, action: PayloadAction<SettingsState>) => {
+        importSettings: (_state, action: PayloadAction<SettingsState>) => {
             return action.payload;
         }
     },

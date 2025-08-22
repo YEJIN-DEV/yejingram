@@ -43,7 +43,7 @@ function OpenChatItem({ room, setRoomId, isSelected }: OpenChatItemProps) {
         setIsEditing(true);
     };
 
-    const handleSave = (e: React.MouseEvent) => {
+    const handleSave = (e: React.SyntheticEvent) => {
         e.stopPropagation();
         if (newName.trim()) {
             dispatch(roomsActions.upsertOne({ ...room, name: newName.trim() }));
@@ -51,7 +51,7 @@ function OpenChatItem({ room, setRoomId, isSelected }: OpenChatItemProps) {
         setIsEditing(false);
     };
 
-    const handleCancel = (e: React.MouseEvent) => {
+    const handleCancel = (e: React.SyntheticEvent) => {
         e.stopPropagation();
         setIsEditing(false);
         setNewName(room.name);
