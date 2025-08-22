@@ -32,13 +32,17 @@ function buildGuidelinesPrompt(prompts: any, character: Character, messages: Mes
         ? prompts.main.message_writing_structured
         : prompts.main.message_writing_unstructured;
 
+    const sticker_usage = useStructuredOutput
+        ? prompts.main.sticker_usage
+        : undefined
+
     const guidelines = [
         prompts.main.memory_generation,
         prompts.main.character_acting,
         messageWritingStyle,
         prompts.main.language,
         prompts.main.additional_instructions,
-        prompts.main.sticker_usage?.replace('{availableStickers}', availableStickers) || ''
+        sticker_usage?.replace('{availableStickers}', availableStickers) || ''
     ].join('\n\n');
 
     return guidelines.replace(/{character.name}/g, character.name).replace('{timeContext}', buildTimeContext(messages, isProactive));
