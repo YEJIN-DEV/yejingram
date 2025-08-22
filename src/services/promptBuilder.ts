@@ -36,8 +36,12 @@ function buildGuidelinesPrompt(prompts: any, character: Character, messages: Mes
         ? prompts.main.sticker_usage
         : undefined
 
+    const memory_generation = useStructuredOutput
+        ? prompts.main.memory_generation
+        : undefined;
+
     const guidelines = [
-        prompts.main.memory_generation,
+        memory_generation,
         prompts.main.character_acting,
         messageWritingStyle,
         prompts.main.language,
