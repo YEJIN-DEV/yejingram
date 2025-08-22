@@ -25,7 +25,7 @@ export function StickerManager({ stickers, onStickersChange }: StickerManagerPro
             reader.onload = (e) => {
                 const data = e.target?.result as string;
                 const newSticker: Sticker = {
-                    id: crypto.randomUUID(),
+                    id: Math.random().toString(36).slice(2),
                     name: file.name,
                     data,
                     type: file.type,

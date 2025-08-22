@@ -115,7 +115,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
     const messageType = stickerToSend ? 'STICKER' : imageToSend ? 'IMAGE' : 'TEXT';
 
     const userMessage = {
-      id: crypto.randomUUID(),
+      id: Math.random().toString(36).slice(2),
       roomId: room.id,
       authorId: 0, // Assuming current user ID is '0'
       content: text,

@@ -30,7 +30,7 @@ function CreateGroupChatModal() {
     const handleCreateGroupChat = () => {
         if (groupName.trim() && selectedParticipantIds.length >= 2) {
             const newRoom = {
-                id: crypto.randomUUID(),
+                id: Math.random().toString(36).slice(2),
                 name: groupName.trim(),
                 memberIds: selectedParticipantIds,
                 type: 'Group' as const,

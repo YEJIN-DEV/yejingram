@@ -17,7 +17,7 @@ function CreateOpenChatModal() {
     const handleCreate = () => {
         if (chatName.trim()) {
             const newRoom = {
-                id: crypto.randomUUID(),
+                id: Math.random().toString(36).slice(2),
                 name: chatName.trim(),
                 memberIds: [], // Open chats don't have fixed members
                 type: 'Open' as const,
