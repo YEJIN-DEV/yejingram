@@ -373,6 +373,7 @@ const MessageList: React.FC<MessageListProps> = ({
                                 onClick={() => {
                                   console.log('Reroll message', msg.id)
                                   dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
+                                  setIsWaitingForResponse(true);
                                   SendMessage(room, setTypingCharacterId)
                                     .finally(() => {
                                       setIsWaitingForResponse(false);
