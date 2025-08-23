@@ -7,12 +7,14 @@ import { settingsActions } from '../../entities/setting/slice';
 interface GroupChatListProps {
     rooms: Room[];
     setRoomId: (id: string | null) => void;
-    selectedRoomId: string | null
+    selectedRoomId: string | null;
+    openCreateGroupChatModal: () => void;
+    openEditGroupChatModal: () => void;
 }
 
-function GroupChatList({ rooms, setRoomId, selectedRoomId }: GroupChatListProps) {
+function GroupChatList({ rooms, setRoomId, selectedRoomId, openCreateGroupChatModal, openEditGroupChatModal }: GroupChatListProps) {
     const dispatch = useDispatch();
-    const handleCreateGroupChat = () => dispatch(settingsActions.openCreateGroupChatModal());
+    // const handleCreateGroupChat = () => dispatch(settingsActions.openCreateGroupChatModal());
 
     return (
         <div className="mb-4">
@@ -21,12 +23,12 @@ function GroupChatList({ rooms, setRoomId, selectedRoomId }: GroupChatListProps)
                     <Users className="w-4 h-4 text-gray-400" />
                     <h3 className="text-sm font-medium text-gray-300">단톡방</h3>
                 </div>
-                <button onClick={handleCreateGroupChat} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-gray-700 hover:bg-blue-600 rounded text-gray-300 hover:text-white transition-colors" title="새 단톡방">
+                <button onClick={openCreateGroupChatModal} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-gray-700 hover:bg-blue-600 rounded text-gray-300 hover:text-white transition-colors" title="새 단톡방">
                     <Plus className="w-3 h-3" />
                 </button>
             </div>
             {rooms.map(room => (
-                <GroupChatItem key={room.id} room={room} setRoomId={setRoomId} isSelected={selectedRoomId === room.id} />
+                <GroupChatItem key={room.id} room={room} setRoomId={setRoomId} isSelected={selectedRoomId === room.id} openEditGroupChatModal={openEditGroupChatModal} />
             ))}
         </div>
     );

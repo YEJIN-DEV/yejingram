@@ -16,12 +16,10 @@ const charactersSlice = createSlice({
     upsertMany: charactersAdapter.upsertMany,
     upsertOne: charactersAdapter.upsertOne,
     removeOne: charactersAdapter.removeOne,
-    openCharacterModal: (state, action: PayloadAction<number | null>) => {
-      state.isCharacterModalOpen = true;
+    setEditingCharacterId: (state, action: PayloadAction<number | null>) => {
       state.editingCharacterId = action.payload;
     },
-    closeCharacterModal: (state) => {
-      state.isCharacterModalOpen = false;
+    resetEditingCharacterId: (state) => {
       state.editingCharacterId = null;
     },
     addSticker: (state, action: PayloadAction<{ characterId: number; sticker: Sticker }>) => {

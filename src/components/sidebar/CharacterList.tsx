@@ -14,12 +14,14 @@ interface CharacterListProps {
     character: Character;
     setRoomId: (id: string | null) => void;
     selectedRoomId: string | null;
+    openCharacterModal: () => void;
 }
 
 function CharacterList({
     character,
     setRoomId,
-    selectedRoomId
+    selectedRoomId,
+    openCharacterModal
 }: CharacterListProps) {
     const chatRooms = useSelector(selectAllRooms).filter(r => r.memberIds?.includes(character.id) && r.type === 'Direct') || [];
     const [isExpanded, setIsExpanded] = useState(false);
@@ -68,7 +70,8 @@ function CharacterList({
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            dispatch(charactersActions.openCharacterModal(character.id));
+                            dispatch(charactersActions.setEditingCharacterId(character.id));
+                            openCharacterModal();
                         }}
                         className="p-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 hover:text-white transition-colors"
                         title="수정"

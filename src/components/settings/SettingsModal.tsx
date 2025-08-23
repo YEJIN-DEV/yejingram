@@ -1,5 +1,5 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { selectIsSettingsModalOpen, selectAllSettings } from '../../entities/setting/selectors';
+import { selectAllSettings } from '../../entities/setting/selectors';
 import { useEffect, useState } from 'react';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
 import { X, ChevronDown, Globe, FilePenLine, Type, User, BrainCircuit, MessageSquarePlus, Shuffle, Download, Upload } from 'lucide-react';
@@ -7,9 +7,14 @@ import { ProviderSettings } from './ProviderSettings';
 import { backupStateToFile, restoreStateFromFile } from '../../utils/backup';
 import { settingsActions } from '../../entities/setting/slice';
 
-function SettingsModal() {
+interface SettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  openPromptModal: () => void;
+}
+
+function SettingsModal({ isOpen, onClose, openPromptModal }: SettingsModalProps) {
   const dispatch = useDispatch();
-  const isOpen = useSelector(selectIsSettingsModalOpen);
   const settings = useSelector(selectAllSettings);
 
   const [localSettings, setLocalSettings] = useState<SettingsState>(settings);
@@ -43,13 +48,9 @@ function SettingsModal() {
     return null;
   }
 
-  const handleClose = () => {
-    dispatch(settingsActions.closeSettingsModal());
-  };
-
   const handleSave = () => {
     dispatch(settingsActions.setSettings(localSettings));
-    handleClose();
+    onClose();
   };
 
   const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -62,7 +63,7 @@ function SettingsModal() {
       <div className="bg-gray-800 rounded-2xl w-full max-w-md mx-4 flex flex-col" style={{ maxHeight: '90vh' }}>
         <div className="flex items-center justify-between p-6 border-b border-gray-700 shrink-0">
           <h3 className="text-lg font-semibold text-white">설정</h3>
-          <button onClick={handleClose} className="p-1 hover:bg-gray-700 rounded-full"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-gray-700 rounded-full"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-6 space-y-2 overflow-y-auto">
           <details className="group border-b border-gray-700 pb-2">
@@ -86,7 +87,7 @@ function SettingsModal() {
                 </div>
                 <ProviderSettings settings={localSettings} setSettings={setLocalSettings} />
                 <div>
-                  <button id="open-prompt-modal" onClick={() => dispatch(settingsActions.openPromptModal())} className="w-full mt-2 py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                  <button id="open-prompt-modal" onClick={openPromptModal} className="w-full mt-2 py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
                     <FilePenLine className="w-4 h-4" /> 프롬프트 수정
                   </button>
                 </div>
@@ -193,7 +194,7 @@ function SettingsModal() {
           </details>
         </div>
         <div className="p-6 mt-auto border-t border-gray-700 shrink-0 flex justify-end space-x-3">
-          <button onClick={handleClose} className="flex-1 py-2.5 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">취소</button>
+          <button onClick={onClose} className="flex-1 py-2.5 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">취소</button>
           <button onClick={handleSave} className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">저장</button>
         </div>
       </div>

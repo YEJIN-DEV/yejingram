@@ -5,20 +5,26 @@ import MainChat from './components/mainchat/MainChat'
 import SettingsModal from './components/settings/SettingsModal'
 import PromptModal from './components/settings/PromptModal'
 import CharacterModal from './components/character/CharacterModal'
+import CreateGroupChatModal from './components/modals/CreateGroupChatModal';
+import CreateOpenChatModal from './components/modals/CreateOpenChatModal';
+import EditGroupChatModal from './components/modals/EditGroupChatModal';
 import { ChevronLeft } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
-import CreateGroupChatModal from './components/modals/CreateGroupChatModal';
-import CreateOpenChatModal from './components/modals/CreateOpenChatModal';
-import EditGroupChatModal from './components/modals/EditGroupChatModal';
 
 function App() {
   const [roomId, setRoomId] = useState<string | null>(null)
   const room = useSelector((state: RootState) => roomId ? selectRoomById(state, roomId) : null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
+  const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
+  const [isCreateGroupChatModalOpen, setIsCreateGroupChatModalOpen] = useState(false);
+  const [isCreateOpenChatModalOpen, setIsCreateOpenChatModalOpen] = useState(false);
+  const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
 
   useEffect(() => {
     setActiveRoomId(roomId);
@@ -40,18 +46,45 @@ function App() {
           </button>
 
           <div id="sidebar-content" className={`flex h-full flex-col overflow-hidden ${isSidebarCollapsed ? 'md:hidden' : ''}`}>
-            <Sidebar setRoomId={setRoomId} roomId={roomId} />
+            <Sidebar
+              setRoomId={setRoomId}
+              roomId={roomId}
+              openSettingsModal={() => setIsSettingsModalOpen(true)}
+              openCharacterModal={() => setIsCharacterModalOpen(true)}
+              openCreateGroupChatModal={() => setIsCreateGroupChatModalOpen(true)}
+              openCreateOpenChatModal={() => setIsCreateOpenChatModalOpen(true)}
+              openEditGroupChatModal={() => setIsEditGroupChatModalOpen(true)}
+            />
           </div>
         </aside>
 
         <main id="main-chat" className="flex-1 flex flex-col bg-gray-950">
           <MainChat room={room} onToggleMobileSidebar={toggleMobileSidebar} />
-          <SettingsModal />
-          <PromptModal />
-          <CharacterModal />
-          <CreateGroupChatModal />
-          <CreateOpenChatModal />
-          <EditGroupChatModal />
+          <SettingsModal
+            isOpen={isSettingsModalOpen}
+            onClose={() => setIsSettingsModalOpen(false)}
+            openPromptModal={() => setIsPromptModalOpen(true)}
+          />
+          <PromptModal
+            isOpen={isPromptModalOpen}
+            onClose={() => setIsPromptModalOpen(false)}
+          />
+          <CharacterModal
+            isOpen={isCharacterModalOpen}
+            onClose={() => setIsCharacterModalOpen(false)}
+          />
+          <CreateGroupChatModal
+            isOpen={isCreateGroupChatModalOpen}
+            onClose={() => setIsCreateGroupChatModalOpen(false)}
+          />
+          <CreateOpenChatModal
+            isOpen={isCreateOpenChatModalOpen}
+            onClose={() => setIsCreateOpenChatModalOpen(false)}
+          />
+          <EditGroupChatModal
+            isOpen={isEditGroupChatModalOpen}
+            onClose={() => setIsEditGroupChatModalOpen(false)}
+          />
         </main>
 
         <div id="sidebar-backdrop" onClick={() => setIsMobileSidebarOpen(false)} className={`fixed inset-0 z-20 bg-black/50 backdrop-blur-xs md:hidden ${isMobileSidebarOpen ? 'block' : 'hidden'}`}></div>

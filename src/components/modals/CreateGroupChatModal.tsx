@@ -4,13 +4,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import type { Character } from '../../entities/character/types';
-import { settingsActions } from '../../entities/setting/slice';
-import { selectIsCreateGroupChatModalOpen } from '../../entities/setting/selectors';
 import { Avatar } from '../../utils/Avatar';
 
-function CreateGroupChatModal() {
+interface CreateGroupChatModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
     const dispatch = useDispatch();
-    const isOpen = useSelector(selectIsCreateGroupChatModalOpen);
     const characters = useSelector(selectAllCharacters);
     const [groupName, setGroupName] = useState('');
     const [selectedParticipantIds, setSelectedParticipantIds] = useState<number[]>([]);
@@ -44,7 +46,7 @@ function CreateGroupChatModal() {
                 }
             };
             dispatch(roomsActions.upsertOne(newRoom));
-            dispatch(settingsActions.closeCreateGroupChatModal());
+            onClose();
         }
     };
 
@@ -54,7 +56,7 @@ function CreateGroupChatModal() {
                 <div className="p-6 border-b border-gray-700">
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-white">단톡방 만들기</h3>
-                        <button onClick={() => dispatch(settingsActions.closeCreateGroupChatModal())} className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
+                        <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
                             <X className="w-5 h-5 text-gray-400" />
                         </button>
                     </div>
@@ -95,7 +97,7 @@ function CreateGroupChatModal() {
                     </div>
                 </div>
                 <div className="p-6 border-t border-gray-700 flex gap-3">
-                    <button onClick={() => dispatch(settingsActions.closeCreateGroupChatModal())} className="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                    <button onClick={onClose} className="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
                         취소
                     </button>
                     <button onClick={handleCreateGroupChat} className="flex-1 py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:bg-gray-500" disabled={!groupName.trim() || selectedParticipantIds.length < 2}>

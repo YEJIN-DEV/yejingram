@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState, useRef } from 'react';
 import { X, Image, Upload, Download, Sparkles, MessageSquarePlus, ChevronDown } from 'lucide-react';
-import { selectIsCharacterModalOpen, selectEditingCharacterId, selectCharacterById } from '../../entities/character/selectors';
+import { selectEditingCharacterId, selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
 import type { RootState } from '../../app/store';
 import { newCharacterDefault, type Character, type PersonaChatAppCharacterCard, type Sticker } from '../../entities/character/types';
@@ -46,9 +46,13 @@ const characterToPersonaCard = (character: Character): PersonaChatAppCharacterCa
     };
 };
 
-function CharacterModal() {
+interface CharacterModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+function CharacterModal({ isOpen, onClose }: CharacterModalProps) {
     const dispatch = useDispatch();
-    const isOpen = useSelector(selectIsCharacterModalOpen);
     const editingId = useSelector(selectEditingCharacterId);
     const editingCharacter = useSelector((state: RootState) => editingId ? selectCharacterById(state, editingId) : null);
     const proactiveChatEnabled = useSelector((state: RootState) => state.settings.proactiveChatEnabled);
@@ -74,15 +78,11 @@ function CharacterModal() {
         return null;
     }
 
-    const handleClose = () => {
-        dispatch(charactersActions.closeCharacterModal());
-    };
-
     const handleSave = () => {
         if (char.name) {
             const characterToSave = { ...newCharacterDefault, ...char, id: editingId || Date.now() };
             dispatch(charactersActions.upsertOne(characterToSave as Character));
-            handleClose();
+            onClose();
         }
     };
 
@@ -183,12 +183,17 @@ function CharacterModal() {
         document.body.removeChild(link);
     };
 
+    const handleClose = () => {
+        dispatch(charactersActions.resetEditingCharacterId());
+        onClose();
+    };
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-gray-800 rounded-2xl w-full max-w-md mx-auto my-auto flex flex-col" style={{ maxHeight: '90vh' }}>
                 <div className="flex items-center justify-between p-6 border-b border-gray-700 shrink-0">
                     <h3 className="text-xl font-semibold text-white">{isNew ? '연락처 추가' : '연락처 수정'}</h3>
-                    <button onClick={handleClose} className="p-1 hover:bg-gray-700 rounded-full"><X className="w-5 h-5" /></button>
+                    <button onClick={handleClose} className="p-1 text-white hover:bg-gray-700 rounded-full"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="p-6 space-y-6 overflow-y-auto">
                     <div className="flex items-center space-x-4">

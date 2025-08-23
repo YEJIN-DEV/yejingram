@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { roomsActions } from '../../entities/room/slice';
-import { settingsActions } from '../../entities/setting/slice';
-import { selectIsCreateOpenChatModalOpen } from '../../entities/setting/selectors';
 
-function CreateOpenChatModal() {
+interface CreateOpenChatModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+function CreateOpenChatModal({ isOpen, onClose }: CreateOpenChatModalProps) {
     const dispatch = useDispatch();
-    const isOpen = useSelector(selectIsCreateOpenChatModalOpen);
     const [chatName, setChatName] = useState('');
 
     if (!isOpen) {
@@ -26,7 +28,7 @@ function CreateOpenChatModal() {
                 currentParticipants: [],
             };
             dispatch(roomsActions.upsertOne(newRoom));
-            dispatch(settingsActions.closeCreateOpenChatModal());
+            onClose();
         }
     };
 
@@ -36,7 +38,7 @@ function CreateOpenChatModal() {
                 <div className="px-6 py-4 border-b border-gray-700">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold text-white">새 오픈톡방</h2>
-                        <button onClick={() => dispatch(settingsActions.closeCreateOpenChatModal())} className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg">
+                        <button onClick={onClose} className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -68,7 +70,7 @@ function CreateOpenChatModal() {
                     </div>
 
                     <div className="flex justify-end gap-3">
-                        <button onClick={() => dispatch(settingsActions.closeCreateOpenChatModal())} className="px-6 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
+                        <button onClick={onClose} className="px-6 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
                             취소
                         </button>
                         <button onClick={handleCreate} className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors" disabled={!chatName.trim()}>

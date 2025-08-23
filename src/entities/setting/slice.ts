@@ -57,36 +57,10 @@ const settingsSlice = createSlice({
     name: 'settings',
     initialState,
     reducers: {
-        openSettingsModal: (state) => {
-            state.isModalOpen = true;
-        },
-        closeSettingsModal: (state) => {
-            state.isModalOpen = false;
-        },
-        openPromptModal: (state) => {
-            state.isPromptModalOpen = true;
-        },
-        closePromptModal: (state) => {
-            state.isPromptModalOpen = false;
-        },
-        openCreateGroupChatModal: (state) => {
-            state.isCreateGroupChatModalOpen = true;
-        },
-        closeCreateGroupChatModal: (state) => {
-            state.isCreateGroupChatModalOpen = false;
-        },
-        openCreateOpenChatModal: (state) => {
-            state.isCreateOpenChatModalOpen = true;
-        },
-        closeCreateOpenChatModal: (state) => {
-            state.isCreateOpenChatModalOpen = false;
-        },
-        openEditGroupChatModal: (state, action: PayloadAction<string>) => {
-            state.isEditGroupChatModalOpen = true;
+        setEditingRoomId: (state, action: PayloadAction<string>) => {
             state.editingRoomId = action.payload;
         },
-        closeEditGroupChatModal: (state) => {
-            state.isEditGroupChatModalOpen = false;
+        resetEditingRoomId: (state) => {
             state.editingRoomId = null;
         },
         setSettings: (state, action: PayloadAction<Partial<SettingsState>>) => {

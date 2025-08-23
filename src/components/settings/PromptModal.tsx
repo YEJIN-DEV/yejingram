@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { X, ChevronDown, RotateCcw, Download, Upload } from 'lucide-react';
-import { selectIsPromptModalOpen, selectPrompts } from '../../entities/setting/selectors';
+import { selectPrompts } from '../../entities/setting/selectors';
 import { settingsActions } from '../../entities/setting/slice';
 import type { Prompts } from '../../entities/setting/types';
 
@@ -18,9 +18,13 @@ const mainPromptSections = {
     '## 오픈챗 컨텍스트 (Open Chat Context)': 'open_chat_context',
 };
 
-function PromptModal() {
+interface PromptModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+function PromptModal({ isOpen, onClose }: PromptModalProps) {
     const dispatch = useDispatch();
-    const isOpen = useSelector(selectIsPromptModalOpen);
     const prompts = useSelector(selectPrompts);
 
     const [localPrompts, setLocalPrompts] = useState<Prompts>(prompts);
@@ -33,13 +37,9 @@ function PromptModal() {
         return null;
     }
 
-    const handleClose = () => {
-        dispatch(settingsActions.closePromptModal());
-    };
-
     const handleSave = () => {
         dispatch(settingsActions.setPrompts(localPrompts));
-        handleClose();
+        onClose();
     };
 
     const handleMainPromptChange = (key: keyof Prompts['main'], value: string) => {
@@ -51,7 +51,7 @@ function PromptModal() {
             <div className="bg-gray-800 rounded-2xl w-full max-w-2xl mx-4 flex flex-col" style={{ maxHeight: '90vh' }}>
                 <div className="flex items-center justify-between p-6 border-b border-gray-700 shrink-0">
                     <h3 className="text-lg font-semibold text-white">프롬프트 수정</h3>
-                    <button onClick={handleClose} className="p-1 hover:bg-gray-700 rounded-full"><X className="w-5 h-5" /></button>
+                    <button onClick={onClose} className="p-1 hover:bg-gray-700 rounded-full"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto">
                     <h4 className="text-base font-semibold text-blue-300 border-b border-blue-300/20 pb-2">메인 채팅 프롬프트</h4>
@@ -160,7 +160,7 @@ function PromptModal() {
                         <Upload className="w-4 h-4" /> 프롬프트 불러오기
                     </button>
                     <div className="flex-grow"></div>
-                    <button onClick={handleClose} className="py-2.5 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">취소</button>
+                    <button onClick={onClose} className="py-2.5 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">취소</button>
                     <button onClick={handleSave} className="py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">저장</button>
                 </div>
             </div>

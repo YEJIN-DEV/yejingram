@@ -4,15 +4,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import { type RootState } from '../../app/store';
 import { selectRoomById } from '../../entities/room/selectors';
 import { roomsActions } from '../../entities/room/slice';
-import { settingsActions } from '../../entities/setting/slice';
-import { selectEditingRoomId, selectIsEditGroupChatModalOpen } from '../../entities/setting/selectors';
+import { selectEditingRoomId } from '../../entities/setting/selectors';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import type { GroupChatSettings, ParticipantSettings } from '../../entities/room/types';
 import type { Character } from '../../entities/character/types';
+import { settingsActions } from '../../entities/setting/slice';
 
-function EditGroupChatModal() {
+interface EditGroupChatModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
     const dispatch = useDispatch();
-    const isOpen = useSelector(selectIsEditGroupChatModalOpen);
     const editingRoomId = useSelector(selectEditingRoomId);
     const room = useSelector((state: RootState) => editingRoomId ? selectRoomById(state, editingRoomId) : null);
     const allCharacters = useSelector(selectAllCharacters);
@@ -34,7 +38,8 @@ function EditGroupChatModal() {
     const participants = room.memberIds.map(id => allCharacters.find(c => c.id === id)).filter((c): c is Character => !!c);
 
     const handleClose = () => {
-        dispatch(settingsActions.closeEditGroupChatModal());
+        dispatch(settingsActions.resetEditingRoomId());
+        onClose();
     };
 
     const handleSave = () => {

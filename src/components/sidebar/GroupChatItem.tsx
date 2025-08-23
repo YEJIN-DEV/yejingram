@@ -10,9 +10,10 @@ interface GroupChatItemProps {
     room: Room;
     setRoomId: (id: string | null) => void;
     isSelected: boolean;
+    openEditGroupChatModal: () => void;
 }
 
-function GroupChatItem({ room, setRoomId, isSelected }: GroupChatItemProps) {
+function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: GroupChatItemProps) {
     const dispatch = useDispatch();
     const allCharacters = useSelector(selectAllCharacters);
     const messages = useSelector((state: any) => selectMessagesByRoomId(state, room.id));
@@ -40,7 +41,8 @@ function GroupChatItem({ room, setRoomId, isSelected }: GroupChatItemProps) {
 
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
-        dispatch(settingsActions.openEditGroupChatModal(room.id));
+        dispatch(settingsActions.setEditingRoomId(room.id));
+        openEditGroupChatModal();
     };
 
     return (
