@@ -47,7 +47,11 @@ function RoomList({
                     }</p>
                 </div>
             </div>
-            <button onClick={() => dispatch(roomsActions.removeOne(room.id))} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-red-600 hover:bg-red-700 rounded text-white" title="채팅방 삭제">
+            <button onClick={() => {
+                if (confirm('채팅방을 삭제하시겠습니까?')) {
+                    dispatch(roomsActions.removeOne(room.id))
+                }
+            }} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-red-600 hover:bg-red-700 rounded text-white" title="채팅방 삭제">
                 <Trash2 className="w-3 h-3" />
             </button>
         </div >

@@ -81,7 +81,9 @@ function CharacterList({
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
-                            dispatch(charactersActions.removeOne(character.id));
+                            if (confirm(`'${character.name}' 캐릭터를 삭제하시겠습니까? 관련된 모든 채팅방과 메시지도 삭제됩니다.`)) {
+                                dispatch(charactersActions.removeOne(character.id));
+                            }
                         }}
                         className="p-1 bg-gray-700 hover:bg-red-600 rounded text-gray-300 hover:text-white transition-colors"
                         title="삭제"
