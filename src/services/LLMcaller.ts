@@ -8,12 +8,13 @@ import { roomsActions } from "../entities/room/slice";
 import type { ChatResponse, MessagePart } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
-import { buildGeminiApiPayload } from "./promptBuilder";
+import { buildGeminiApiPayload, buildClaudeApiPayload } from "./promptBuilder";
 import type { ApiConfig, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
 
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
+const CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1/messages/";
 
 async function handleApiResponse(
     res: ChatResponse,
@@ -76,7 +77,18 @@ async function callApi(
     userDescription?: string
 ): Promise<ChatResponse> {
     const { apiProvider } = settings;
-    const payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput);
+    let payload: string|object = '';
+
+    switch (apiProvider) {
+        case 'gemini':
+        case 'vertexai':
+            payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput);
+            break;
+        case 'claude':
+            payload = buildClaudeApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput);
+            break;
+    }
+    
 
     let url: string;
     let headers: HeadersInit;
@@ -90,9 +102,17 @@ async function callApi(
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiConfig.accessToken}`
         };
-    } else { // gemini
+    } else if (apiProvider === 'gemini') {
         url = `${GEMINI_API_BASE_URL}${apiConfig.model}:generateContent?key=${apiConfig.apiKey}`;
         headers = { 'Content-Type': 'application/json' };
+    } else { // claude
+        url = CLAUDE_API_BASE_URL;
+        headers = {
+            "x-api-key": apiConfig.apiKey,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+            "anthropic-dangerous-direct-browser-access": "true"
+        };
     }
 
     try {
@@ -119,8 +139,10 @@ async function callApi(
 }
 
 function parseApiResponse(data: any, settings: SettingsState, messages: Message[]): ChatResponse {
-    if (data.candidates && data.candidates.length > 0 && data.candidates[0].content?.parts[0]?.text) {
-        const rawResponseText = data.candidates[0].content.parts[0].text;
+    const apiProvider = settings.apiProvider;
+
+    function processApiMessage(targetData: any): ChatResponse {
+        const rawResponseText = targetData;
         if (settings.useStructuredOutput) {
             const parsed = JSON.parse(rawResponseText);
             parsed.reactionDelay = Math.max(0, parsed.reactionDelay || 0);
@@ -139,10 +161,20 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
             }));
             return { reactionDelay: 0, messages: formattedMessages };
         }
-    } else {
-        const reason = data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || '알 수 없는 이유';
-        console.warn("API 응답에 유효한 content가 없습니다.", data);
-        throw new Error(reason);
+    }
+
+    if (apiProvider === 'gemini' || apiProvider === 'vertexai') {
+        if (data.candidates && data.candidates.length > 0 && data.candidates[0].content?.parts[0]?.text) {
+            return processApiMessage(data.candidates[0].content?.parts[0]?.text);
+        } else {
+            throw new Error(data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || '알 수 없는 이유');
+        }
+    } else { // Claude
+        if (data.content && data.content.length > 0 && data.content[0]?.text) {
+            return processApiMessage(data.content[0]?.text);
+        } else {
+            throw new Error(data.stop_reason || '알 수 없는 이유');
+        }
     }
 }
 

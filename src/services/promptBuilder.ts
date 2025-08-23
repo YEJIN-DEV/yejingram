@@ -2,7 +2,11 @@ import { store } from "../app/store";
 import type { Character } from "../entities/character/types";
 import type { Message } from "../entities/message/types";
 import { selectPrompts } from "../entities/setting/selectors";
-import type { GeminiApiPayload } from "./type";
+import type { GeminiApiPayload, ClaudeApiPayload } from "./type";
+
+const TEMPERATURE = 1.25;
+const TOP_K = 40;
+const TOP_P = 0.95;
 
 function buildTimeContext(messages: Message[], isProactive: boolean) {
     const currentTime = new Date();
@@ -102,7 +106,7 @@ ${guidelines}
 `;
 }
 
-function buildContents(messages: Message[], isProactive: boolean) {
+function buildGeminiContents(messages: Message[], isProactive: boolean) {
     const contents = messages.map(msg => {
         const role = msg.authorId === 0 ? "user" : "model";
         const parts: ({ text: string; } |
@@ -154,12 +158,12 @@ export function buildGeminiApiPayload(
     useStructuredOutput: boolean
 ): GeminiApiPayload {
     const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput);
-    const contents = buildContents(messages, isProactive);
+    const contents = buildGeminiContents(messages, isProactive);
 
     const generationConfig: any = {
-        temperature: 1.25,
-        topK: 40,
-        topP: 0.95,
+        temperature: TEMPERATURE,
+        topK: TOP_K,
+        topP: TOP_P,
     };
 
     if (useStructuredOutput) {
@@ -218,5 +222,83 @@ export function buildGeminiApiPayload(
             { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
             { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
         ]
+    };
+}
+
+function buildClaudeContents(messages: Message[], isProactive: boolean) {
+    const messagesPart = messages.map(msg => {
+        const role = msg.authorId === 0 ? "user" : "assistant";
+        const content: ({type: string; text: string;} | 
+        {type: 'image'; source: {data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64';};})[]
+        = [{ type: 'text', text: msg.content }];
+
+        if (msg.image) {
+            const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
+            if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
+                throw new Error(`Unsupported image type: ${mimeType}`);
+            }
+            const base64Data = msg.image.dataUrl.split(',')[1];
+            if (mimeType && base64Data) {
+                content.push({
+                    type: 'image',
+                    source: {
+                        data: base64Data,
+                        media_type: mimeType,
+                        type: 'base64'
+                    }
+                });
+            }
+        }
+
+        if (msg.sticker) {
+            if ('text' in msg) {
+                const lastText = msg.text;
+                if (lastText == "(No content provided)") {
+                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄]`;
+                } else {
+                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄] ` + lastText;
+                }
+            }
+        }
+
+        return { role, content };
+    });
+
+    if (isProactive && messagesPart.length === 0) {
+        messagesPart.push({
+            role: "user",
+            content: [{
+                type: 'text',
+                text: "(SYSTEM: You are starting this conversation. Please begin.)"
+            }]
+        });
+    }
+
+    return messagesPart;
+}
+
+export function buildClaudeApiPayload(
+    model: string,
+    userName: string,
+    userDescription: string,
+    character: Character,
+    messages: Message[],
+    isProactive: boolean,
+    useStructuredOutput: boolean
+): ClaudeApiPayload {
+    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput);
+    const contents = buildClaudeContents(messages, isProactive);
+
+    return {
+        model: model,
+        messages: contents,
+        system: [{
+            type: "text",
+            text: masterPrompt
+        }],
+        temperature: 1,
+        top_k: TOP_K,
+        top_p: TOP_P,
+        max_tokens: 8096,
     };
 }

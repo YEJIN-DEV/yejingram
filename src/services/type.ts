@@ -50,3 +50,29 @@ export interface GeminiApiPayload {
         threshold: string;
     }[];
 }
+
+export interface ClaudeApiPayload {
+    model: string;
+    messages: {
+        role: string;
+        content: ({
+            type: string;
+            text: string;
+        } | {
+            type: 'image';
+            source: {
+                data: string;
+                media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+                type: 'base64';
+            };
+        })[];
+    }[];
+    system: {
+        type: string;
+        text: string;
+    }[];
+    temperature: number;
+    top_k: number;
+    top_p: number;
+    max_tokens: number;
+}
