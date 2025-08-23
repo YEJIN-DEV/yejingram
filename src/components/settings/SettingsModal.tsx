@@ -2,7 +2,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { selectIsSettingsModalOpen, selectAllSettings } from '../../entities/setting/selectors';
 import { useEffect, useState } from 'react';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
-import { X, ChevronDown, Globe, FilePenLine, Type, User, BrainCircuit, MessageSquarePlus, Shuffle, Download, Upload } from 'lucide-react';
+import { X, ChevronDown, Globe, FilePenLine, Type, User, BrainCircuit, MessageSquarePlus, Shuffle, Download, Upload, FastForward } from 'lucide-react';
 import { ProviderSettings } from './ProviderSettings';
 import { backupStateToFile, restoreStateFromFile } from '../../utils/backup';
 import { settingsActions } from '../../entities/setting/slice';
@@ -104,6 +104,15 @@ function SettingsModal() {
                   <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Type className="w-4 h-4 mr-2" />UI 크기</label>
                   <input id="settings-font-scale" type="range" min="0.8" max="1.4" step="0.1" value={localSettings.fontScale} onChange={e => setLocalSettings(prev => ({ ...prev, fontScale: +e.target.value }))} className="w-full" />
                   <div className="flex justify-between text-xs text-gray-400 mt-1"><span>작게</span><span>크게</span></div>
+                </div>
+                <div>
+                  <label className="flex items-center justify-between text-sm font-medium text-gray-300 mb-2">
+                    <span className="flex items-center"><FastForward className="w-4 h-4 mr-2" />메시지 입력 가속</span>
+                    <span className="text-blue-400 font-semibold">{localSettings.speedup}X</span>
+                  </label>
+                  <p className="text-xs text-gray-500 mt-2">* 구조화된 출력 사용중에는 적용되지 않습니다.</p>
+                  <input id="settings-speedup" type="range" min="1" max="4" step="0.5" value={localSettings.speedup} onChange={e => setLocalSettings(prev => ({ ...prev, speedup: +e.target.value }))} className="w-full" />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1"><span>느리게</span><span>빠르게</span></div>
                 </div>
               </div>
             </div>
