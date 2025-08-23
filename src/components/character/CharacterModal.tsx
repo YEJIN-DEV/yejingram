@@ -4,41 +4,13 @@ import { X, Image, Upload, Download, Sparkles, MessageSquarePlus, ChevronDown } 
 import { selectIsCharacterModalOpen, selectEditingCharacterId, selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
 import type { RootState } from '../../app/store';
-import type { Character, Sticker } from '../../entities/character/types';
+import { newCharacterDefault, type Character, type PersonaChatAppCharacterCard, type Sticker } from '../../entities/character/types';
 import { AttributeSliders } from './AttributeSliders';
 import { MemoryManager } from './MemoryManager';
 import { StickerManager } from './StickerManager';
-import { decodeTextFromImage, getImageDataFromSrc, encodeTextInImage, imageDataToDataURL } from '../../utils/imageStego';
-
-const newCharacterDefault: Omit<Character, 'id'> = {
-    name: '',
-    prompt: '',
-    avatar: null,
-    responseTime: 5,
-    thinkingTime: 5,
-    reactivity: 5,
-    tone: 5,
-    memories: [],
-    proactiveEnabled: true,
-    messageCountSinceLastSummary: 0,
-    media: [],
-    stickers: [],
-};
+import { decodeText, encodeText } from '../../utils/imageStego';
 
 
-export interface PersonaChatAppCharacterCard {
-    name: string;
-    prompt: string;
-    responseTime: string;   // 숫자처럼 보이지만 JSON에서는 string이므로 string으로 정의
-    thinkingTime: string;
-    reactivity: string;
-    tone: string;
-    source: "PersonaChatAppCharacterCard"; // 리터럴 타입으로 고정
-    memories: any[];        // 추후에 세부 타입이 있으면 any 대신 구체적으로 정의 가능
-    proactiveEnabled: boolean;
-}
-
-// Helper function to convert PersonaChatAppCharacterCard to Character
 const personaCardToCharacter = (card: PersonaChatAppCharacterCard): Character => {
     const { name, prompt, responseTime, thinkingTime, reactivity, tone, memories, proactiveEnabled } = card;
 
@@ -81,7 +53,7 @@ function CharacterModal() {
     const editingCharacter = useSelector((state: RootState) => editingId ? selectCharacterById(state, editingId) : null);
     const proactiveChatEnabled = useSelector((state: RootState) => state.settings.proactiveChatEnabled);
 
-    const [char, setChar] = useState<Partial<Character>>(newCharacterDefault);
+    const [char, setChar] = useState<Character>(newCharacterDefault);
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
     const isNew = !editingId;
@@ -163,17 +135,20 @@ function CharacterModal() {
             reader.onload = async (ev) => {
                 const src = String(ev.target?.result || "");
                 try {
-                    const imageData = await getImageDataFromSrc(src);
-                    const jsonString = decodeTextFromImage(imageData);
-                    if (jsonString) {
+                    const decodeResult = await decodeText(src);
+                    if (decodeResult.text) {
                         try {
-                            const data = JSON.parse(jsonString) as PersonaChatAppCharacterCard;
-                            console.log("불러온 연락처 데이터:", data);
-                            // Ensure the loaded data is a valid card
-                            if (data.source !== 'PersonaChatAppCharacterCard') {
-                                throw new Error("Invalid character card format.");
+                            let characterFromCard: Character;
+                            if (decodeResult.method === "png-trailer") {
+                                characterFromCard = JSON.parse(decodeResult.text) as Character;
+                            } else {
+                                const jsonData = JSON.parse(decodeResult.text) as PersonaChatAppCharacterCard;
+                                if (jsonData.source !== 'PersonaChatAppCharacterCard') {
+                                    throw new Error("Invalid character card format.");
+                                }
+                                characterFromCard = personaCardToCharacter(jsonData);
                             }
-                            const characterFromCard = personaCardToCharacter(data);
+                            console.log("불러온 연락처 데이터:", characterFromCard);
                             setChar(characterFromCard);
                         } catch (e) {
                             console.error("Failed to parse character card:", e);
@@ -193,30 +168,19 @@ function CharacterModal() {
         input.click();
     }
 
-    const exportPersonaImage = async () => {
+    const exportPersonaImage = async (method: "png-trailer" | "alpha-channel") => {
         if (!char.avatar) {
             alert("아바타 이미지가 없습니다. 이미지를 먼저 추가해주세요.");
             return;
         }
 
-        try {
-            const personaCard: PersonaChatAppCharacterCard = characterToPersonaCard(char as Character);
-            const jsonString = JSON.stringify(personaCard);
-            const originalImageData = await getImageDataFromSrc(char.avatar);
-            const encodedImageData = encodeTextInImage(originalImageData, jsonString);
-            const dataUrl = imageDataToDataURL(encodedImageData, "image/png");
-
-            const a = document.createElement("a");
-            a.href = dataUrl;
-            a.download = `${char.name || 'character'}_persona.png`;
-            document.body.appendChild(a); // Firefox requires the link to be in the body
-            a.click();
-            document.body.removeChild(a); // Clean up
-            URL.revokeObjectURL(dataUrl);
-        } catch (error) {
-            console.error("연락처 이미지 내보내기 실패:", error);
-            alert("연락처 이미지 내보내기에 실패했습니다.");
-        }
+        const dataURL = await encodeText(char.avatar, JSON.stringify(method === "png-trailer" ? char : characterToPersonaCard(char)), method);
+        const link = document.createElement("a");
+        link.href = dataURL;
+        link.download = `${char.name || 'character'}_persona.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
@@ -238,8 +202,11 @@ function CharacterModal() {
                             <button onClick={importPersonaImage} className="py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
                                 <Upload className="w-4 h-4" /> 연락처 불러오기
                             </button>
-                            <button onClick={exportPersonaImage} className="py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-                                <Download className="w-4 h-4" /> 연락처 공유하기
+                            <button onClick={() => exportPersonaImage("alpha-channel")} className="py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                                <Download className="w-4 h-4" /> 연락처 공유하기 (아리스톡)
+                            </button>
+                            <button onClick={() => exportPersonaImage("png-trailer")} className="py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                                <Download className="w-4 h-4" /> 연락처 공유하기 (예진그램)
                             </button>
                         </div>
                         <input type="file" accept="image/png,image/jpeg" ref={avatarInputRef} onChange={handleAvatarChange} className="hidden" />

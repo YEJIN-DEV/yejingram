@@ -6,7 +6,7 @@ export interface Sticker {
 }
 
 export interface Character {
-    id: number
+    id: number | null
     name: string
     prompt: string
     avatar: string | null
@@ -19,6 +19,18 @@ export interface Character {
     messageCountSinceLastSummary: number
     media: string[]
     stickers: Sticker[]
+}
+
+export interface PersonaChatAppCharacterCard {
+    name: string;
+    prompt: string;
+    responseTime: string;   // 숫자처럼 보이지만 JSON에서는 string이므로 string으로 정의
+    thinkingTime: string;
+    reactivity: string;
+    tone: string;
+    source: "PersonaChatAppCharacterCard"; // 리터럴 타입으로 고정
+    memories: any[];        // 추후에 세부 타입이 있으면 any 대신 구체적으로 정의 가능
+    proactiveEnabled: boolean;
 }
 
 export const defaultCharacters = [
@@ -38,3 +50,19 @@ export const defaultCharacters = [
         stickers: [] // Add sticker storage for character stickers
     }
 ]
+
+export const newCharacterDefault: Character = {
+    id: null,
+    name: '',
+    prompt: '',
+    avatar: null,
+    responseTime: 5,
+    thinkingTime: 5,
+    reactivity: 5,
+    tone: 5,
+    memories: [],
+    proactiveEnabled: true,
+    messageCountSinceLastSummary: 0,
+    media: [],
+    stickers: [],
+};
