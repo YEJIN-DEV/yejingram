@@ -2,7 +2,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { X, ChevronDown, RotateCcw, Download, Upload } from 'lucide-react';
 import { selectPrompts } from '../../entities/setting/selectors';
-import { settingsActions } from '../../entities/setting/slice';
+import { settingsActions, initialState } from '../../entities/setting/slice';
 import type { Prompts } from '../../entities/setting/types';
 
 const mainPromptSections = {
@@ -46,6 +46,34 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
         setLocalPrompts(prev => ({ ...prev, main: { ...prev.main, [key]: value } }));
     };
 
+    const setPromptToDefault = (key: keyof Prompts['main'] | "message_writing_style" | "profile_creation" | "character_sheet_generation") => {
+        if (confirm('기본값으로 되돌리시겠습니까?')) {
+            if (key === "message_writing_style") {
+                setLocalPrompts(prev => ({
+                    ...prev,
+                    main: {
+                        ...prev.main,
+                        message_writing_structured: initialState.prompts.main.message_writing_structured,
+                        message_writing_unstructured: initialState.prompts.main.message_writing_unstructured
+                    }
+                }));
+            } else if (key === "profile_creation" || key === "character_sheet_generation") {
+                setLocalPrompts(prev => ({
+                    ...prev,
+                    [key]: initialState.prompts[key]
+                }));
+            } else {
+                setLocalPrompts(prev => ({
+                    ...prev,
+                    main: {
+                        ...prev.main,
+                        [key]: initialState.prompts.main[key]
+                    }
+                }));
+            }
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-gray-800 rounded-2xl w-full max-w-2xl mx-4 flex flex-col" style={{ maxHeight: '90vh' }}>
@@ -66,7 +94,9 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                     <div className="content-wrapper">
                                         <div className="content-inner p-4 border-t border-gray-700">
                                             <div className="flex items-center gap-2 mb-3">
-                                                <button className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
+                                                <button onClick={() => {
+                                                    setPromptToDefault('message_writing_style');
+                                                }} className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
                                                     <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                                 </button>
                                             </div>
@@ -96,7 +126,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                 <div className="content-wrapper">
                                     <div className="content-inner p-4 border-t border-gray-700">
                                         <div className="flex items-center gap-2 mb-3">
-                                            <button className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
+                                            <button onClick={() => setPromptToDefault(key as keyof Prompts['main'])} className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
                                                 <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                             </button>
                                         </div>
@@ -119,7 +149,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         <div className="content-wrapper">
                             <div className="content-inner p-4 border-t border-gray-700">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <button className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
+                                    <button onClick={() => setPromptToDefault('profile_creation')} className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
                                         <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                     </button>
                                 </div>
@@ -140,7 +170,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         <div className="content-wrapper">
                             <div className="content-inner p-4 border-t border-gray-700">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <button className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
+                                    <button onClick={() => setPromptToDefault('character_sheet_generation')} className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
                                         <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                     </button>
                                 </div>

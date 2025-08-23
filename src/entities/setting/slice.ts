@@ -12,7 +12,7 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     customOpenAI: { apiKey: '', baseUrl: '', model: '', customModels: [] },
 };
 
-const initialState: SettingsState = {
+export const initialState: SettingsState = {
     isModalOpen: false,
     isPromptModalOpen: false,
     isCreateGroupChatModalOpen: false,
