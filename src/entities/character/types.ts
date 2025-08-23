@@ -6,7 +6,7 @@ export interface Sticker {
 }
 
 export interface Character {
-    id: number | null
+    id: number
     name: string
     prompt: string
     avatar: string | null
@@ -52,7 +52,7 @@ export const defaultCharacters = [
 ]
 
 export const newCharacterDefault: Character = {
-    id: null,
+    id: -1,
     name: '',
     prompt: '',
     avatar: null,
