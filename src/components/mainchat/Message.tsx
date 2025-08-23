@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState, useLayoutEffect } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
@@ -51,7 +51,6 @@ interface MessageListProps {
   isWaitingForResponse: boolean; // Assuming this is passed as a prop
   typingCharacterId: number | null;
   currentUserId: number; // Assuming current user ID is available to determine isMe
-  scrollRef: React.RefObject<HTMLDivElement | null>;
 
   setTypingCharacterId: React.Dispatch<React.SetStateAction<number | null>>;
   setIsWaitingForResponse: React.Dispatch<React.SetStateAction<boolean>>;
@@ -63,7 +62,6 @@ const MessageList: React.FC<MessageListProps> = ({
   isWaitingForResponse,
   typingCharacterId,
   currentUserId,
-  scrollRef,
 
   setTypingCharacterId,
   setIsWaitingForResponse
@@ -92,60 +90,6 @@ const MessageList: React.FC<MessageListProps> = ({
     // This effect might be more complex if actual animation triggers are needed
     // For now, just ensuring the ref is cleared or managed
   }, [messages]);
-
-  // Force scroll to bottom when room changes
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) {
-      // Use requestAnimationFrame to wait for the DOM to be updated
-      requestAnimationFrame(() => {
-        el.scrollTop = el.scrollHeight;
-      });
-    }
-  }, [room.id, scrollRef]);
-
-  const BOTTOM_THRESHOLD = 120; // ✅ 여유 넉넉히
-
-  // 새 메시지가 추가되면 (길이 변화) 바닥이면 내려가기
-  useLayoutEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    const isNearBottom =
-      el.scrollHeight - el.scrollTop - el.clientHeight <= BOTTOM_THRESHOLD;
-
-    // DOM 레이아웃 확정 후 스크롤 (깜빡임/계산오차 방지)
-    requestAnimationFrame(() => {
-      if (!el) return;
-      if (isNearBottom) {
-        const delta = el.scrollHeight - el.scrollTop - el.clientHeight;
-        el.scrollTo({
-          top: el.scrollHeight,
-          behavior: delta < 500 ? 'smooth' : 'auto', // 작은 이동은 부드럽게
-        });
-      }
-    });
-  }, [messages.length]); // ✅ 객체 전체 말고 길이만
-
-  // 컨테이너 높이가 '늦게' 변하는 경우(이미지 로드 등)에도 바닥 유지
-  useEffect(() => {
-    const scroller = scrollRef.current;
-    const inner = innerRef.current;
-    if (!scroller || !inner) return;
-
-    const BOTTOM_THRESHOLD = 120;
-    const isNearBottom = () =>
-      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight <= BOTTOM_THRESHOLD;
-
-    const ro = new ResizeObserver(() => {
-      if (isNearBottom()) {
-        scroller.scrollTop = scroller.scrollHeight;
-      }
-    });
-
-    ro.observe(inner);
-    return () => ro.disconnect();
-  }, []);
 
 
   return (

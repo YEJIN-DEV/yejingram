@@ -2,7 +2,7 @@ import type { Room } from '../../entities/room/types';
 import { Menu, Bot, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Send, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { type AppDispatch, type RootState } from '../../app/store';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import MessageList from './Message';
@@ -43,6 +43,46 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   const memberChars = useSelector((state: RootState) =>
     room?.memberIds.map(id => selectCharacterById(state, id))
   );
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      // DOM 업데이트 후 스크롤이 정확하게 되도록 setTimeout 사용
+      setTimeout(() => {
+        scrollToBottom(container);
+      }, 0);
+    }
+  }, [room, messages]);
+
+  const scrollToBottom = (container: HTMLDivElement | null) => {
+    // rAF보다 직접 할당이 모바일에서 더 안정적일 때가 많습니다
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  };
+
+
+  const handleInputFocus = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    // 모바일 키보드가 열리면 visualViewport가 resize됩니다 (특히 iOS)
+    if (typeof window !== 'undefined' && 'visualViewport' in window) {
+      const vv = window.visualViewport!;
+      const onResize = () => {
+        // 키보드가 완전히 열린 뒤 한 번 더 스크롤
+        scrollToBottom(container);
+        vv.removeEventListener('resize', onResize);
+      };
+      vv.addEventListener('resize', onResize, { once: true });
+
+      // 혹시 resize 이벤트가 안 오더라도 대비용 딜레이
+      setTimeout(scrollToBottom, 350);
+    } else {
+      // 안드로이드/기타 브라우저 대비: 짧은 딜레이만으로도 충분한 경우가 많음
+      setTimeout(scrollToBottom, 120);
+    }
+  };
 
   const handleEditRoomName = () => {
     if (!room) return;
@@ -127,7 +167,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
 
     dispatch(messagesActions.upsertOne(userMessage));
 
-    
+
     setStickerToSend(null);
     setImageToSend(null);
     if (fileInputRef.current) {
@@ -238,7 +278,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
             </header>
 
             <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
-              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} scrollRef={messagesContainerRef} />
+              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} />
               <div id="messages-end-ref"></div>
             </div>
 
@@ -255,6 +295,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 onStickerClear={handleCancelSticker}
                 onSendMessage={handleSendMessage}
                 onPaste={handlePaste}
+                onFocus={handleInputFocus}
               />
             </div>
           </>
@@ -314,7 +355,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
             </header>
 
             <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
-              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} scrollRef={messagesContainerRef} />
+              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} />
               <div id="messages-end-ref"></div>
             </div>
 
@@ -331,6 +372,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 onStickerClear={handleCancelSticker}
                 onSendMessage={handleSendMessage}
                 onPaste={handlePaste}
+                onFocus={handleInputFocus}
               />
             </div>
           </>
@@ -388,7 +430,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
             </header>
 
             <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
-              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} scrollRef={messagesContainerRef} />
+              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} />
               <div id="messages-end-ref"></div>
             </div>
 
@@ -405,6 +447,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 onStickerClear={handleCancelSticker}
                 onSendMessage={handleSendMessage}
                 onPaste={handlePaste}
+                onFocus={handleInputFocus}
                 renderUserStickerPanel={() =>
                   showStickerPanel && character && (
                     <StickerPanel
@@ -439,6 +482,7 @@ export interface InputAreaProps {
   onSendMessage: (text: string) => void;
   onStickerClear?: () => void;
   onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
+  onFocus?: () => void;
 
   // (선택) 커스텀 스티커 패널 렌더링
   renderUserStickerPanel?: () => React.ReactNode;
@@ -454,6 +498,7 @@ export function InputArea({
   onSendMessage,
   onStickerClear,
   onPaste,
+  onFocus,
   renderUserStickerPanel,
 }: InputAreaProps) {
   const [text, setText] = useState("");
@@ -560,6 +605,7 @@ export function InputArea({
               }
             }}
             onPaste={onPaste}
+            onFocus={onFocus}
           />
 
           {/* 우측 액션 버튼들 */}
