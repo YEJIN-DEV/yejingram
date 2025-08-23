@@ -13,6 +13,7 @@ import { setActiveRoomId } from './utils/activeRoomTracker'
 import CreateGroupChatModal from './components/modals/CreateGroupChatModal';
 import CreateOpenChatModal from './components/modals/CreateOpenChatModal';
 import EditGroupChatModal from './components/modals/EditGroupChatModal';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 function App() {
   const [roomId, setRoomId] = useState<string | null>(null)
@@ -56,6 +57,7 @@ function App() {
 
         <div id="sidebar-backdrop" onClick={() => setIsMobileSidebarOpen(false)} className={`fixed inset-0 z-20 bg-black/50 backdrop-blur-xs md:hidden ${isMobileSidebarOpen ? 'block' : 'hidden'}`}></div>
       </div>
+      <SpeedInsights />
     </>
   )
 }
