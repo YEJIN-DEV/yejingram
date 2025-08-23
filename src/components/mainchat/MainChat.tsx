@@ -49,7 +49,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
     if (container) {
       // DOM 업데이트 후 스크롤이 정확하게 되도록 setTimeout 사용
       setTimeout(() => {
-        container.scrollTop = container.scrollHeight;
+        scrollToBottom(container);
       }, 0);
     }
   }, [room, messages]);
