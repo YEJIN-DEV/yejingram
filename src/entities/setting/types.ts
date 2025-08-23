@@ -49,4 +49,5 @@ export interface SettingsState {
     randomMessageFrequencyMax: number;
     prompts: Prompts;
     useStructuredOutput: boolean;
+    speedup: number;
 }

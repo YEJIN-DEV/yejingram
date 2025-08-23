@@ -3,7 +3,6 @@ import { Settings, Bot, Plus } from 'lucide-react';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
-import { settingsActions } from '../../entities/setting/slice';
 import { charactersActions } from '../../entities/character/slice';
 import { selectAllRooms } from '../../entities/room/selectors';
 import GroupChatList from './GroupChatList';

@@ -47,6 +47,7 @@ const initialState: SettingsState = {
     randomMessageFrequencyMin: 10,
     randomMessageFrequencyMax: 60,
     useStructuredOutput: true,
+    speedup: 2,
 };
 
 export const settingsAdapter = createEntityAdapter<SettingsState, string>({

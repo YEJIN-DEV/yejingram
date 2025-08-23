@@ -133,7 +133,7 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
                     outChars: line.length,
                     device: "mobile",
                 }, {
-                    speedup: 2
+                    speedup: settings.speedup
                 }),
                 content: line,
             }));

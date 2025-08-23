@@ -5,14 +5,15 @@ import MainChat from './components/mainchat/MainChat'
 import SettingsModal from './components/settings/SettingsModal'
 import PromptModal from './components/settings/PromptModal'
 import CharacterModal from './components/character/CharacterModal'
-import CreateGroupChatModal from './components/modals/CreateGroupChatModal';
-import CreateOpenChatModal from './components/modals/CreateOpenChatModal';
-import EditGroupChatModal from './components/modals/EditGroupChatModal';
+import CreateGroupChatModal from './components/modals/CreateGroupChatModal'
+import CreateOpenChatModal from './components/modals/CreateOpenChatModal'
+import EditGroupChatModal from './components/modals/EditGroupChatModal'
 import { ChevronLeft } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 function App() {
   const [roomId, setRoomId] = useState<string | null>(null)
@@ -89,6 +90,7 @@ function App() {
 
         <div id="sidebar-backdrop" onClick={() => setIsMobileSidebarOpen(false)} className={`fixed inset-0 z-20 bg-black/50 backdrop-blur-xs md:hidden ${isMobileSidebarOpen ? 'block' : 'hidden'}`}></div>
       </div>
+      <SpeedInsights />
     </>
   )
 }
