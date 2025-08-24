@@ -199,7 +199,7 @@ const MessageList: React.FC<MessageListProps> = ({
               if (hasTextMessage) {
                 return (
                   <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
-                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-xs transition-all duration-200 hover:scale-[1.02] ${isMe
+                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-200 text-gray-900'
                       } ${cornerClass}`}>
@@ -224,7 +224,7 @@ const MessageList: React.FC<MessageListProps> = ({
               );
 
               const captionTag = msg.content && msg.content.trim() ? (
-                <div className={`mt-1 px-4 py-3 rounded-2xl text-base leading-relaxed max-w-xs transition-all duration-200 hover:scale-[1.02] ${isMe
+                <div className={`mt-1 px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-200 text-gray-900'
                   } ${cornerClass}`}>
@@ -240,7 +240,7 @@ const MessageList: React.FC<MessageListProps> = ({
               );
             } else if (msg.type === 'TEXT') {
               return (
-                <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-xs transition-all duration-200 hover:scale-[1.02] ${isMe
+                <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-200 text-gray-900'
                   } ${cornerClass}`}>
