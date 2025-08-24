@@ -146,7 +146,7 @@ const MessageList: React.FC<MessageListProps> = ({
                       <img src={msg.content} className="max-w-xs max-h-80 rounded-2xl object-cover mb-2 cursor-pointer" onClick={() => window.open(msg.content)} />
                       <textarea
                         data-id={msg.id.toString()}
-                        className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm resize-y min-h-32 md:min-h-40"
+                        className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-32 md:min-h-40 transition-all duration-300 focus:scale-105"
                         rows={4}
                         defaultValue={msg.content}
                       ></textarea>
@@ -154,7 +154,7 @@ const MessageList: React.FC<MessageListProps> = ({
                   ) : (
                     <textarea
                       data-id={msg.id.toString()}
-                      className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm resize-y min-h-40 md:min-h-48"
+                      className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 focus:scale-105"
                       rows={5}
                       defaultValue={msg.content || ''}
                     ></textarea>
@@ -162,7 +162,7 @@ const MessageList: React.FC<MessageListProps> = ({
                   <div className="flex items-center space-x-2 mt-2">
                     <button onClick={() => {
                       setEditingMessageId(null);
-                    }} data-id={msg.id.toString()} className="cancel-edit-btn text-xs text-gray-500 hover:text-gray-700 bg-gray-100 px-3 py-1 rounded-full" >취소</button>
+                    }} data-id={msg.id.toString()} className="cancel-edit-btn text-sm text-gray-500 hover:text-gray-700 bg-gray-100 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105 hover:bg-gray-200" >취소</button>
                     <button onClick={() => {
                       const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
                       if (textarea) {
@@ -173,7 +173,7 @@ const MessageList: React.FC<MessageListProps> = ({
                         }));
                         setEditingMessageId(null);
                       }
-                    }} data-id={msg.id.toString()} className="save-edit-btn text-xs text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded-full">저장</button>
+                    }} data-id={msg.id.toString()} className="save-edit-btn text-sm text-white bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105">저장</button>
                   </div>
                 </div>
               );
@@ -189,8 +189,8 @@ const MessageList: React.FC<MessageListProps> = ({
               const imgSrc = stickerData.data;
               const stickerName = stickerData.name || '스티커';
               const stickerElement = (
-                <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
-                  <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain`} style={heightStyle} />
+                <div className="inline-block cursor-pointer transition-all duration-300 hover:scale-110 transform" onClick={() => toggleStickerSize(msg.id.toString())}>
+                  <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`} style={heightStyle} />
                 </div>
               );
 
@@ -199,7 +199,7 @@ const MessageList: React.FC<MessageListProps> = ({
               if (hasTextMessage) {
                 return (
                   <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
-                    <div className={`px-4 py-2 rounded-2xl text-sm leading-relaxed max-w-xs ${isMe
+                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-xs transition-all duration-200 hover:scale-[1.02] ${isMe
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-200 text-gray-900'
                       } ${cornerClass}`}>
@@ -218,13 +218,13 @@ const MessageList: React.FC<MessageListProps> = ({
               const heightStyle = isExpanded ? { maxHeight: '400px' } : { maxHeight: '200px' };
 
               const imageTag = (
-                <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
-                  <img src={imageUrl} className={`${sizeClass} rounded-2xl object-cover`} style={heightStyle} />
+                <div className="inline-block cursor-pointer transition-all duration-300 hover:scale-105 transform" onClick={() => toggleStickerSize(msg.id.toString())}>
+                  <img src={imageUrl} className={`${sizeClass} rounded-2xl object-cover transition-all duration-500 hover:brightness-110`} style={heightStyle} />
                 </div>
               );
 
               const captionTag = msg.content && msg.content.trim() ? (
-                <div className={`mt-1 px-4 py-2 rounded-2xl text-sm leading-relaxed max-w-xs ${isMe
+                <div className={`mt-1 px-4 py-3 rounded-2xl text-base leading-relaxed max-w-xs transition-all duration-200 hover:scale-[1.02] ${isMe
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-200 text-gray-900'
                   } ${cornerClass}`}>
@@ -240,7 +240,7 @@ const MessageList: React.FC<MessageListProps> = ({
               );
             } else if (msg.type === 'TEXT') {
               return (
-                <div className={`px-4 py-2 rounded-2xl text-sm leading-relaxed max-w-xs ${isMe
+                <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-xs transition-all duration-200 hover:scale-[1.02] ${isMe
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-200 text-gray-900'
                   } ${cornerClass}`}>
@@ -262,15 +262,15 @@ const MessageList: React.FC<MessageListProps> = ({
             <React.Fragment key={msg.id}>
               {showDateSeparator && (
                 <div className="flex justify-center my-6">
-                  <div className="flex items-center text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    <Calendar className="w-3 h-3 mr-2 text-gray-400" />
+                  <div className="flex items-center text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-200 hover:scale-105">
+                    <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                     {formatDateSeparator(new Date(msg.createdAt))}
                   </div>
                 </div>
               )}
               {msg.type === 'SYSTEM' && (
                 <div className="flex justify-center my-4">
-                  <div className="flex items-center text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                  <div className="flex items-center text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full animate-fadeIn">
                     {msg.content}
                   </div>
                 </div>
@@ -294,7 +294,7 @@ const MessageList: React.FC<MessageListProps> = ({
                     <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}>
                       {/* Sender name for group messages */}
                       {showSenderName && !isMe && (
-                        <p className="text-xs text-gray-500 mb-1 px-1">
+                        <p className="text-sm text-gray-500 mb-1 px-1 animate-fadeIn">
                           <SenderName authorId={msg.authorId} />
                         </p>
                       )}
@@ -306,27 +306,27 @@ const MessageList: React.FC<MessageListProps> = ({
                         </div>
 
                         {/* Message controls - Instagram DM style */}
-                        <div className={`absolute ${isMe ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex items-center space-x-1 opacity-0 group-hover/message:opacity-100 transition-opacity duration-200`}>
+                        <div className={`absolute ${isMe ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex items-center space-x-1 opacity-0 group-hover/message:opacity-100 transition-all duration-300 transform ${isMe ? 'translate-x-2' : '-translate-x-2'} group-hover/message:translate-x-0`}>
                           {(msg.type === 'TEXT' || (msg.type === 'IMAGE' && msg.content)) && (
                             <button
                               data-id={msg.id.toString()}
                               onClick={() => { setEditingMessageId(msg.id) }}
-                              className="edit-msg-btn p-1 text-gray-400 hover:text-gray-600 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200"
+                              className="edit-msg-btn p-2 text-gray-400 hover:text-gray-600 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
                               aria-label="메시지 편집"
                               title="편집"
                             >
-                              <Edit3 className="w-3 h-3" />
+                              <Edit3 className="w-4 h-4" />
                             </button>
                           )}
 
                           <button
                             data-id={msg.id.toString()}
                             onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
-                            className="delete-msg-btn p-1 text-gray-400 hover:text-red-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200"
+                            className="delete-msg-btn p-2 text-gray-400 hover:text-red-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
                             aria-label="메시지 삭제"
                             title="삭제"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
 
                           {!isMe && (msg.type === 'TEXT' || msg.type === 'IMAGE') && i === messages.length - 1 && !isWaitingForResponse && (
@@ -341,11 +341,11 @@ const MessageList: React.FC<MessageListProps> = ({
                                     setIsWaitingForResponse(false);
                                   });
                               }}
-                              className="reroll-msg-btn p-1 text-gray-400 hover:text-blue-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200"
+                              className="reroll-msg-btn p-2 text-gray-400 hover:text-blue-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
                               aria-label="다시 생성"
                               title="다시 생성"
                             >
-                              <RefreshCw className="w-3 h-3" />
+                              <RefreshCw className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -353,12 +353,12 @@ const MessageList: React.FC<MessageListProps> = ({
 
                       {/* Timestamp and read status */}
                       {(i === groupInfo.endIndex || (i < messages.length - 1 && messages[i + 1].authorId !== msg.authorId)) && (
-                        <div className={`flex items-center mt-1 md:mt-2 ${isMe ? 'flex-row-reverse' : ''} gap-2`}>
-                          <p className="text-xs text-gray-400">
+                        <div className={`flex items-center mt-1 md:mt-2 ${isMe ? 'flex-row-reverse' : ''} gap-2 animate-fadeIn`}>
+                          <p className="text-sm text-gray-400">
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                           {showUnread && (
-                            <span className="text-xs text-blue-500">전송됨</span>
+                            <span className="text-sm text-blue-500 animate-pulse">전송됨</span>
                           )}
                         </div>
                       )}
@@ -378,11 +378,11 @@ const MessageList: React.FC<MessageListProps> = ({
                 return typingChar ? <Avatar char={typingChar} size="sm" /> : null;
               })()}
             </div>
-            <div className="px-4 py-2 rounded-2xl bg-gray-200 rounded-bl-md">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1.4s' }}></span>
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1.4s' }}></span>
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1.4s' }}></span>
+            <div className="px-4 py-4 rounded-2xl bg-gray-200 rounded-bl-md min-h-[3rem]">
+              <div className="flex items-center justify-center gap-2 h-full">
+                <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1.4s' }}></span>
+                <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1.4s' }}></span>
+                <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1.4s' }}></span>
               </div>
             </div>
           </div>

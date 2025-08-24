@@ -36,6 +36,58 @@ html {
   animation: fadeIn 0.3s ease-in-out;
 }
 
+/* 메시지 호버 효과 */
+@keyframes scaleUp {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.02);
+  }
+}
+
+.hover\:scale-\[1\.02\]:hover {
+  transform: scale(1.02);
+}
+
+/* 부드러운 스케일 효과 */
+@keyframes gentleScale {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+/* 이미지 밝기 효과 */
+@keyframes brighten {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.1);
+  }
+}
+
+.hover\:brightness-110:hover {
+  filter: brightness(1.1);
+}
+
+/* 회전 애니메이션 */
+@keyframes spin180 {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+.hover\:rotate-180:hover {
+  animation: spin180 0.3s ease-in-out;
+}
+
 /* 유리 효과 */
 .glass-effect {
   backdrop-filter: blur(20px);
