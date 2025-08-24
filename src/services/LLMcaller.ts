@@ -11,6 +11,7 @@ import type { Character } from "../entities/character/types";
 import { buildGeminiApiPayload, buildClaudeApiPayload } from "./promptBuilder";
 import type { ApiConfig, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
+import { replacePlaceholders } from "../utils/placeholder";
 
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
@@ -77,7 +78,7 @@ async function callApi(
     userDescription?: string
 ): Promise<ChatResponse> {
     const { apiProvider } = settings;
-    let payload: string|object = '';
+    let payload: string | object = '';
 
     switch (apiProvider) {
         case 'gemini':
@@ -88,7 +89,18 @@ async function callApi(
             payload = buildClaudeApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput);
             break;
     }
-    
+
+    const placeholders = {
+        user: settings.userName,
+        char: character.name,
+    };
+
+    if (typeof payload === 'string') {
+        payload = replacePlaceholders(payload, placeholders);
+    } else if (payload && typeof payload === 'object') {
+        const replaced = replacePlaceholders(JSON.stringify(payload), placeholders);
+        payload = JSON.parse(replaced);
+    }
 
     let url: string;
     let headers: HeadersInit;
@@ -204,9 +216,7 @@ async function LLMSend(
         const groupPrompt = settings.prompts.main.group_chat_context;
         const groupContext = groupPrompt
             .replace(/{participantCount}/g, (allParticipants.length + 1).toString())
-            .replace(/{userName}/g, settings.userName)
             .replace(/{participantDetails}/g, participantDetails)
-            .replace(/{characterName}/g, char.name);
         finalUserDescription += '\n' + groupContext;
     } else if (room.type === 'Open' && allParticipants) {
         const otherParticipants = allParticipants.filter(p => p.id !== char.id);
@@ -217,9 +227,7 @@ async function LLMSend(
 
         const openPrompt = settings.prompts.main.open_chat_context;
         const openContext = openPrompt
-            .replace(/{userName}/g, settings.userName)
             .replace(/{participantDetails}/g, participantDetails)
-            .replace(/{characterName}/g, char.name);
         finalUserDescription += '\n' + openContext;
     }
 

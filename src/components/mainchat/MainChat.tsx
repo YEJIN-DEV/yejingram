@@ -13,6 +13,8 @@ import { SendMessage, SendGroupChatMessage, SendOpenChatMessage } from '../../se
 import type { Sticker } from '../../entities/character/types';
 import { StickerPanel } from './StickerPanel';
 import type { ImageToSend } from '../../entities/message/types';
+import { selectAllSettings } from '../../entities/setting/selectors';
+import { replacePlaceholders } from '../../utils/placeholder';
 
 interface MainChatProps {
   room: Room | null;
@@ -46,6 +48,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   const memberChars = useSelector((state: RootState) =>
     room?.memberIds.map(id => selectCharacterById(state, id))
   );
+  const settings = useSelector(selectAllSettings);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -169,11 +172,15 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
 
     const messageType = stickerToSend ? 'STICKER' : imageToSend ? 'IMAGE' : 'TEXT';
 
+    const currentCharName = room.type === 'Direct' ? (character?.name || undefined) : undefined;
+    const currentUserName = settings.userName?.trim();
+    const processedText = text ? replacePlaceholders(text, { user: currentUserName, char: currentCharName }) : '';
+
     const userMessage = {
       id: Math.random().toString(36).slice(2),
       roomId: room.id,
       authorId: 0, // Assuming current user ID is '0'
-      content: text,
+      content: processedText,
       createdAt: new Date().toISOString(),
       type: messageType as 'TEXT' | 'STICKER' | 'IMAGE',
       sticker: stickerToSend || undefined,

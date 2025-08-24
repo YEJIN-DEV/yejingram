@@ -56,7 +56,7 @@ function buildGuidelinesPrompt(prompts: any, character: Character, messages: Mes
         sticker_usage?.replace('{availableStickers}', availableStickers) || ''
     ].join('\n\n');
 
-    return guidelines.replace(/{character.name}/g, character.name).replace('{timeContext}', buildTimeContext(messages, isProactive));
+    return guidelines.replace('{timeContext}', buildTimeContext(messages, isProactive));
 }
 
 function buildActiveLorebookSection(character: Character, messages: Message[]): string {
@@ -92,42 +92,43 @@ function buildMasterPrompt(
 ${prompts.main.system_rules}
 
 ## Role and Objective of Assistant
-${prompts.main.role_and_objective.replace(/{character.name}/g, character.name)}
+${prompts.main.role_and_objective}
 
 ## Informations
-The information is composed of the settings and memories of ${character.name}, <user>, and the worldview in which they live.
+The information is composed of the settings and memories of {{char}}, {{user}}, and the worldview in which they live.
 
 # User Profile
-Information of <user> that user will play.
-- User's Name: ${userName || 'Not specified. You can ask.'}
-- User's Description: ${userDescription || 'No specific information provided about the user.'}
+Information of < user > that user will play.
+- User's Name: ${userName || 'Not specified.You can ask.'}
+    - User's Description: ${userDescription || 'No specific information provided about the user.'}
 
 # Character Profile & Additional Information
-This is the information about the character, ${character.name}, you must act.
-Settings of Worldview, features, and Memories of ${character.name} and <user>, etc.
-${character.prompt}
+This is the information about the character, {{char}}, you must act.
+Settings of Worldview, features, and Memories of {{char}} and {{user}}, etc.
+    ${character.prompt}
 
 # Memory
-This is a list of key memories the character has. Use them to maintain consistency and recall past events.
-${character.memories && character.memories.length > 0 ? character.memories.map(mem => `- ${mem}`).join('\n') : 'No specific memories recorded yet.'}
+This is a list of key memories the character has.Use them to maintain consistency and recall past events.
+    ${character.memories && character.memories.length > 0 ? character.memories.map(mem => `- ${mem}`).join('\n') : 'No specific memories recorded yet.'}
 
 ${authorsNote ? `# Author's Note
 Treat the following as high-priority memory for this chat room. It provides meta-guidance and context that should subtly influence behavior and tone without being quoted explicitly.
 - ${authorsNote}
-` : ''}
+` : ''
+        }
 
 ${lorebookSection}
 
-# Character Personality Sliders (1=Left, 10=Right)
-- 응답시간 (${character.responseTime}/10): "거의 즉시" <-> "전화를 걸어야함". This is the character's general speed to check the user's message. This MUST affect your 'reactionDelay' value. A low value means very fast replies (e.g., 50-2000ms). A high value means very slow replies (e.g., 30000-180000ms), as if busy.
-- 생각 시간 (${character.thinkingTime}/10): "사색에 잠김" <-> "메시지를 보내고 생각". This is how long the character thinks before sending messages. This MUST affect the 'delay' value in the 'messages' array. A low value (e.g., 1) means longer, more thoughtful delays (e.g., 30000-90000ms, as if deep in thought). A high value (e.g., 10) means short, impulsive delays (e.g., 500-2000ms, as if sending messages without much thought).
-- 반응성 (${character.reactivity}/10): "활발한 JK 갸루" <-> "무뚝뚝함". This is how actively the character engages in conversation. This affects your energy level, engagement, and tendency to start a conversation (proactive chat).
-- 어조/말투 (${character.tone}/10): "공손하고 예의바름" <-> "싸가지 없음". This is the character's politeness and language style. A low value means polite and gentle. A high value means rude and blunt.
-*These are general tendencies. Adapt to the situation.*
+# Character Personality Sliders(1 = Left, 10 = Right)
+- 응답시간(${character.responseTime} / 10): "거의 즉시" < -> "전화를 걸어야함".This is the character's general speed to check the user's message.This MUST affect your 'reactionDelay' value.A low value means very fast replies(e.g., 50 - 2000ms).A high value means very slow replies(e.g., 30000 - 180000ms), as if busy.
+- 생각 시간(${character.thinkingTime} / 10): "사색에 잠김" < -> "메시지를 보내고 생각".This is how long the character thinks before sending messages.This MUST affect the 'delay' value in the 'messages' array.A low value(e.g., 1) means longer, more thoughtful delays(e.g., 30000 - 90000ms, as if deep in thought).A high value(e.g., 10) means short, impulsive delays(e.g., 500 - 2000ms, as if sending messages without much thought).
+- 반응성(${character.reactivity} / 10): "활발한 JK 갸루" < -> "무뚝뚝함".This is how actively the character engages in conversation.This affects your energy level, engagement, and tendency to start a conversation(proactive chat).
+- 어조 / 말투(${character.tone} / 10): "공손하고 예의바름" < -> "싸가지 없음".This is the character's politeness and language style. A low value means polite and gentle. A high value means rude and blunt.
+* These are general tendencies.Adapt to the situation.*
 
-${character.name} has access to the following stickers that can be used to express emotions and reactions:
+{{char}} has access to the following stickers that can be used to express emotions and reactions:
 
-I read all Informations carefully. First, let's remind my Guidelines again.
+I read all Informations carefully.First, let's remind my Guidelines again.
 
 [## Guidelines]
 ${guidelines}
@@ -159,7 +160,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean) {
                 if (lastText == "(No content provided)") {
                     msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄]`;
                 } else {
-                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄] ` + lastText;
+                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄]` + lastText;
                 }
             }
         }
@@ -263,7 +264,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean) {
         if (msg.image) {
             const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
             if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
-                throw new Error(`Unsupported image type: ${mimeType}`);
+                throw new Error(`Unsupported image type: ${mimeType} `);
             }
             const base64Data = msg.image.dataUrl.split(',')[1];
             if (mimeType && base64Data) {
@@ -284,7 +285,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean) {
                 if (lastText == "(No content provided)") {
                     msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄]`;
                 } else {
-                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄] ` + lastText;
+                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄]` + lastText;
                 }
             }
         }
