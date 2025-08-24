@@ -13,13 +13,13 @@ interface SidebarProps {
     setRoomId: (id: string | null) => void;
     roomId: string | null;
     openSettingsModal: () => void;
-    openCharacterModal: () => void;
+    toggleCharacterPanel: () => void;
     openCreateGroupChatModal: () => void;
     openCreateOpenChatModal: () => void;
     openEditGroupChatModal: () => void;
 }
 
-function Sidebar({ setRoomId, roomId, openSettingsModal, openCharacterModal, openCreateGroupChatModal, openCreateOpenChatModal, openEditGroupChatModal }: SidebarProps) {
+function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, openCreateGroupChatModal, openCreateOpenChatModal, openEditGroupChatModal }: SidebarProps) {
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const rooms = useSelector(selectAllRooms);
@@ -34,7 +34,7 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, openCharacterModal, ope
 
     const handleNewCharacter = () => {
         dispatch(charactersActions.setEditingCharacterId(null));
-        openCharacterModal();
+        toggleCharacterPanel();
     }
 
     return (
@@ -79,7 +79,7 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, openCharacterModal, ope
                             character={char}
                             setRoomId={setRoomId}
                             selectedRoomId={roomId}
-                            openCharacterModal={openCharacterModal}
+                            toggleCharacterPanel={toggleCharacterPanel}
                         />
                     ))}
                 </div>

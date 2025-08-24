@@ -4,7 +4,7 @@ import Sidebar from './components/sidebar/Sidebar'
 import MainChat from './components/mainchat/MainChat'
 import SettingsModal from './components/settings/SettingsModal'
 import PromptModal from './components/settings/PromptModal'
-import CharacterModal from './components/character/CharacterModal'
+import CharacterPanel from './components/character/CharacterPanel'
 import CreateGroupChatModal from './components/modals/CreateGroupChatModal'
 import CreateOpenChatModal from './components/modals/CreateOpenChatModal'
 import EditGroupChatModal from './components/modals/EditGroupChatModal'
@@ -22,7 +22,7 @@ function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
-  const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
+  const [isCharacterPanelOpen, setIsCharacterPanelOpen] = useState(false);
   const [isCreateGroupChatModalOpen, setIsCreateGroupChatModalOpen] = useState(false);
   const [isCreateOpenChatModalOpen, setIsCreateOpenChatModalOpen] = useState(false);
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
@@ -33,6 +33,10 @@ function App() {
 
   const toggleMobileSidebar = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
+  const toggleCharacterPanel = () => {
+    setIsCharacterPanelOpen(!isCharacterPanelOpen);
   };
 
   return (
@@ -51,13 +55,15 @@ function App() {
               setRoomId={setRoomId}
               roomId={roomId}
               openSettingsModal={() => setIsSettingsModalOpen(true)}
-              openCharacterModal={() => setIsCharacterModalOpen(true)}
+              toggleCharacterPanel={toggleCharacterPanel}
               openCreateGroupChatModal={() => setIsCreateGroupChatModalOpen(true)}
               openCreateOpenChatModal={() => setIsCreateOpenChatModalOpen(true)}
               openEditGroupChatModal={() => setIsEditGroupChatModalOpen(true)}
             />
           </div>
         </aside>
+        
+        {isCharacterPanelOpen && <CharacterPanel />}
 
         <main id="main-chat" className="flex-1 flex flex-col bg-gray-950">
           <MainChat room={room} onToggleMobileSidebar={toggleMobileSidebar} />
@@ -69,10 +75,6 @@ function App() {
           <PromptModal
             isOpen={isPromptModalOpen}
             onClose={() => setIsPromptModalOpen(false)}
-          />
-          <CharacterModal
-            isOpen={isCharacterModalOpen}
-            onClose={() => setIsCharacterModalOpen(false)}
           />
           <CreateGroupChatModal
             isOpen={isCreateGroupChatModalOpen}
