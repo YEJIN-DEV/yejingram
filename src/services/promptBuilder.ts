@@ -6,6 +6,7 @@ import type { GeminiApiPayload, ClaudeApiPayload, OpenAIApiPayload } from "./typ
 import { filterActiveLores } from "../entities/lorebook/match";
 import { getActiveRoomId } from "../utils/activeRoomTracker";
 import { selectRoomById } from "../entities/room/selectors";
+import { selectCharacterById } from "../entities/character/selectors";
 
 const TEMPERATURE = 1.25;
 const TOP_K = 40;
@@ -78,7 +79,8 @@ function buildMasterPrompt(
     character: Character,
     messages: Message[],
     isProactive: boolean,
-    useStructuredOutput: boolean
+    useStructuredOutput: boolean,
+    extraSystemInstruction?: string
 ): string {
     const prompts = selectPrompts(store.getState());
     const guidelines = buildGuidelinesPrompt(prompts, character, messages, isProactive, useStructuredOutput);
@@ -132,14 +134,46 @@ I read all Informations carefully.First, let's remind my Guidelines again.
 
 [## Guidelines]
 ${guidelines}
+
+## Conversation Rules (Anti-echo and Flow Control)
+- Never repeat or closely paraphrase the last message from the user or other characters. Produce novel content that moves the conversation forward.
+- If the previous message is from another character, do not mirror, summarize, or say the same thing in different words. React in your own voice and add new value.
+- Prefer 1-2 concise sentences unless depth is required. Include at least one of: ask a follow-up, add a new detail, suggest an action, or express a brief emotion.
+- Do not include speaker tags like "[Name]", "[From: ...]", "User:", "{{char}}:", or any name followed by a colon in your output; just reply as {{char}}.
+- Any bracketed metadata such as [From: ...] you see in the history is meta-information for you only. Never quote, mention, or replicate it in your answer.
+- Do not start your message with '[' or 'From:' or a speaker name. If your draft contains such a prefix, remove it before finalizing.
+- If you have nothing new to add, ask a short, relevant question instead of echoing.
+
+## Output Format (Strict)
+- Output plain text only, as {{char}}. No speaker tags, no bracketed metadata, no role labels.
+- Avoid square brackets [] in your output unless they are in-character content required by the story. Prefer parentheses () for brief asides if needed.
+- If you accidentally included any of the forbidden prefixes or tags, silently rewrite the line to comply before final output.
+
+${extraSystemInstruction ? `## Extra Instruction\n${extraSystemInstruction}` : ''}
 `;
 }
 
-function buildGeminiContents(messages: Message[], isProactive: boolean) {
+function buildGeminiContents(messages: Message[], isProactive: boolean, userName: string) {
+    const state = store.getState();
+    const activeRoomId = getActiveRoomId();
+    const room = activeRoomId ? selectRoomById(state, activeRoomId) : null;
+    const useSpeakerTag = room?.type !== 'Direct';
     const contents = messages.map(msg => {
         const role = msg.authorId === 0 ? "user" : "model";
+        const speaker = msg.authorId === 0
+            ? (userName || 'User')
+            : (selectCharacterById(state, msg.authorId)?.name || `Char#${msg.authorId}`);
+
+        const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
+        const baseText = msg.content ? `${header}${msg.content}` : (useSpeakerTag ? header : '');
+
         const parts: ({ text: string; } |
         { inline_data: { mime_type: string; data: string; }; })[] = [{ text: msg.content }];
+
+        // Replace first text part with speaker-tagged text
+        if (parts.length > 0 && 'text' in parts[0]) {
+            (parts[0] as any).text = baseText;
+        }
 
         if (msg.image) {
             const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
@@ -155,14 +189,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean) {
         }
 
         if (msg.sticker) {
-            if ('text' in msg) {
-                const lastText = msg.text;
-                if (lastText == "(No content provided)") {
-                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄]`;
-                } else {
-                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄]` + lastText;
-                }
-            }
+            parts.push({ text: `${useSpeakerTag ? header : ''}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
         }
         return { role, parts };
     });
@@ -184,10 +211,11 @@ export function buildGeminiApiPayload(
     character: Character,
     messages: Message[],
     isProactive: boolean,
-    useStructuredOutput: boolean
+    useStructuredOutput: boolean,
+    extraSystemInstruction?: string
 ): GeminiApiPayload {
-    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput);
-    const contents = buildGeminiContents(messages, isProactive);
+    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, extraSystemInstruction);
+    const contents = buildGeminiContents(messages, isProactive, userName);
 
     const generationConfig: any = {
         temperature: TEMPERATURE,
@@ -254,12 +282,20 @@ export function buildGeminiApiPayload(
     };
 }
 
-function buildClaudeContents(messages: Message[], isProactive: boolean) {
+function buildClaudeContents(messages: Message[], isProactive: boolean, userName: string) {
+    const state = store.getState();
+    const activeRoomId = getActiveRoomId();
+    const room = activeRoomId ? selectRoomById(state, activeRoomId) : null;
+    const useSpeakerTag = room?.type !== 'Direct';
     const messagesPart = messages.map(msg => {
         const role = msg.authorId === 0 ? "user" : "assistant";
+        const speaker = msg.authorId === 0
+            ? (userName || 'User')
+            : (selectCharacterById(state, msg.authorId)?.name || `Char#${msg.authorId}`);
+        const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
         const content: ({ type: string; text: string; } |
         { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[]
-            = [{ type: 'text', text: msg.content }];
+            = [{ type: 'text', text: msg.content ? `${header}${msg.content}` : (useSpeakerTag ? header : '') }];
 
         if (msg.image) {
             const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
@@ -280,14 +316,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean) {
         }
 
         if (msg.sticker) {
-            if ('text' in msg) {
-                const lastText = msg.text;
-                if (lastText == "(No content provided)") {
-                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄]`;
-                } else {
-                    msg.text = `[사용자가 "${msg.sticker}" 스티커를 보냄]` + lastText;
-                }
-            }
+            content.push({ type: 'text', text: `${useSpeakerTag ? header : ''}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
         }
 
         return { role, content };
@@ -313,10 +342,11 @@ export function buildClaudeApiPayload(
     character: Character,
     messages: Message[],
     isProactive: boolean,
-    useStructuredOutput: boolean
+    useStructuredOutput: boolean,
+    extraSystemInstruction?: string
 ): ClaudeApiPayload {
-    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput);
-    const contents = buildClaudeContents(messages, isProactive);
+    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, extraSystemInstruction);
+    const contents = buildClaudeContents(messages, isProactive, userName);
 
     return {
         model: model,
@@ -333,11 +363,20 @@ export function buildClaudeApiPayload(
 }
 
 // OpenAI (Chat Completions) payload builders
-function buildOpenAIContents(messages: Message[], isProactive: boolean) {
+function buildOpenAIContents(messages: Message[], isProactive: boolean, userName: string) {
+    const state = store.getState();
+    const activeRoomId = getActiveRoomId();
+    const room = activeRoomId ? selectRoomById(state, activeRoomId) : null;
+    const useSpeakerTag = room?.type !== 'Direct';
     const items = messages.map(msg => {
         const role = msg.authorId === 0 ? 'user' : 'assistant';
 
-        let text = msg.content ?? '';
+        const speaker = msg.authorId === 0
+            ? (userName || 'User')
+            : (selectCharacterById(state, msg.authorId)?.name || `Char#${msg.authorId}`);
+        const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
+
+        let text = (msg.content ? `${header}${msg.content}` : (useSpeakerTag ? header : ''));
         if (msg.sticker) {
             text = `[사용자가 "${msg.sticker}" 스티커를 보냄]` + (text ? ` ${text}` : '');
         }
@@ -371,10 +410,11 @@ export function buildOpenAIApiPayload(
     character: Character,
     messages: Message[],
     isProactive: boolean,
-    useStructuredOutput: boolean
+    useStructuredOutput: boolean,
+    extraSystemInstruction?: string
 ): OpenAIApiPayload {
-    const systemPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput);
-    const history = buildOpenAIContents(messages, isProactive);
+    const systemPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, extraSystemInstruction);
+    const history = buildOpenAIContents(messages, isProactive, userName);
 
     const payload: OpenAIApiPayload = {
         model,
