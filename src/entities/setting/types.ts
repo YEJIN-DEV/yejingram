@@ -8,6 +8,10 @@ export interface ApiConfig {
     projectId?: string;
     location?: string;
     accessToken?: string;
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    topK?: number;
 }
 
 export interface MainPrompts {

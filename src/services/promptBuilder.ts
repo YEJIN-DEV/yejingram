@@ -6,10 +6,12 @@ import type { GeminiApiPayload, ClaudeApiPayload, OpenAIApiPayload } from "./typ
 import { filterActiveLores } from "../entities/lorebook/match";
 import { getActiveRoomId } from "../utils/activeRoomTracker";
 import { selectRoomById } from "../entities/room/selectors";
+import { selectCurrentApiConfig } from "../entities/setting/selectors";
 
-const TEMPERATURE = 1.25;
-const TOP_K = 40;
-const TOP_P = 0.95;
+const TEMPERATURE = selectCurrentApiConfig(store.getState()).temperature;
+const MAX_TOKENS = selectCurrentApiConfig(store.getState()).maxTokens;
+const TOP_K = selectCurrentApiConfig(store.getState()).topK;
+const TOP_P = selectCurrentApiConfig(store.getState()).topP;
 
 function buildTimeContext(messages: Message[], isProactive: boolean) {
     const currentTime = new Date();
@@ -325,10 +327,10 @@ export function buildClaudeApiPayload(
             type: "text",
             text: masterPrompt
         }],
-        temperature: 1,
+        temperature: TEMPERATURE,
         top_k: TOP_K,
         top_p: TOP_P,
-        max_tokens: 8096,
+        max_tokens: MAX_TOKENS,
     };
 }
 

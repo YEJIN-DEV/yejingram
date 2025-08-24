@@ -9,6 +9,7 @@ import { selectAllCharacters } from '../../entities/character/selectors';
 import type { GroupChatSettings, ParticipantSettings } from '../../entities/room/types';
 import type { Character } from '../../entities/character/types';
 import { settingsActions } from '../../entities/setting/slice';
+import { Avatar } from '../../utils/Avatar';
 
 interface EditGroupChatModalProps {
     isOpen: boolean;
@@ -105,17 +106,24 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                         <h3 className="text-lg font-semibold text-gray-900">개별 캐릭터 설정</h3>
                         <div className="space-y-4">
                             {participants.map(participant => (
-                                <div key={participant.id} className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                    <h4 className="font-medium text-gray-900 mb-3">{participant.name}</h4>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-3">
-                                            <input type="checkbox" id={`active-${participant.id}`}
-                                                checked={settings.participantSettings[participant.id]?.isActive !== false}
-                                                onChange={e => handleParticipantSettingChange(participant.id, 'isActive', e.target.checked)}
-                                                className="w-4 h-4 text-blue-500 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2" />
-                                            <label htmlFor={`active-${participant.id}`} className="text-sm text-gray-700">응답 활성화</label>
+                                <div className="space-y-2 max-h-60 overflow-y-auto">
+                                    <label key={participant.id} className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors border border-gray-100">
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <Avatar char={participant} size="md" />
+                                            <div>
+                                                <div className="font-medium text-gray-900">{participant.name}</div>
+                                                {/* <div className="text-sm text-gray-500 truncate">{char.description}</div> */}
+                                            </div>
                                         </div>
-                                    </div>
+                                        <input
+                                            id={`active-${participant.id}`}
+                                            type="checkbox"
+                                            checked={settings.participantSettings[participant.id]?.isActive !== false}
+                                            onChange={e => handleParticipantSettingChange(participant.id, 'isActive', e.target.checked)}
+                                            className="group-chat-participant mr-3 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
+                                        />
+                                        응답 활성화
+                                    </label>
                                 </div>
                             ))}
                         </div>

@@ -3,9 +3,9 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { SettingsState, ApiProvider, ApiConfig, Prompts } from './types';
 
 export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
-    gemini: { apiKey: '', model: 'gemini-2.5-pro', customModels: [] },
-    vertexai: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], projectId: '', location: 'global', accessToken: '' },
-    claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [] },
+    gemini: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], temperature: 1.25, topK: 40, topP: 0.95 },
+    vertexai: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], projectId: '', location: 'global', accessToken: '', temperature: 1.25, topK: 40, topP: 0.95  },
+    claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [], temperature: 1, topK: 40, topP: 0.95, maxTokens: 8192 },
     openai: { apiKey: '', model: 'gpt-5', customModels: [] },
     grok: { apiKey: '', model: 'grok-4', customModels: [] },
     openrouter: { apiKey: '', model: '', customModels: [] },
