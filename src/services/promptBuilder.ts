@@ -3,6 +3,7 @@ import type { Character } from "../entities/character/types";
 import type { Message } from "../entities/message/types";
 import { selectPrompts } from "../entities/setting/selectors";
 import type { GeminiApiPayload, ClaudeApiPayload } from "./type";
+import { filterActiveLores } from "../entities/lorebook/match";
 
 const TEMPERATURE = 1.25;
 const TOP_K = 40;
@@ -56,6 +57,19 @@ function buildGuidelinesPrompt(prompts: any, character: Character, messages: Mes
     return guidelines.replace(/{character.name}/g, character.name).replace('{timeContext}', buildTimeContext(messages, isProactive));
 }
 
+function buildActiveLorebookSection(character: Character, messages: Message[]): string {
+    const textCorpus = messages.map(m => m.content || "").join("\n");
+    const active = filterActiveLores(character.lorebook || [], textCorpus);
+    if (active.length === 0) {
+        return '';
+    }
+    const lines = active
+        .sort((a, b) => a.order - b.order)
+        .map(l => `## Lore: ${l.prompt}`)
+        .join("\n\n");
+    return `# Lorebook (Active)\n${lines}`;
+}
+
 function buildMasterPrompt(
     userName: string,
     userDescription: string,
@@ -66,6 +80,7 @@ function buildMasterPrompt(
 ): string {
     const prompts = selectPrompts(store.getState());
     const guidelines = buildGuidelinesPrompt(prompts, character, messages, isProactive, useStructuredOutput);
+    const lorebookSection = buildActiveLorebookSection(character, messages);
 
     return `# System Rules
 ${prompts.main.system_rules}
@@ -89,6 +104,8 @@ ${character.prompt}
 # Memory
 This is a list of key memories the character has. Use them to maintain consistency and recall past events.
 ${character.memories && character.memories.length > 0 ? character.memories.map(mem => `- ${mem}`).join('\n') : 'No specific memories recorded yet.'}
+
+${lorebookSection}
 
 # Character Personality Sliders (1=Left, 10=Right)
 - 응답시간 (${character.responseTime}/10): "거의 즉시" <-> "전화를 걸어야함". This is the character's general speed to check the user's message. This MUST affect your 'reactionDelay' value. A low value means very fast replies (e.g., 50-2000ms). A high value means very slow replies (e.g., 30000-180000ms), as if busy.
@@ -228,9 +245,9 @@ export function buildGeminiApiPayload(
 function buildClaudeContents(messages: Message[], isProactive: boolean) {
     const messagesPart = messages.map(msg => {
         const role = msg.authorId === 0 ? "user" : "assistant";
-        const content: ({type: string; text: string;} | 
-        {type: 'image'; source: {data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64';};})[]
-        = [{ type: 'text', text: msg.content }];
+        const content: ({ type: string; text: string; } |
+        { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[]
+            = [{ type: 'text', text: msg.content }];
 
         if (msg.image) {
             const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];

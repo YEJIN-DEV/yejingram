@@ -9,6 +9,8 @@ import { AttributeSliders } from './AttributeSliders';
 import { MemoryManager } from './MemoryManager';
 import { StickerManager } from './StickerManager';
 import { decodeText, encodeText } from '../../utils/imageStego';
+import { LorebookEditor } from './LorebookEditor';
+import type { Lore } from '../../entities/lorebook/types';
 
 
 const personaCardToCharacter = (card: PersonaChatAppCharacterCard): Character => {
@@ -53,7 +55,7 @@ function CharacterPanel() {
     const proactiveChatEnabled = useSelector((state: RootState) => state.settings.proactiveChatEnabled)
 
     const [char, setChar] = useState<Character>(newCharacterDefault);
-    const [activeTab, setActiveTab] = useState<'basicInfo' | 'backup'>('basicInfo');
+    const [activeTab, setActiveTab] = useState<'basicInfo' | 'lorebook' | 'backup'>('basicInfo');
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
     const isNew = !editingId;
@@ -97,6 +99,10 @@ function CharacterPanel() {
 
     const handleStickersChange = (stickers: Sticker[]) => {
         setChar(prev => ({ ...prev, stickers }));
+    };
+
+    const handleLoresChange = (lores: Lore[]) => {
+        setChar(prev => ({ ...prev, lorebook: lores }));
     };
 
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,6 +190,12 @@ function CharacterPanel() {
                     기본정보
                 </button>
                 <button
+                    className={`py-3 px-6 text-sm font-medium ${activeTab === 'lorebook' ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'}`}
+                    onClick={() => setActiveTab('lorebook')}
+                >
+                    로어북
+                </button>
+                <button
                     className={`py-3 px-6 text-sm font-medium ${activeTab === 'backup' ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'}`}
                     onClick={() => setActiveTab('backup')}
                 >
@@ -264,6 +276,11 @@ function CharacterPanel() {
                             </div>
                         </details>
                     </>
+                )}
+                {activeTab === 'lorebook' && (
+                    <div className="space-y-6">
+                        <LorebookEditor lores={char.lorebook || []} onChange={handleLoresChange} />
+                    </div>
                 )}
                 {activeTab === 'backup' && (
                     <div className="p-6 space-y-6 overflow-y-auto">

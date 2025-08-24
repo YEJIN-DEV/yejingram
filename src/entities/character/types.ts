@@ -1,3 +1,5 @@
+import type { Lore } from "../lorebook/types";
+
 export interface Sticker {
     id: string;
     name: string;
@@ -19,6 +21,7 @@ export interface Character {
     messageCountSinceLastSummary: number
     media: string[]
     stickers: Sticker[]
+    lorebook?: Lore[]
 }
 
 export interface PersonaChatAppCharacterCard {
@@ -47,7 +50,8 @@ export const defaultCharacters = [
         proactiveEnabled: true,
         messageCountSinceLastSummary: 0,
         media: [], // Add media storage for images
-        stickers: [] // Add sticker storage for character stickers
+        stickers: [], // Add sticker storage for character stickers
+        lorebook: [],
     }
 ]
 
@@ -65,4 +69,5 @@ export const newCharacterDefault: Character = {
     messageCountSinceLastSummary: 0,
     media: [],
     stickers: [],
+    lorebook: [],
 };
