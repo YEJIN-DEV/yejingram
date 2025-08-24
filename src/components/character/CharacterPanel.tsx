@@ -172,7 +172,7 @@ function CharacterPanel() {
     };
 
     return (
-        <div className="bg-gray-800 min-w-96 h-full flex flex-col">
+        <div className="bg-gray-800 w-96 h-full flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-gray-700 shrink-0">
                 <h3 className="text-xl font-semibold text-white">{isNew ? '연락처 추가' : '연락처 수정'}</h3>
             </div>
