@@ -127,16 +127,16 @@ const MessageList: React.FC<MessageListProps> = ({
                       <img src={msg.content} className="max-w-xs max-h-80 rounded-2xl object-cover mb-2 cursor-pointer" onClick={() => window.open(msg.content)} />
                       <textarea
                         data-id={msg.id.toString()}
-                        className="edit-message-textarea w-full px-3 py-2 bg-gray-100 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm resize-none"
-                        rows={2}
+                        className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm resize-y min-h-32 md:min-h-40"
+                        rows={4}
                         defaultValue={msg.content}
                       ></textarea>
                     </>
                   ) : (
                     <textarea
                       data-id={msg.id.toString()}
-                      className="edit-message-textarea w-full px-3 py-2 bg-gray-100 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm resize-none"
-                      rows={3}
+                      className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm resize-y min-h-40 md:min-h-48"
+                      rows={5}
                       defaultValue={msg.content || ''}
                     ></textarea>
                   )}
@@ -257,20 +257,20 @@ const MessageList: React.FC<MessageListProps> = ({
               )}
               {msg.type !== 'SYSTEM' && (
                 <div className={`group flex w-full mb-2 md:mb-3 ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`flex items-end max-w-[75%] ${isMe ? 'flex-row-reverse' : ''} gap-3 md:gap-4`}>
+                  <div className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-3 md:gap-4 ${editingMessageId === msg.id ? 'flex-1 w-full max-w-none' : 'max-w-[75%]'}`}>
 
                     {/* Avatar - only for non-me messages at start of group */}
-                    {!isMe && showSenderInfo && senderCharacter && (
+                    {!isMe && showSenderInfo && senderCharacter && editingMessageId !== msg.id && (
                       <div className="shrink-0 w-8 h-8 mb-1">
                         <Avatar char={senderCharacter} size="sm" />
                       </div>
                     )}
-                    {!isMe && !showSenderInfo && (
+                    {!isMe && !showSenderInfo && editingMessageId !== msg.id && (
                       <div className="shrink-0 w-8 h-8"></div>
                     )}
 
                     {/* Message Content */}
-                    <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                    <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}>
                       {/* Sender name for group messages */}
                       {showSenderInfo && !isMe && (
                         <p className="text-xs text-gray-500 mb-1 px-1">
@@ -279,8 +279,8 @@ const MessageList: React.FC<MessageListProps> = ({
                       )}
 
                       {/* Message bubble with hover controls */}
-                      <div className={`relative group/message ${isMe ? 'flex-row-reverse' : ''} flex items-end`}>
-                        <div className="message-content-wrapper">
+                      <div className={`relative group/message ${isMe ? 'flex-row-reverse' : ''} flex items-end ${editingMessageId === msg.id ? 'w-full' : ''}`}>
+                        <div className={`message-content-wrapper ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}>
                           {renderMessageContent()}
                         </div>
 
