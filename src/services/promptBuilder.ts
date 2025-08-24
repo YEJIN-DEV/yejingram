@@ -336,11 +336,26 @@ export function buildClaudeApiPayload(
 function buildOpenAIContents(messages: Message[], isProactive: boolean) {
     const items = messages.map(msg => {
         const role = msg.authorId === 0 ? 'user' : 'assistant';
-        // For now, only text is supported; stickers/images are summarized as text like other builders do
-        return {
-            role,
-            content: typeof msg.content === 'string' ? msg.content : String(msg.content)
-        };
+
+        let text = msg.content ?? '';
+        if (msg.sticker) {
+            text = `[사용자가 "${msg.sticker}" 스티커를 보냄]` + (text ? ` ${text}` : '');
+        }
+
+        const parts: Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }> = [];
+        if (text) {
+            parts.push({ type: 'text', text });
+        }
+        if (msg.image?.dataUrl) {
+            parts.push({ type: 'image_url', image_url: { url: msg.image.dataUrl } });
+        }
+
+        // Use array content when we have image or want multimodal; otherwise plain string
+        const content = parts.length > 1 || (parts.length === 1 && 'image_url' in parts[0])
+            ? parts
+            : (parts[0]?.type === 'text' ? parts[0].text : '');
+
+        return { role, content };
     });
 
     if (isProactive && items.length === 0) {
