@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { SettingsState, ApiConfig } from '../../entities/setting/types';
-import { Key, Cpu, Link, Plus, X, Briefcase, Globe, BrainCog, Thermometer, Hash, Percent, ArrowUpToLine } from 'lucide-react';
+import { Key, Cpu, Link, Plus, X, Briefcase, Globe, Thermometer, Hash, Percent, ArrowUpToLine } from 'lucide-react';
 import { initialApiConfigs } from '../../entities/setting/slice';
 
 interface ProviderSettingsProps {
