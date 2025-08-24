@@ -19,6 +19,27 @@ const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{p
 const CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1/messages/";
 const OPENAI_API_BASE_URL = "https://api.openai.com/v1/chat/completions";
 
+// Remove leading speaker/meta tags like [From: XXX] or [Name: XXX] from model output
+function sanitizeOutputContent(text?: string): string | undefined {
+    if (!text) return text;
+    const TAG = /\[\s*(?:from|name)\s*:[^\]]*]/gi;
+    const PUNCT_TAG = /([.!?…。！？]["')\]]?)[ \t]*\[\s*(?:from|name)\s*:[^\]]*]\s*/gi;
+
+    const clean = (line: string) => {
+        let s = line.replace(/^(?:\s*\[\s*(?:from|name)\s*:[^\]]*]\s*)+/i, '');
+        let prev: string;
+        do {
+            prev = s;
+            s = s.replace(PUNCT_TAG, '$1 ').replace(TAG, '');
+        } while (s !== prev);
+        return s.replace(/\s{2,}/g, ' ').replace(/^\s+/, '');
+    };
+
+    let out = text.split(/\r?\n/).map(clean).join('\n').replace(/^\s+/, '');
+    out = out.replace(/([.!?…。！？]+)(["')\]]*)(\s+)(?=[A-Za-z가-힣0-9“"'[\(])/gu, '$1$2\n');
+    return out;
+}
+
 async function handleApiResponse(
     res: ChatResponse,
     room: Room,
@@ -77,7 +98,8 @@ async function callApi(
     character: Character,
     messages: Message[],
     isProactive: boolean,
-    userDescription?: string
+    userDescription?: string,
+    extraSystemInstruction?: string
 ): Promise<ChatResponse> {
     const { apiProvider } = settings;
     let payload: string | object = '';
@@ -85,14 +107,14 @@ async function callApi(
     switch (apiProvider) {
         case 'gemini':
         case 'vertexai':
-            payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput);
+            payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
             break;
         case 'claude':
-            payload = buildClaudeApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput);
+            payload = buildClaudeApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
             break;
         case 'openai':
         case 'customOpenAI':
-            payload = buildOpenAIApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput);
+            payload = buildOpenAIApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
             break;
     }
 
@@ -166,8 +188,8 @@ async function callApi(
 function parseApiResponse(data: any, settings: SettingsState, messages: Message[]): ChatResponse {
     const apiProvider = settings.apiProvider;
 
-    function processApiMessage(targetData: any): ChatResponse {
-        const rawResponseText = targetData;
+    function processApiMessage(targetData: string): ChatResponse {
+        const rawResponseText = sanitizeOutputContent(targetData) ?? '';
         if (settings.useStructuredOutput) {
             const parsed = JSON.parse(rawResponseText);
             parsed.reactionDelay = Math.max(0, parsed.reactionDelay || 0);
@@ -253,16 +275,82 @@ async function LLMSend(
     }
 
 
+    // --- Anti-echo detection helpers ---
+    function normalize(text: string) {
+        return (text || '')
+            .toLowerCase()
+            .replace(/\s+/g, ' ')
+            .replace(/[\p{P}\p{S}]/gu, '')
+            .trim();
+    }
+    function tokenSet(text: string) {
+        return new Set(normalize(text).split(' ').filter(Boolean));
+    }
+    function jaccard(a: Set<string>, b: Set<string>) {
+        if (a.size === 0 || b.size === 0) return 0;
+        let inter = 0;
+        for (const t of a) if (b.has(t)) inter++;
+        return inter / (a.size + b.size - inter);
+    }
+    function isEchoLike(reply: string, refs: string[], threshold = 0.8) {
+        const r = tokenSet(reply);
+        for (const ref of refs) {
+            const refNorm = normalize(ref);
+            if (!refNorm) continue;
+            if (normalize(reply).includes(refNorm) || refNorm.includes(normalize(reply))) return true;
+            const s = tokenSet(ref);
+            const score = jaccard(r, s);
+            if (score >= threshold) return true;
+        }
+        return false;
+    }
+
     try {
-        const res = await callApi(
-            api,
-            settings,
-            char,
-            messages,
-            false,
-            finalUserDescription
-        );
-        await handleApiResponse(res, room, char, dispatch, setTypingCharacterId);
+        // Build negative references from last few non-self messages
+        const recentOthers = [...messages]
+            .reverse()
+            .filter(m => m.authorId !== char.id && m.type !== 'SYSTEM')
+            .slice(0, 3);
+        const refTexts = recentOthers.map(m => m.content || '').filter(Boolean);
+
+        let extraInstruction: string | undefined = undefined;
+        let attempts = 0;
+        let maxAttempts = 3; // initial + 2 retries
+        let finalRes: ChatResponse | null = null;
+
+        while (attempts < maxAttempts) {
+            const res = await callApi(
+                api,
+                settings,
+                char,
+                messages,
+                false,
+                finalUserDescription,
+                extraInstruction
+            );
+
+            // Concatenate contents to evaluate similarity as a whole
+            const combined = (res.messages || []).map(p => p.content || '').join('\n');
+            if (refTexts.length > 0 && isEchoLike(combined, refTexts)) {
+                // Prepare stronger instruction and retry
+                const lastRef = refTexts[0];
+                extraInstruction = `Your previous draft was too similar to another participant's last message: "${lastRef.slice(0, 200)}". Do NOT repeat or paraphrase it. Produce a NEW, concise reply that adds value (ask a short follow-up or introduce a new detail). Avoid using the same phrases.`;
+                attempts++;
+                continue;
+            }
+            finalRes = res;
+            break;
+        }
+
+        if (!finalRes) {
+            // Fallback: if still echo-like, send a short probing question to move forward
+            finalRes = {
+                reactionDelay: 500,
+                messages: [{ delay: 800, content: '그 얘기 흥미로운데, 너는 어떻게 생각해?' }]
+            };
+        }
+
+        await handleApiResponse(finalRes, room, char, dispatch, setTypingCharacterId);
     } catch (error) {
         handleError(error, room.id, char.id, dispatch);
     } finally {
