@@ -1,5 +1,5 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, ChevronDown, RotateCcw, Download, Upload } from 'lucide-react';
 import { selectPrompts } from '../../entities/setting/selectors';
 import { settingsActions, initialState } from '../../entities/setting/slice';
@@ -28,6 +28,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
     const prompts = useSelector(selectPrompts);
 
     const [localPrompts, setLocalPrompts] = useState<Prompts>(prompts);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         setLocalPrompts(prompts);
@@ -71,6 +72,68 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                     }
                 }));
             }
+        }
+    };
+
+    const downloadJson = (data: unknown, filenameBase: string) => {
+        try {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const ts = new Date();
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            const fname = `${filenameBase}_${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.json`;
+            a.href = url;
+            a.download = fname;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            alert('다운로드 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleBackup = () => {
+        downloadJson(localPrompts, 'prompts_backup');
+    };
+
+    type AnyRecord = Record<string, unknown>;
+
+    const extractPrompts = (data: unknown): Prompts | null => {
+        const obj = data as AnyRecord | null;
+        const maybe = (obj && (obj as AnyRecord).prompts) ? (obj as AnyRecord).prompts : obj;
+        if (!maybe || typeof maybe !== 'object') return null;
+        const p = maybe as any;
+
+        if (!p.main || typeof p.profile_creation !== 'string' || typeof p.character_sheet_generation !== 'string') {
+            return null;
+        }
+        return p as Prompts;
+    };
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const json = JSON.parse(text);
+            const parsed = extractPrompts(json);
+            if (!parsed) {
+                alert('유효한 프롬프트 파일이 아닙니다.');
+                return;
+            }
+            setLocalPrompts(parsed);
+            alert('프롬프트를 불러왔습니다.');
+        } catch (err) {
+            alert('불러오기 중 오류가 발생했습니다. JSON 형식을 확인해주세요.');
+            console.error(err);
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -183,10 +246,17 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                     </details>
                 </div>
                 <div className="p-6 mt-auto border-t border-gray-700 shrink-0 flex flex-wrap justify-end gap-3">
-                    <button className="py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm flex items-center gap-2">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="application/json,.json"
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                    <button onClick={handleBackup} className="py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm flex items-center gap-2">
                         <Download className="w-4 h-4" /> 프롬프트 백업
                     </button>
-                    <button className="py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm flex items-center gap-2">
+                    <button onClick={handleImportClick} className="py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm flex items-center gap-2">
                         <Upload className="w-4 h-4" /> 프롬프트 불러오기
                     </button>
                     <div className="flex-grow"></div>
