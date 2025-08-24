@@ -767,24 +767,24 @@ function AuthorNoteModal({ open, onClose, value, onChange, onSave }: { open: boo
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg mx-4 bg-gray-900 rounded-2xl border border-gray-800 shadow-xl p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-white font-semibold">
-            <StickyNote className="w-4 h-4" /> 작가의 노트
+      <div className="w-full max-w-lg mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-gray-900 font-semibold">
+            <StickyNote className="w-5 h-5 text-blue-500" /> 작가의 노트
           </div>
-          <button className="p-2 rounded-full hover:bg-gray-800 text-gray-300" onClick={onClose}>
-            <X className="w-4 h-4" />
+          <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors" onClick={onClose}>
+            <X className="w-5 h-5" />
           </button>
         </div>
         <textarea
-          className="w-full h-48 p-3 bg-gray-800 text-white rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          className="w-full h-48 p-4 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 resize-none"
           placeholder="방 전체에 적용될 메타 지침을 적어주세요. (예: 톤, 금지사항, 세계관 규칙, 줄거리 방향 등)"
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
-        <div className="mt-3 flex justify-end gap-2">
-          <button className="px-3 py-2 rounded-lg bg-gray-800 text-gray-200 hover:bg-gray-700" onClick={onClose}>취소</button>
-          <button className="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700" onClick={onSave}>저장</button>
+        <div className="mt-4 flex justify-end gap-3">
+          <button className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors font-medium" onClick={onClose}>취소</button>
+          <button className="px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium" onClick={onSave}>저장</button>
         </div>
       </div>
     </div>

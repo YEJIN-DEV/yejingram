@@ -62,7 +62,7 @@ function CharacterList({
             {/* Instagram DM Style Character Item */}
             <div
                 onClick={() => setIsExpanded(prev => !prev)}
-                className="character-header group px-4 py-3 cursor-pointer transition-all duration-200 relative hover:bg-gray-50"
+                className="character-header group px-4 py-3 cursor-pointer transition-all duration-200 relative hover:bg-gray-50 select-none"
             >
                 <div className="absolute top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
                     <button
@@ -155,15 +155,15 @@ function CharacterList({
                     {chatRooms.map((room, index) => (
                         <div
                             key={room.id}
-                            className={`pl-16 pr-4 py-2 hover:bg-gray-100 cursor-pointer ${index !== chatRooms.length - 1 ? 'border-b border-gray-100' : ''
+                            className={`pl-16 pr-4 py-2 hover:bg-gray-100 cursor-pointer select-none ${index !== chatRooms.length - 1 ? 'border-b border-gray-100' : ''
                                 }`}
-                            onClick={() => setRoomId(room.id)}
                         >
                             <RoomList
                                 room={room}
                                 unreadCount={room.unreadCount || 0}
                                 setRoomId={setRoomId}
                                 isSelected={selectedRoomId === room.id}
+                                useDoubleClick={true}
                             />
                         </div>
                     ))}

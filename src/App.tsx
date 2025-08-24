@@ -108,31 +108,31 @@ function App() {
             ) : (
               <MainChat room={room} onToggleMobileSidebar={toggleMobileSidebar} />
             )}
-
-            {/* Modals */}
-            <SettingsModal
-              isOpen={isSettingsModalOpen}
-              onClose={() => setIsSettingsModalOpen(false)}
-              openPromptModal={() => setIsPromptModalOpen(true)}
-            />
-            <PromptModal
-              isOpen={isPromptModalOpen}
-              onClose={() => setIsPromptModalOpen(false)}
-            />
-            <CreateGroupChatModal
-              isOpen={isCreateGroupChatModalOpen}
-              onClose={() => setIsCreateGroupChatModalOpen(false)}
-            />
-            <CreateOpenChatModal
-              isOpen={isCreateOpenChatModalOpen}
-              onClose={() => setIsCreateOpenChatModalOpen(false)}
-            />
-            <EditGroupChatModal
-              isOpen={isEditGroupChatModalOpen}
-              onClose={() => setIsEditGroupChatModalOpen(false)}
-            />
           </main>
         </div>
+
+        {/* Global Modals (rendered above sidebar/main) */}
+        <SettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          openPromptModal={() => setIsPromptModalOpen(true)}
+        />
+        <PromptModal
+          isOpen={isPromptModalOpen}
+          onClose={() => setIsPromptModalOpen(false)}
+        />
+        <CreateGroupChatModal
+          isOpen={isCreateGroupChatModalOpen}
+          onClose={() => setIsCreateGroupChatModalOpen(false)}
+        />
+        <CreateOpenChatModal
+          isOpen={isCreateOpenChatModalOpen}
+          onClose={() => setIsCreateOpenChatModalOpen(false)}
+        />
+        <EditGroupChatModal
+          isOpen={isEditGroupChatModalOpen}
+          onClose={() => setIsEditGroupChatModalOpen(false)}
+        />
 
         {/* Mobile Sidebar Backdrop */}
         <div

@@ -10,6 +10,7 @@ interface RoomListProps {
     unreadCount: number;
     setRoomId: (id: string | null) => void;
     isSelected: boolean;
+    useDoubleClick?: boolean;
 }
 
 function getLastMessageContent(state: RootState, roomId: string) {
@@ -21,7 +22,8 @@ function RoomList({
     room,
     unreadCount,
     setRoomId,
-    isSelected
+    isSelected,
+    useDoubleClick = false
 }: RoomListProps) {
     const dispatch = useDispatch();
     const lastMessage = useSelector((state: RootState) => getLastMessageContent(state, room.id));
@@ -41,17 +43,19 @@ function RoomList({
         return date.toLocaleDateString();
     };
 
+    const handleRoomSelect = () => {
+        dispatch(roomsActions.resetUnread(room.id));
+        setRoomId(room.id);
+    };
+
     return (
         <div
-            className={`chat-room-item group relative cursor-pointer transition-all duration-200 ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
+            className={`chat-room-item group relative cursor-pointer transition-all duration-200 select-none ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
                 }`}
             data-chat-id={room.id}
         >
             <div
-                onClick={() => {
-                    dispatch(roomsActions.resetUnread(room.id));
-                    setRoomId(room.id);
-                }}
+                {...(useDoubleClick ? { onDoubleClick: handleRoomSelect } : { onClick: handleRoomSelect })}
                 className="flex items-center justify-between p-3"
             >
                 <div className="flex-1 min-w-0">

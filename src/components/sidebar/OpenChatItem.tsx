@@ -74,9 +74,9 @@ function OpenChatItem({ room, setRoomId, isSelected }: OpenChatItemProps) {
 
     return (
         <div
-            className={`relative group cursor-pointer transition-all duration-200 px-4 py-3 ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
+            className={`relative group cursor-pointer transition-all duration-200 px-4 py-3 select-none ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
                 }`}
-            onClick={() => !isEditing && setRoomId(room.id)}
+            onDoubleClick={() => !isEditing && setRoomId(room.id)}
         >
             <div className="absolute top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
                 <button
