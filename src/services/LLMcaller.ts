@@ -8,7 +8,7 @@ import { roomsActions } from "../entities/room/slice";
 import type { ChatResponse, MessagePart } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
-import { buildGeminiApiPayload, buildClaudeApiPayload } from "./promptBuilder";
+import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload } from "./promptBuilder";
 import type { ApiConfig, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
 import { replacePlaceholders } from "../utils/placeholder";
@@ -17,6 +17,7 @@ import { nanoid } from "@reduxjs/toolkit";
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
 const CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1/messages/";
+const OPENAI_API_BASE_URL = "https://api.openai.com/v1/chat/completions";
 
 async function handleApiResponse(
     res: ChatResponse,
@@ -89,6 +90,10 @@ async function callApi(
         case 'claude':
             payload = buildClaudeApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput);
             break;
+        case 'openai':
+        case 'customOpenAI':
+            payload = buildOpenAIApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput);
+            break;
     }
 
     const placeholders = {
@@ -118,13 +123,20 @@ async function callApi(
     } else if (apiProvider === 'gemini') {
         url = `${GEMINI_API_BASE_URL}${apiConfig.model}:generateContent?key=${apiConfig.apiKey}`;
         headers = { 'Content-Type': 'application/json' };
-    } else { // claude
+    } else if (apiProvider === 'claude') {
         url = CLAUDE_API_BASE_URL;
         headers = {
             "x-api-key": apiConfig.apiKey,
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
             "anthropic-dangerous-direct-browser-access": "true"
+        };
+    } else { // openai & customOpenAI
+        const baseUrl = (apiProvider === 'customOpenAI' && apiConfig.baseUrl) ? apiConfig.baseUrl : OPENAI_API_BASE_URL;
+        url = baseUrl;
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiConfig.apiKey}`
         };
     }
 
@@ -182,12 +194,20 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
         } else {
             throw new Error(data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || '알 수 없는 이유');
         }
-    } else { // Claude
+    } else if (apiProvider === 'claude') { // Claude
         if (data.content && data.content.length > 0 && data.content[0]?.text) {
             return processApiMessage(data.content[0]?.text);
         } else {
             throw new Error(data.stop_reason || '알 수 없는 이유');
         }
+    } else { // OpenAI-compatible
+        const text = data?.choices?.[0]?.message?.content;
+        if (!text) {
+            const t2 = data?.choices?.[0]?.delta?.content; // for stream chunks if ever used
+            if (!t2) throw new Error('응답 본문이 비어있습니다.');
+            return processApiMessage(t2);
+        }
+        return processApiMessage(text);
     }
 }
 

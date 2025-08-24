@@ -2,7 +2,7 @@ import { store } from "../app/store";
 import type { Character } from "../entities/character/types";
 import type { Message } from "../entities/message/types";
 import { selectPrompts } from "../entities/setting/selectors";
-import type { GeminiApiPayload, ClaudeApiPayload } from "./type";
+import type { GeminiApiPayload, ClaudeApiPayload, OpenAIApiPayload } from "./type";
 import { filterActiveLores } from "../entities/lorebook/match";
 import { getActiveRoomId } from "../utils/activeRoomTracker";
 import { selectRoomById } from "../entities/room/selectors";
@@ -330,4 +330,47 @@ export function buildClaudeApiPayload(
         top_p: TOP_P,
         max_tokens: 8096,
     };
+}
+
+// OpenAI (Chat Completions) payload builders
+function buildOpenAIContents(messages: Message[], isProactive: boolean) {
+    const items = messages.map(msg => {
+        const role = msg.authorId === 0 ? 'user' : 'assistant';
+        // For now, only text is supported; stickers/images are summarized as text like other builders do
+        return {
+            role,
+            content: typeof msg.content === 'string' ? msg.content : String(msg.content)
+        };
+    });
+
+    if (isProactive && items.length === 0) {
+        items.push({ role: 'user', content: '(SYSTEM: You are starting this conversation. Please begin.)' });
+    }
+    return items;
+}
+
+export function buildOpenAIApiPayload(
+    model: string,
+    userName: string,
+    userDescription: string,
+    character: Character,
+    messages: Message[],
+    isProactive: boolean,
+    useStructuredOutput: boolean
+): OpenAIApiPayload {
+    const systemPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput);
+    const history = buildOpenAIContents(messages, isProactive);
+
+    const payload: OpenAIApiPayload = {
+        model,
+        messages: [
+            { role: 'system', content: systemPrompt },
+            ...history,
+        ],
+        temperature: TEMPERATURE,
+        top_p: TOP_P,
+        max_tokens: 2048,
+        response_format: useStructuredOutput ? { type: 'json_object' } : { type: 'text' },
+    };
+    return payload;
 }

@@ -79,7 +79,7 @@ function SettingsModal({ isOpen, onClose, openPromptModal }: SettingsModalProps)
                     <option value="gemini">Google Gemini</option>
                     <option value="vertexai">Google Vertex AI</option>
                     <option value="claude">Anthropic Claude</option>
-                    <option value="openai">OpenAI ChatGPT</option>
+                    <option value="openai">OpenAI</option>
                     <option value="grok">xAI Grok</option>
                     <option value="openrouter">OpenRouter</option>
                     <option value="customOpenAI">Custom OpenAI</option>

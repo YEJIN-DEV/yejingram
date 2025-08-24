@@ -76,3 +76,21 @@ export interface ClaudeApiPayload {
     top_p: number;
     max_tokens: number;
 }
+
+export interface OpenAIApiPayload {
+    model: string;
+    messages: Array<{
+        role: 'system' | 'user' | 'assistant' | string;
+        content:
+        | string
+        | Array<
+            | { type: 'text'; text: string }
+            | { type: 'image_url'; image_url: { url: string } }
+        >;
+    }>;
+    temperature?: number;
+    top_p?: number;
+    max_tokens?: number;
+    // Supported by Chat Completions for JSON-mode on modern models
+    response_format?: { type: 'json_object' } | { type: 'text' };
+}
