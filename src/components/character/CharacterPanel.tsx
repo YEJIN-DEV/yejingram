@@ -178,7 +178,7 @@ function CharacterPanel() {
     };
 
     return (
-        <div className="bg-gray-800 w-96 h-full flex flex-col">
+        <div className="fixed inset-y-0 right-0 z-40 w-96 max-w-full bg-gray-900 border-l border-gray-800 shadow-xl flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-gray-700 shrink-0">
                 <h3 className="text-xl font-semibold text-white">{isNew ? '연락처 추가' : '연락처 수정'}</h3>
             </div>
@@ -303,7 +303,6 @@ function CharacterPanel() {
                                 <Download className="w-4 h-4" /> 연락처 공유하기 (예진그램)
                             </button>
                         </div>
-                        <input type="file" accept="image/png,image/jpeg" ref={avatarInputRef} onChange={handleAvatarChange} className="hidden" />
                     </div>
                 )}
             </div>
@@ -311,6 +310,8 @@ function CharacterPanel() {
                 <button onClick={() => dispatch(charactersActions.resetEditingCharacterId())} className="flex-1 py-2.5 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">취소</button>
                 <button onClick={handleSave} className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">저장</button>
             </div>
+            {/* 숨겨진 파일 입력: 어디서든 아바타 업로드 버튼이 동작하도록 전역 배치 */}
+            <input type="file" accept="image/png,image/jpeg" ref={avatarInputRef} onChange={handleAvatarChange} className="hidden" />
         </div>
     );
 }
