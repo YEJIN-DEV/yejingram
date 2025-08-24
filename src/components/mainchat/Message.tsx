@@ -94,7 +94,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
   return (
     <>
-      <div ref={innerRef} data-list-inner className="px-6 py-4 space-y-1">
+      <div ref={innerRef} data-list-inner className="px-6 py-4">
         {messages.map((msg, i) => {
           const prevMsg = messages[i - 1];
           const isMe = msg.authorId === currentUserId; // Derive isMe
@@ -109,6 +109,25 @@ const MessageList: React.FC<MessageListProps> = ({
           })();
 
           const groupInfo = findMessageGroup(messages, i);
+          const isGroupStart = i === groupInfo.startIndex;
+          const isGroupEnd = i === groupInfo.endIndex;
+          const bubbleMarginClass = isGroupEnd ? 'mb-2 md:mb-3' : 'mb-1';
+
+          const cornerClass = (() => {
+            if (isGroupStart && isGroupEnd) {
+              return '';
+            }
+            if (isMe) {
+              // Me (right side) - use small radius instead of square
+              if (isGroupStart) return 'rounded-br-md'; // first -> right bottom slightly squared
+              if (!isGroupEnd) return 'rounded-tr-md rounded-br-md'; // middle -> right top & bottom slightly squared
+              return 'rounded-tr-md'; // last -> right top slightly squared
+            }
+            // Not me (left side)
+            if (isGroupStart) return 'rounded-bl-md'; // first -> left bottom slightly squared
+            if (!isGroupEnd) return 'rounded-tl-md rounded-bl-md'; // middle -> left top & bottom slightly squared
+            return 'rounded-tl-md'; // last -> left top slightly squared
+          })();
 
           const hasAnimated = animatedMessageIds.current.has(msg.id.toString());
           const needsAnimation = !hasAnimated;
@@ -163,7 +182,7 @@ const MessageList: React.FC<MessageListProps> = ({
             // Instagram DM Style message rendering
             if (msg.type === 'STICKER' && msg.sticker) {
               const stickerData = msg.sticker;
-              const isExpanded = expandedStickers.has(msg.id);
+              const isExpanded = expandedStickers.has(msg.id.toString());
               const sizeClass = isExpanded ? 'max-w-sm' : 'max-w-32';
               const heightStyle = isExpanded ? { maxHeight: '400px' } : { maxHeight: '120px' };
 
@@ -181,9 +200,9 @@ const MessageList: React.FC<MessageListProps> = ({
                 return (
                   <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
                     <div className={`px-4 py-2 rounded-2xl text-sm leading-relaxed max-w-xs ${isMe
-                      ? 'bg-blue-500 text-white rounded-br-md'
-                      : 'bg-gray-200 text-gray-900 rounded-bl-md'
-                      }`}>
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 text-gray-900'
+                      } ${cornerClass}`}>
                       <div className="break-words">{msg.content}</div>
                     </div>
                     {stickerElement}
@@ -194,7 +213,7 @@ const MessageList: React.FC<MessageListProps> = ({
               }
             } else if (msg.type === 'IMAGE' && msg.image?.dataUrl) {
               const imageUrl = msg.image?.dataUrl;
-              const isExpanded = expandedStickers.has(msg.id);
+              const isExpanded = expandedStickers.has(msg.id.toString());
               const sizeClass = isExpanded ? 'max-w-sm' : 'max-w-60';
               const heightStyle = isExpanded ? { maxHeight: '400px' } : { maxHeight: '200px' };
 
@@ -206,9 +225,9 @@ const MessageList: React.FC<MessageListProps> = ({
 
               const captionTag = msg.content && msg.content.trim() ? (
                 <div className={`mt-1 px-4 py-2 rounded-2xl text-sm leading-relaxed max-w-xs ${isMe
-                  ? 'bg-blue-500 text-white rounded-br-md'
-                  : 'bg-gray-200 text-gray-900 rounded-bl-md'
-                  }`}>
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-900'
+                  } ${cornerClass}`}>
                   <div className="break-words">{msg.content}</div>
                 </div>
               ) : null;
@@ -222,9 +241,9 @@ const MessageList: React.FC<MessageListProps> = ({
             } else if (msg.type === 'TEXT') {
               return (
                 <div className={`px-4 py-2 rounded-2xl text-sm leading-relaxed max-w-xs ${isMe
-                  ? 'bg-blue-500 text-white rounded-br-md'
-                  : 'bg-gray-200 text-gray-900 rounded-bl-md'
-                  }`}>
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-900'
+                  } ${cornerClass}`}>
                   <div className="break-words">{msg.content}</div>
                 </div>
               );
@@ -234,7 +253,8 @@ const MessageList: React.FC<MessageListProps> = ({
           const lastUserMessage = [...messages].reverse().find(m => m.authorId === currentUserId);
           const showUnread = isMe && lastUserMessage && msg.id === lastUserMessage.id && isWaitingForResponse && !typingCharacterId;
 
-          const showSenderInfo = !isMe && i === groupInfo.startIndex;
+          const showSenderName = !isMe && isGroupStart;
+          const showAvatar = !isMe && isGroupEnd;
           const senderCharacter = !isMe ? allCharacters.find(c => c.id === msg.authorId) : null;
 
 
@@ -256,23 +276,24 @@ const MessageList: React.FC<MessageListProps> = ({
                 </div>
               )}
               {msg.type !== 'SYSTEM' && (
-                <div className={`group flex w-full mb-2 md:mb-3 ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'justify-end' : 'justify-start'}`}>
+                <div className={`group flex w-full ${bubbleMarginClass} ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'justify-end' : 'justify-start'}`}>
                   <div className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-3 md:gap-4 ${editingMessageId === msg.id ? 'flex-1 w-full max-w-none' : 'max-w-[75%]'}`}>
 
-                    {/* Avatar - only for non-me messages at start of group */}
-                    {!isMe && showSenderInfo && senderCharacter && editingMessageId !== msg.id && (
-                      <div className="shrink-0 w-8 h-8 mb-1">
-                        <Avatar char={senderCharacter} size="sm" />
-                      </div>
-                    )}
-                    {!isMe && !showSenderInfo && editingMessageId !== msg.id && (
-                      <div className="shrink-0 w-8 h-8"></div>
+                    {/* Avatar - for non-me messages at end of group (bottom aligned); placeholder otherwise for consistent indent */}
+                    {!isMe && editingMessageId !== msg.id && (
+                      showAvatar && senderCharacter ? (
+                        <div className="shrink-0 w-10 h-10">
+                          <Avatar char={senderCharacter} size="sm" />
+                        </div>
+                      ) : (
+                        <div className="shrink-0 w-10 h-10"></div>
+                      )
                     )}
 
                     {/* Message Content */}
                     <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}>
                       {/* Sender name for group messages */}
-                      {showSenderInfo && !isMe && (
+                      {showSenderName && !isMe && (
                         <p className="text-xs text-gray-500 mb-1 px-1">
                           <SenderName authorId={msg.authorId} />
                         </p>
@@ -332,7 +353,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
                       {/* Timestamp and read status */}
                       {(i === groupInfo.endIndex || (i < messages.length - 1 && messages[i + 1].authorId !== msg.authorId)) && (
-                        <div className={`flex items-center mt-2 md:mt-3 ${isMe ? 'flex-row-reverse' : ''} gap-2`}>
+                        <div className={`flex items-center mt-1 md:mt-2 ${isMe ? 'flex-row-reverse' : ''} gap-2`}>
                           <p className="text-xs text-gray-400">
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
@@ -351,7 +372,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
         {typingCharacterId && (
           <div className="flex items-end space-x-2 mt-2 md:mt-3 mb-4 animate-slideUp">
-            <div className="shrink-0 w-8 h-8">
+            <div className="shrink-0 w-10 h-10">
               {(() => {
                 const typingChar = allCharacters.find(c => c.id === typingCharacterId);
                 return typingChar ? <Avatar char={typingChar} size="sm" /> : null;

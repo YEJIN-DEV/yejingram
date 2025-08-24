@@ -66,40 +66,40 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
     const totalSize = stickers.reduce((acc, sticker) => acc + (sticker.data.length * 0.75), 0); // Base64 approx size
 
     return (
-        <div className="absolute bottom-full left-0 mb-2 w-80 bg-gray-800 rounded-xl shadow-lg border border-gray-700 animate-fadeIn">
-            <div className="p-3 border-b border-gray-700 flex items-center justify-between">
-                <h3 className="text-sm font-medium text-white">페르소나 스티커</h3>
+        <div className="absolute bottom-full left-0 mb-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 animate-fadeIn">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-900">페르소나 스티커</h3>
                 <div className="flex gap-2">
-                    <button onClick={handleAddStickerClick} className="p-1 bg-blue-600 hover:bg-blue-700 text-white rounded" title="스티커 추가">
-                        <Plus className="w-3 h-3" />
+                    <button onClick={handleAddStickerClick} className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors shadow-sm" title="스티커 추가">
+                        <Plus className="w-4 h-4" />
                     </button>
-                    <button onClick={onClose} className="p-1 bg-gray-600 hover:bg-gray-500 text-white rounded" title="닫기">
-                        <X className="w-3 h-3" />
+                    <button onClick={onClose} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors" title="닫기">
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
             </div>
-            <div className="p-3">
-                <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+            <div className="p-4">
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
                     <span>jpg, gif, png, bmp, webp 지원</span>
-                    <span>스티커: {stickers.length}개</span>
+                    <span className="bg-gray-100 px-2 py-1 rounded-full">스티커: {stickers.length}개</span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
                     <span>총 용량: {formatBytes(totalSize)}</span>
                 </div>
                 {stickers.length === 0 ? (
-                    <div className="text-center text-gray-400 py-8">
-                        <Smile className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm">스티커를 추가해보세요</p>
-                        <button onClick={handleAddStickerClick} className="mt-2 text-xs text-blue-400 hover:text-blue-300">스티커 추가하기</button>
+                    <div className="text-center text-gray-500 py-8">
+                        <Smile className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm font-medium mb-2">스티커를 추가해보세요</p>
+                        <button onClick={handleAddStickerClick} className="text-sm text-blue-500 hover:text-blue-600 font-medium">스티커 추가하기</button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                    <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto">
                         {stickers.map(sticker => {
                             const isVideo = sticker.type.startsWith('video/');
                             const isAudio = sticker.type.startsWith('audio/');
                             let content;
                             if (isAudio) {
-                                content = <div className="w-full h-full flex items-center justify-center bg-gray-600"><Music className="w-6 h-6 text-gray-300" /></div>;
+                                content = <div className="w-full h-full flex items-center justify-center bg-gray-100"><Music className="w-6 h-6 text-gray-400" /></div>;
                             } else if (isVideo) {
                                 content = <video className="w-full h-full object-cover" muted src={sticker.data} />;
                             } else {
@@ -109,20 +109,20 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
                             return (
                                 <div key={sticker.id} className="relative group">
                                     <button onClick={() => onSelectSticker(sticker)}
-                                        className="w-full aspect-square bg-gray-700 rounded-lg overflow-hidden hover:bg-gray-600 transition-colors">
+                                        className="w-full aspect-square bg-gray-50 rounded-xl overflow-hidden hover:bg-gray-100 transition-all duration-200 shadow-sm hover:shadow-md border border-gray-100">
                                         {content}
                                     </button>
-                                    <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                         <button onClick={(e) => { e.stopPropagation(); handleEditStickerName(sticker.id, sticker.name); }}
-                                            className="w-5 h-5 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center text-xs" title="이름 변경">
-                                            <Edit3 className="w-2 h-2" />
+                                            className="w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors shadow-lg" title="이름 변경">
+                                            <Edit3 className="w-3 h-3" />
                                         </button>
                                         <button onClick={(e) => { e.stopPropagation(); handleDeleteSticker(sticker.id); }}
-                                            className="w-5 h-5 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xs" title="삭제">
+                                            className="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors shadow-lg" title="삭제">
                                             <X className="w-3 h-3" />
                                         </button>
                                     </div>
-                                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate rounded-b-lg">
+                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent text-white text-xs p-2 truncate rounded-b-xl">
                                         {sticker.name}
                                     </div>
                                 </div>
