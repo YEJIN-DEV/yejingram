@@ -4,6 +4,7 @@ import { Plus, X, Edit3, Music, Smile } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { charactersActions } from '../../entities/character/slice';
 import { useRef } from 'react';
+import { nanoid } from '@reduxjs/toolkit';
 
 interface StickerPanelProps {
     characterId: number;
@@ -29,7 +30,7 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
             reader.onload = (e) => {
                 const data = e.target?.result as string;
                 const newSticker: Sticker = {
-                    id: Math.random().toString(36).slice(2),
+                    id: nanoid(),
                     name: file.name,
                     data,
                     type: file.type,

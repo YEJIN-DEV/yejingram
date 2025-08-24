@@ -12,6 +12,7 @@ import { buildGeminiApiPayload, buildClaudeApiPayload } from "./promptBuilder";
 import type { ApiConfig, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
 import { replacePlaceholders } from "../utils/placeholder";
+import { nanoid } from "@reduxjs/toolkit";
 
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
@@ -38,7 +39,7 @@ async function handleApiResponse(
 
 function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Message {
     const message: Message = {
-        id: Math.random().toString(36).slice(2),
+        id: nanoid(),
         roomId: roomId,
         authorId: char.id,
         content: messagePart.content,
@@ -59,7 +60,7 @@ function handleError(error: unknown, roomId: string, charId: number, dispatch: A
     console.error("Error in LLMSend:", error);
     const errorMessage = `답변이 생성되지 않았습니다. (이유: ${error instanceof Error ? error.message : String(error)})`;
     const errorResponse: Message = {
-        id: Math.random().toString(36).slice(2),
+        id: nanoid(),
         roomId: roomId,
         authorId: charId,
         content: errorMessage,
@@ -316,7 +317,7 @@ export async function SendOpenChatMessage(room: Room, setTypingCharacterId: (id:
             const character = allCharacters.find(c => c.id === participantId);
             if (character) {
                 dispatch(messagesActions.upsertOne({
-                    id: Math.random().toString(36).slice(2),
+                    id: nanoid(),
                     roomId: room.id,
                     authorId: 0,
                     content: `${character.name}님이 나갔습니다.`,
@@ -333,7 +334,7 @@ export async function SendOpenChatMessage(room: Room, setTypingCharacterId: (id:
         if (Math.random() < 0.1) {
             newJoinerIds.push(char.id);
             dispatch(messagesActions.upsertOne({
-                id: Math.random().toString(36).slice(2),
+                id: nanoid(),
                 roomId: room.id,
                 authorId: 0,
                 content: `${char.name}님이 들어왔습니다.`,

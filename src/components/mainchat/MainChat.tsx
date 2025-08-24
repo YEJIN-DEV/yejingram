@@ -15,6 +15,7 @@ import { StickerPanel } from './StickerPanel';
 import type { ImageToSend } from '../../entities/message/types';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import { replacePlaceholders } from '../../utils/placeholder';
+import { nanoid } from '@reduxjs/toolkit';
 
 interface MainChatProps {
   room: Room | null;
@@ -177,7 +178,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
     const processedText = text ? replacePlaceholders(text, { user: currentUserName, char: currentCharName }) : '';
 
     const userMessage = {
-      id: Math.random().toString(36).slice(2),
+      id: nanoid(),
       roomId: room.id,
       authorId: 0, // Assuming current user ID is '0'
       content: processedText,

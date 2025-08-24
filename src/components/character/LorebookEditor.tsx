@@ -1,6 +1,7 @@
 import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { Lore } from '../../entities/lorebook/types';
+import { nanoid } from '@reduxjs/toolkit';
 
 export interface LorebookEditorProps {
     lores: Lore[];
@@ -8,7 +9,7 @@ export interface LorebookEditorProps {
 }
 
 const emptyLore = (nextOrder: number): Lore => ({
-    id: crypto.randomUUID(),
+    id: nanoid(),
     name: '',
     activationKeys: [''],
     order: nextOrder,

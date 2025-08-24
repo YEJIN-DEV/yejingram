@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { roomsActions } from '../../entities/room/slice';
+import { nanoid } from '@reduxjs/toolkit';
 
 interface CreateOpenChatModalProps {
     isOpen: boolean;
@@ -19,7 +20,7 @@ function CreateOpenChatModal({ isOpen, onClose }: CreateOpenChatModalProps) {
     const handleCreate = () => {
         if (chatName.trim()) {
             const newRoom = {
-                id: Math.random().toString(36).slice(2),
+                id: nanoid(),
                 name: chatName.trim(),
                 memberIds: [], // Open chats don't have fixed members
                 type: 'Open' as const,

@@ -5,6 +5,7 @@ import { selectAllCharacters } from '../../entities/character/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import type { Character } from '../../entities/character/types';
 import { Avatar } from '../../utils/Avatar';
+import { nanoid } from '@reduxjs/toolkit';
 
 interface CreateGroupChatModalProps {
     isOpen: boolean;
@@ -32,7 +33,7 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
     const handleCreateGroupChat = () => {
         if (groupName.trim() && selectedParticipantIds.length >= 2) {
             const newRoom = {
-                id: Math.random().toString(36).slice(2),
+                id: nanoid(),
                 name: groupName.trim(),
                 memberIds: selectedParticipantIds,
                 type: 'Group' as const,

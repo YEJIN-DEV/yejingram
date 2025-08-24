@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Plus, CheckSquare, CheckCircle, Trash2, Edit3 } from 'lucide-react';
 import type { Sticker } from '../../entities/character/types';
+import { nanoid } from '@reduxjs/toolkit';
 
 interface StickerManagerProps {
     stickers: Sticker[];
@@ -25,7 +26,7 @@ export function StickerManager({ stickers, onStickersChange }: StickerManagerPro
             reader.onload = (e) => {
                 const data = e.target?.result as string;
                 const newSticker: Sticker = {
-                    id: Math.random().toString(36).slice(2),
+                    id: nanoid(),
                     name: file.name,
                     data,
                     type: file.type,
