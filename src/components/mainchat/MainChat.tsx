@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, Bot, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Send, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote } from 'lucide-react';
+import { Menu, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -218,25 +218,23 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
 
   if (!room) {
     return (
-      <div className="flex-1 flex items-center justify-center text-center p-4">
+      <div className="flex-1 flex items-center justify-center bg-gray-50">
         <button
           id="mobile-sidebar-toggle"
-          className="absolute top-4 left-4 p-2 rounded-full hover:bg-gray-700 md:hidden"
+          className="absolute top-4 left-4 p-2 rounded-full hover:bg-gray-100 md:hidden"
           onClick={onToggleMobileSidebar}
         >
-          <Menu className="h-5 w-5 text-gray-300" />
+          <Menu className="h-5 w-5 text-gray-600" />
         </button>
-        <div>
-          <div className="w-20 h-20 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Bot className="w-10 h-10 text-white" />
+        <div className="text-center">
+          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <MessageCircle className="w-12 h-12 text-white" />
           </div>
-          <h3 className="text-xl md:text-2xl font-semibold text-white mb-3">
-            상대를 선택하세요
+          <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-3">
+            메시지를 보내세요
           </h3>
-          <p className="text-sm md:text-base text-gray-400 leading-relaxed">
-            사이드 바에서 상대를 선택하여 메시지를 보내세요
-            <br />
-            혹은 새로운 상대를 초대하세요
+          <p className="text-sm md:text-base text-gray-500 leading-relaxed">
+            친구나 그룹과 개인 사진 및 메시지를 공유하세요.
           </p>
         </div>
       </div>
@@ -254,68 +252,94 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
         />
         {room.type == "Open" ? (
           <>
-            <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
-              <div className="flex items-center space-x-2 md:space-x-4">
-                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" onClick={onToggleMobileSidebar}>
-                  <Menu className="h-5 w-5 text-gray-300" />
+            {/* Instagram DM Style Header for Open Chat */}
+            <header className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  id="mobile-sidebar-toggle"
+                  className="p-2 -ml-2 rounded-full hover:bg-gray-100 md:hidden"
+                  onClick={onToggleMobileSidebar}
+                >
+                  <Menu className="h-5 w-5 text-gray-600" />
                 </button>
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <Globe className="w-6 h-6 text-white" />
+                <div className="relative">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+                    <Globe className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                 </div>
-                <div>
+                <div className="flex-1">
                   {isEditingRoomName ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center space-x-2">
                       <input
                         type="text"
                         value={newRoomName}
                         onChange={(e) => setNewRoomName(e.target.value)}
-                        className="bg-gray-700 text-white text-base md:text-lg font-semibold rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="bg-gray-100 text-gray-900 text-lg font-semibold rounded-lg px-3 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                         autoFocus
-                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); handleSaveRoomName(); } if (e.key === 'Escape') setIsEditingRoomName(false); }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                            e.preventDefault();
+                            handleSaveRoomName();
+                          }
+                          if (e.key === 'Escape') setIsEditingRoomName(false);
+                        }}
                       />
-                      <button onClick={handleSaveRoomName} className="p-1 text-green-400 hover:text-green-300">
+                      <button onClick={handleSaveRoomName} className="p-1 text-green-600 hover:text-green-700">
                         <Check className="w-4 h-4" />
                       </button>
-                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-400 hover:text-red-300">
+                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-600 hover:text-red-700">
                         <XCircle className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    <div className="group flex items-center gap-2">
-                      <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
-                      <button onClick={handleEditRoomName} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-white">
+                    <div className="group flex items-center space-x-2">
+                      <h2 className="font-bold text-gray-900 text-lg">{room.name}</h2>
+                      <button
+                        onClick={handleEditRoomName}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
+                      >
                         <Edit2 className="w-4 h-4" />
                       </button>
                     </div>
                   )}
-                  <p className="text-xs md:text-sm text-gray-400 flex items-center">
-                    <Globe className="w-3 h-3 mr-1.5" />
-                    {room.currentParticipants?.length || 0}명 접속중
+                  <p className="text-sm text-gray-500 flex items-center mt-1">
+                    {room.currentParticipants?.length || 0}명 활성 · 오픈 채팅
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-1 md:space-x-2">
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
-                  <Phone className="w-4 h-4 text-gray-300" />
+              <div className="flex items-center space-x-2">
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+                  <Phone className="w-5 h-5" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={startVideoCall} */}
-                  <Video className="w-4 h-4 text-gray-300" />
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+                  <Video className="w-5 h-5" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700" title="작가의 노트" onClick={openAuthorNote}>
-                  <StickyNote className="w-4 h-4 text-gray-300" />
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={openAuthorNote}>
+                  <StickyNote className="w-5 h-5" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
-                  <MoreHorizontal className="w-4 h-4 text-gray-300" />
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+                  <MoreHorizontal className="w-5 h-5" />
                 </button>
               </div>
             </header>
 
-            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
-              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} />
+            {/* Messages Container - Instagram DM Style */}
+            <div id="messages-container" className="flex-1 overflow-y-auto bg-white" ref={messagesContainerRef}>
+              <MessageList
+                messages={messages}
+                room={room}
+                isWaitingForResponse={isWaitingForResponse}
+                typingCharacterId={typingCharacterId}
+                currentUserId={0}
+                setTypingCharacterId={setTypingCharacterId}
+                setIsWaitingForResponse={setIsWaitingForResponse}
+              />
               <div id="messages-end-ref"></div>
             </div>
 
-            <div className="p-4 bg-gray-900 border-t border-gray-800">
+            {/* Input Area - Instagram DM Style */}
+            <div className="px-6 py-4 bg-white border-t border-gray-200">
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
               <InputArea
                 room={room}
@@ -334,68 +358,96 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
           </>
         ) : room.type == "Group" ? (
           <>
-            <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
-              <div className="flex items-center space-x-2 md:space-x-4">
-                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" onClick={onToggleMobileSidebar}>
-                  <Menu className="h-5 w-5 text-gray-300" />
+            {/* Instagram DM Style Header for Group Chat */}
+            <header className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  id="mobile-sidebar-toggle"
+                  className="p-2 -ml-2 rounded-full hover:bg-gray-100 md:hidden"
+                  onClick={onToggleMobileSidebar}
+                >
+                  <Menu className="h-5 w-5 text-gray-600" />
                 </button>
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
-                  <Users className="w-6 h-6 text-white" />
+                <div className="relative">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                 </div>
-                <div>
+                <div className="flex-1">
                   {isEditingRoomName ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center space-x-2">
                       <input
                         type="text"
                         value={newRoomName}
                         onChange={(e) => setNewRoomName(e.target.value)}
-                        className="bg-gray-700 text-white text-base md:text-lg font-semibold rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="bg-gray-100 text-gray-900 text-lg font-semibold rounded-lg px-3 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                         autoFocus
-                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); handleSaveRoomName(); } if (e.key === 'Escape') setIsEditingRoomName(false); }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                            e.preventDefault();
+                            handleSaveRoomName();
+                          }
+                          if (e.key === 'Escape') setIsEditingRoomName(false);
+                        }}
                       />
-                      <button onClick={handleSaveRoomName} className="p-1 text-green-400 hover:text-green-300">
+                      <button onClick={handleSaveRoomName} className="p-1 text-green-600 hover:text-green-700">
                         <Check className="w-4 h-4" />
                       </button>
-                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-400 hover:text-red-300">
+                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-600 hover:text-red-700">
                         <XCircle className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    <div className="group flex items-center gap-2">
-                      <h2 className="font-semibold text-white text-base md:text-lg">{room.name}</h2>
-                      <button onClick={handleEditRoomName} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-white">
+                    <div className="group flex items-center space-x-2">
+                      <h2 className="font-bold text-gray-900 text-lg">{room.name}</h2>
+                      <button
+                        onClick={handleEditRoomName}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
+                      >
                         <Edit2 className="w-4 h-4" />
                       </button>
                     </div>
                   )}
-                  <p className="text-xs md:text-sm text-gray-400 flex items-center">
-                    <Users className="w-3 h-3 mr-1.5" />
-                    {room.memberIds.length}명 참여
+                  <p className="text-sm text-gray-500 flex items-center mt-1">
+                    {memberChars && memberChars.length > 0
+                      ? memberChars.map(char => char?.name).filter(Boolean).join(', ')
+                      : `${room.memberIds.length}명의 참여자`}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-1 md:space-x-2">
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
-                  <Phone className="w-4 h-4 text-gray-300" />
+              <div className="flex items-center space-x-2">
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+                  <Phone className="w-5 h-5" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={startVideoCall} */}
-                  <Video className="w-4 h-4 text-gray-300" />
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+                  <Video className="w-5 h-5" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700" title="작가의 노트" onClick={openAuthorNote}>
-                  <StickyNote className="w-4 h-4 text-gray-300" />
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={openAuthorNote}>
+                  <StickyNote className="w-5 h-5" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
-                  <MoreHorizontal className="w-4 h-4 text-gray-300" />
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+                  <MoreHorizontal className="w-5 h-5" />
                 </button>
               </div>
             </header>
 
-            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
-              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} />
+            {/* Messages Container - Instagram DM Style */}
+            <div id="messages-container" className="flex-1 overflow-y-auto bg-white" ref={messagesContainerRef}>
+              <MessageList
+                messages={messages}
+                room={room}
+                isWaitingForResponse={isWaitingForResponse}
+                typingCharacterId={typingCharacterId}
+                currentUserId={0}
+                setTypingCharacterId={setTypingCharacterId}
+                setIsWaitingForResponse={setIsWaitingForResponse}
+              />
               <div id="messages-end-ref"></div>
             </div>
 
-            <div className="p-4 bg-gray-900 border-t border-gray-800">
+            {/* Input Area - Instagram DM Style */}
+            <div className="px-6 py-4 bg-white border-t border-gray-200">
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
               <InputArea
                 room={room}
@@ -414,66 +466,90 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
           </>
         ) : room.type == "Direct" && character && messages ? (
           <>
-            <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
-              <div className="flex items-center space-x-2 md:space-x-4">
-                <button id="mobile-sidebar-toggle" className="p-2 -ml-2 rounded-full hover:bg-gray-700 md:hidden" onClick={onToggleMobileSidebar}>
-                  <Menu className="h-5 w-5 text-gray-300" />
+            {/* Instagram DM Style Header for Direct Chat */}
+            <header className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  id="mobile-sidebar-toggle"
+                  className="p-2 -ml-2 rounded-full hover:bg-gray-100 md:hidden"
+                  onClick={onToggleMobileSidebar}
+                >
+                  <Menu className="h-5 w-5 text-gray-600" />
                 </button>
-                <Avatar char={character} size="sm" />
-                <div>
-                  <h2 className="font-semibold text-white text-base md:text-lg">{character.name}</h2>
+                <div className="relative">
+                  <Avatar char={character} size="md" />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                </div>
+                <div className="flex-1">
+                  <h2 className="font-bold text-gray-900 text-lg">{character.name}</h2>
                   {isEditingRoomName ? (
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center space-x-2 mt-1">
                       <input
                         type="text"
                         value={newRoomName}
                         onChange={(e) => setNewRoomName(e.target.value)}
-                        className="bg-gray-700 text-white text-xs md:text-sm rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="bg-gray-100 text-gray-900 text-sm rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                         autoFocus
-                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); handleSaveRoomName(); } if (e.key === 'Escape') setIsEditingRoomName(false); }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                            e.preventDefault();
+                            handleSaveRoomName();
+                          }
+                          if (e.key === 'Escape') setIsEditingRoomName(false);
+                        }}
                       />
-                      <button onClick={handleSaveRoomName} className="p-1 text-green-400 hover:text-green-300">
-                        <Check className="w-4 h-4" />
+                      <button onClick={handleSaveRoomName} className="p-1 text-green-600 hover:text-green-700">
+                        <Check className="w-3 h-3" />
                       </button>
-                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-400 hover:text-red-300">
-                        <XCircle className="w-4 h-4" />
+                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-600 hover:text-red-700">
+                        <XCircle className="w-3 h-3" />
                       </button>
                     </div>
                   ) : (
-                    <div className="group flex items-center gap-2" >
-                      <p className="text-xs md:text-sm text-gray-400 flex items-center">
-                        <MessageCircle className="w-3 h-3 mr-1.5" />
-                        {room.name}
-                      </p>
-                      <button onClick={handleEditRoomName} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-white">
+                    <div className="group flex items-center space-x-2 mt-1">
+                      <p className="text-sm text-gray-500">{room.name}</p>
+                      <button
+                        onClick={handleEditRoomName}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
+                      >
                         <Edit2 className="w-3 h-3" />
                       </button>
                     </div>
                   )}
                 </div>
               </div>
-              <div className="flex items-center space-x-1 md:space-x-2">
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
-                  <Phone className="w-4 h-4 text-gray-300" />
+              <div className="flex items-center space-x-2">
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+                  <Phone className="w-5 h-5" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
-                  <Video className="w-4 h-4 text-gray-300" />
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+                  <Video className="w-5 h-5" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700" title="작가의 노트" onClick={openAuthorNote}>
-                  <StickyNote className="w-4 h-4 text-gray-300" />
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={openAuthorNote}>
+                  <StickyNote className="w-5 h-5" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
-                  <MoreHorizontal className="w-4 h-4 text-gray-300" />
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+                  <MoreHorizontal className="w-5 h-5" />
                 </button>
               </div>
             </header>
 
-            <div id="messages-container" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" ref={messagesContainerRef}>
-              <MessageList messages={messages} room={room} isWaitingForResponse={isWaitingForResponse} typingCharacterId={typingCharacterId} currentUserId={0} setTypingCharacterId={setTypingCharacterId} setIsWaitingForResponse={setIsWaitingForResponse} />
+            {/* Messages Container - Instagram DM Style */}
+            <div id="messages-container" className="flex-1 overflow-y-auto bg-white" ref={messagesContainerRef}>
+              <MessageList
+                messages={messages}
+                room={room}
+                isWaitingForResponse={isWaitingForResponse}
+                typingCharacterId={typingCharacterId}
+                currentUserId={0}
+                setTypingCharacterId={setTypingCharacterId}
+                setIsWaitingForResponse={setIsWaitingForResponse}
+              />
               <div id="messages-end-ref"></div>
             </div>
 
-            <div className="p-4 bg-gray-900 border-t border-gray-800">
+            {/* Input Area - Instagram DM Style */}
+            <div className="px-6 py-4 bg-white border-t border-gray-200">
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
               <InputArea
                 room={room}
@@ -544,8 +620,8 @@ function InputArea({
 
   const placeholder = useMemo(() => {
     if (hasImage) return "캡션 추가...";
-    if (stickerToSend) return "스티커와 함께 보낼 메시지 (선택사항)...";
-    return "메시지를 입력하세요...";
+    if (stickerToSend) return "스티커와 함께 메시지...";
+    return "메시지 보내기...";
   }, [hasImage, stickerToSend]);
 
   const handleSend = () => {
@@ -555,124 +631,134 @@ function InputArea({
 
   return (
     <div className="input-area-container relative">
-      {/* 이미지 프리뷰 */}
+      {/* Image Preview - Instagram DM Style */}
       {hasImage && imageToSend?.dataUrl && (
-        <div className="p-2 border-b border-gray-700 mb-2">
-          <div className="relative w-20 h-20">
+        <div className="mb-3 p-3 bg-gray-50 rounded-xl">
+          <div className="relative w-16 h-16">
             <img
               src={imageToSend.dataUrl}
-              className="w-full h-full object-cover rounded-lg"
+              className="w-full h-full object-cover rounded-xl"
               alt="미리보기"
             />
             <button
               type="button"
               onClick={onCancelImagePreview}
-              className="absolute -top-2 -right-2 p-1 bg-gray-900 rounded-full text-white hover:bg-red-500 transition-colors"
+              className="absolute -top-2 -right-2 p-1 bg-gray-800 rounded-full text-white hover:bg-red-500 transition-colors"
             >
-              <X className="w-4 h-4 pointer-events-none" />
+              <X className="w-3 h-3" />
             </button>
           </div>
         </div>
       )}
 
-      {/* 인풋 옵션 팝오버 */}
+      {/* Selected Sticker Display - Instagram DM Style */}
+      {stickerToSend && (
+        <div className="mb-3 p-3 bg-gray-50 rounded-xl flex items-center gap-3 text-sm text-gray-600">
+          <img
+            src={stickerToSend.data}
+            alt={stickerToSend.name}
+            className="w-8 h-8 rounded-lg object-cover"
+          />
+          <span className="flex-1">{stickerToSend.name}</span>
+          <button
+            type="button"
+            onClick={onStickerClear}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Input Options Popover - Instagram DM Style */}
       {showInputOptions && (
-        <div className="absolute bottom-full left-0 mb-2 w-48 bg-gray-700 rounded-xl shadow-lg p-2 animate-fadeIn">
+        <div className="absolute bottom-full left-4 mb-2 w-48 bg-white rounded-2xl shadow-lg border border-gray-200 p-2 animate-fadeIn">
           <button
             type="button"
             onClick={() => {
               onOpenImageUpload?.();
               setInputOptions((prev) => !prev);
             }}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-lg hover:bg-gray-600 text-white"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl hover:bg-gray-50 text-gray-700"
           >
-            <ImageIcon className="w-4 h-4" /> 사진 업로드
+            <ImageIcon className="w-4 h-4" /> 사진
           </button>
         </div>
       )}
 
-      <div className="flex items-center space-x-3">
-        {/* 플러스 버튼 (이미지 없을 때만) */}
+      {/* Main Input Container - Instagram DM Style */}
+      <div className="flex items-end space-x-3">
+        {/* Plus Button */}
         {!hasImage && (
           <button
             id="open-input-options-btn"
             type="button"
             onClick={() => setInputOptions((prev) => !prev)}
-            className="p-3 bg-gray-800 hover:bg-gray-700 text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 h-[48px]"
+            className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 flex-shrink-0"
             disabled={isWaitingForResponse}
           >
             <Plus className="w-5 h-5" />
           </button>
         )}
 
+        {/* Input Field Container */}
         <div className="flex-1 relative">
-          {/* 선택된 스티커 표시 */}
-          {stickerToSend && (
-            <div className="mb-2 p-2 bg-gray-700 rounded-lg flex items-center gap-2 text-sm text-gray-300">
-              <img
-                src={stickerToSend.data}
-                alt={stickerToSend.name}
-                className="w-6 h-6 rounded object-cover"
-              />
-              <span>스티커: {stickerToSend.name}</span>
-              <button
-                type="button"
-                onClick={onStickerClear}
-                className="ml-auto text-gray-400 hover:text-white"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          )}
-
-          {/* 메시지 입력창 */}
-          <textarea
-            id="new-message-input"
-            placeholder={placeholder}
-            className="w-full pl-4 pr-20 py-3 bg-gray-800 text-white rounded-2xl border border-gray-700 resize-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all duration-200 text-sm placeholder-gray-500 flex items-center"
-            rows={1}
-            style={{ minHeight: 48, maxHeight: 120 }}
-            disabled={isWaitingForResponse}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            onPaste={onPaste}
-            onFocus={onFocus}
-          />
-
-          {/* 우측 액션 버튼들 */}
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-            <button
-              id="sticker-btn"
-              type="button"
-              onClick={onToggleUserStickerPanel}
-              className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-all duration-200"
+          <div className="flex items-end bg-gray-100 rounded-3xl px-4 py-2">
+            <textarea
+              id="new-message-input"
+              placeholder={placeholder}
+              className="flex-1 bg-transparent text-gray-900 resize-none border-none outline-none text-sm placeholder-gray-500 max-h-20"
+              rows={1}
               disabled={isWaitingForResponse}
-            >
-              <Smile className="w-4 h-4" />
-            </button>
+              value={text}
+              onChange={(e) => {
+                setText(e.target.value);
+                // Auto-resize textarea
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              onPaste={onPaste}
+              onFocus={onFocus}
+              style={{ minHeight: '20px' }}
+            />
 
-            <button
-              id="send-message-btn"
-              type="button"
-              onClick={handleSend}
-              className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              disabled={isWaitingForResponse || (!text.trim() && !stickerToSend)}
-              title="Send"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            {/* Right Action Buttons */}
+            <div className="flex items-center space-x-1 ml-2">
+              <button
+                id="sticker-btn"
+                type="button"
+                onClick={onToggleUserStickerPanel}
+                className="p-1 text-gray-500 hover:text-gray-700 transition-all duration-200"
+                disabled={isWaitingForResponse}
+              >
+                <Smile className="w-5 h-5" />
+              </button>
+
+              {(text.trim() || stickerToSend) ? (
+                <button
+                  id="send-message-btn"
+                  type="button"
+                  onClick={handleSend}
+                  className="p-1 text-blue-500 hover:text-blue-600 transition-all duration-200 font-semibold text-sm"
+                  disabled={isWaitingForResponse}
+                  title="전송"
+                >
+                  전송
+                </button>
+              ) : null}
+            </div>
           </div>
-
-          {/* 사용자 스티커 패널 */}
-          {renderUserStickerPanel?.()}
         </div>
       </div>
+
+      {/* User Sticker Panel */}
+      {renderUserStickerPanel?.()}
     </div>
   );
 }

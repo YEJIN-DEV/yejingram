@@ -79,9 +79,9 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex flex-col">
-                    <label htmlFor="structured-output-toggle" className="font-medium text-gray-200 cursor-pointer">
+                    <label htmlFor="structured-output-toggle" className="font-medium text-gray-900 cursor-pointer">
                         구조화된 출력 사용
                     </label>
                     <p className="text-xs text-gray-500">LLM이 응답 시간과 메시지를 직접 제어합니다. (권장)</p>
@@ -94,18 +94,18 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         checked={settings.useStructuredOutput}
                         onChange={e => setSettings(prev => ({ ...prev, useStructuredOutput: e.target.checked }))}
                     />
-                    <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                 </label>
             </div>
             {provider !== 'vertexai' && (
                 <div>
-                    <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Key className="w-4 h-4 mr-2" />API 키</label>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Key className="w-4 h-4 mr-2" />API 키</label>
                     <input
                         type="password"
                         value={config.apiKey}
                         onChange={e => handleConfigChange('apiKey', e.target.value)}
                         placeholder="API 키를 입력하세요"
-                        className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm"
+                        className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
                     />
                 </div>
             )}
@@ -113,33 +113,33 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
             {provider === 'vertexai' && (
                 <>
                     <div>
-                        <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Briefcase className="w-4 h-4 mr-2" />Project ID</label>
+                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Briefcase className="w-4 h-4 mr-2" />Project ID</label>
                         <input
                             type="text"
                             value={config.projectId || ''}
                             onChange={e => handleConfigChange('projectId', e.target.value)}
                             placeholder="Vertex AI Project ID"
-                            className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
                         />
                     </div>
                     <div>
-                        <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Globe className="w-4 h-4 mr-2" />Location</label>
+                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Globe className="w-4 h-4 mr-2" />Location</label>
                         <input
                             type="text"
                             value={config.location || ''}
                             onChange={e => handleConfigChange('location', e.target.value)}
                             placeholder="global"
-                            className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
                         />
                     </div>
                     <div>
-                        <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Key className="w-4 h-4 mr-2" />Access Token</label>
+                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Key className="w-4 h-4 mr-2" />Access Token</label>
                         <input
                             type="password"
                             value={config.accessToken || ''}
                             onChange={e => handleConfigChange('accessToken', e.target.value)}
                             placeholder="gcloud auth print-access-token"
-                            className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
                         />
                     </div>
                 </>
@@ -147,19 +147,19 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
             {provider === 'customOpenAI' && (
                 <div>
-                    <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Link className="w-4 h-4 mr-2" />Base URL</label>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Link className="w-4 h-4 mr-2" />Base URL</label>
                     <input
                         type="text"
                         value={config.baseUrl || ''}
                         onChange={e => handleConfigChange('baseUrl', e.target.value)}
                         placeholder="https://api.openai.com/v1"
-                        className="w-full px-4 py-3 bg-gray-700 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-sm"
+                        className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
                     />
                 </div>
             )}
 
             <div>
-                <label className="flex items-center text-sm font-medium text-gray-300 mb-2"><Cpu className="w-4 h-4 mr-2" />모델</label>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Cpu className="w-4 h-4 mr-2" />모델</label>
 
                 {models.length > 0 && (
                     <div className="grid grid-cols-1 gap-2 mb-3">
@@ -168,7 +168,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                                 key={model}
                                 type="button"
                                 onClick={() => handleModelSelect(model)}
-                                className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors ${config.model === model ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+                                className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors border ${config.model === model ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'}`}>
                                 {model}
                             </button>
                         ))}
@@ -181,31 +181,31 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         value={customModelInput}
                         onChange={e => setCustomModelInput(e.target.value)}
                         placeholder="커스텀 모델명 입력"
-                        className="flex-1 px-3 py-2 bg-gray-700 text-white rounded-lg border-0 focus:ring-2 focus:ring-blue-500/50 text-sm"
+                        className="flex-1 px-3 py-2 bg-gray-50 text-gray-900 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm"
                     />
                     <button
                         type="button"
                         onClick={handleAddCustomModel}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm flex items-center gap-1">
+                        className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm flex items-center gap-1">
                         <Plus className="w-4 h-4" />추가
                     </button>
                 </div>
 
                 {config.customModels.length > 0 && (
                     <div className="mt-3 space-y-1">
-                        <label className="text-xs text-gray-400">커스텀 모델</label>
+                        <label className="text-xs text-gray-500">커스텀 모델</label>
                         {config.customModels.map((model, index) => (
                             <div key={index} className="flex items-center gap-2">
                                 <button
                                     type="button"
                                     onClick={() => handleModelSelect(model)}
-                                    className={`model-select-btn flex-1 px-3 py-2 text-left text-sm rounded-lg transition-colors ${config.model === model ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+                                    className={`model-select-btn flex-1 px-3 py-2 text-left text-sm rounded-lg transition-colors border ${config.model === model ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'}`}>
                                     {model}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveCustomModel(index)}
-                                    className="remove-custom-model-btn px-2 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm">
+                                    className="remove-custom-model-btn px-2 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm">
                                     <X className="w-3 h-3" />
                                 </button>
                             </div>

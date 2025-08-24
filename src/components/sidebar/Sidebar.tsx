@@ -39,40 +39,81 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
 
     return (
         <>
-            <header className="p-4 md:p-6 border-b border-gray-800">
-                <div className="flex items-center justify-between mb-4 md:mb-6">
-                    <div>
-                        <h1 className="text-xl md:text-2xl font-bold text-white mb-1">예진그램</h1>
-                        <p className="text-xs md:text-sm text-gray-400">상대를 초대/대화 하세요</p>
+            {/* Instagram DM Style Header */}
+            <header className="p-4 border-b border-gray-100 bg-white">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                        <h1 className="text-2xl font-bold text-gray-900">예진그램</h1>
                     </div>
-                    <button id="open-settings-modal" onClick={openSettingsModal} className="p-2 md:p-2.5 rounded-full bg-gray-800 hover:bg-gray-700 transition-all duration-200">
-                        <Settings className="w-5 h-5 text-gray-300" />
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        <button
+                            id="open-new-character-modal"
+                            onClick={handleNewCharacter}
+                            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            title="새 채팅"
+                        >
+                            <Plus className="w-6 h-6 text-gray-600" />
+                        </button>
+                        <button
+                            id="open-settings-modal"
+                            onClick={openSettingsModal}
+                            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            title="설정"
+                        >
+                            <Settings className="w-6 h-6 text-gray-600" />
+                        </button>
+                    </div>
                 </div>
+
+                {/* Search Bar */}
                 <div className="relative">
-                    <Bot className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                    <Bot className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                         id="search-input"
                         type="text"
-                        placeholder="검색하기..."
+                        placeholder="검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-11 pr-4 py-2 md:py-3 bg-gray-800 text-white rounded-xl border-0 focus:ring-2 focus:ring-blue-500/30 focus:bg-gray-750 transition-all duration-200 text-sm placeholder-gray-500"
+                        className="w-full pl-10 pr-4 py-2 bg-gray-100 text-gray-900 rounded-full border-0 focus:bg-gray-50 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 text-sm placeholder-gray-500"
                     />
                 </div>
             </header>
 
+            {/* Chat List */}
             <div className="flex-1 overflow-y-auto">
-                <div className="p-4 space-y-2">
-                    <button id="open-new-character-modal" onClick={handleNewCharacter} className="w-full flex items-center justify-center py-3 md:py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all duration-200 font-medium shadow-lg text-sm">
-                        <Plus className="w-4 h-4 mr-2" />
-                        초대하기
-                    </button>
+                {/* Quick Actions */}
+                <div className="px-4 py-2 border-b border-gray-100">
+                    <div className="flex space-x-4">
+                        <button
+                            onClick={openCreateOpenChatModal}
+                            className="flex items-center text-sm text-blue-500 hover:text-blue-600 font-medium"
+                        >
+                            오픈 채팅 만들기
+                        </button>
+                        <button
+                            onClick={openCreateGroupChatModal}
+                            className="flex items-center text-sm text-blue-500 hover:text-blue-600 font-medium"
+                        >
+                            그룹 채팅 만들기
+                        </button>
+                    </div>
                 </div>
 
-                <div className="space-y-1 px-3 pb-4">
-                    <OpenChatList rooms={openChats} setRoomId={setRoomId} selectedRoomId={roomId} openCreateOpenChatModal={openCreateOpenChatModal} />
-                    <GroupChatList rooms={groupChats} setRoomId={setRoomId} selectedRoomId={roomId} openCreateGroupChatModal={openCreateGroupChatModal} openEditGroupChatModal={openEditGroupChatModal} />
+                {/* Chat Items */}
+                <div className="space-y-0">
+                    <OpenChatList
+                        rooms={openChats}
+                        setRoomId={setRoomId}
+                        selectedRoomId={roomId}
+                        openCreateOpenChatModal={openCreateOpenChatModal}
+                    />
+                    <GroupChatList
+                        rooms={groupChats}
+                        setRoomId={setRoomId}
+                        selectedRoomId={roomId}
+                        openCreateGroupChatModal={openCreateGroupChatModal}
+                        openEditGroupChatModal={openEditGroupChatModal}
+                    />
                     {filteredCharacters.map((char) => (
                         <CharacterList
                             key={char.id}

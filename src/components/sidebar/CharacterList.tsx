@@ -38,18 +38,33 @@ function CharacterList({
     });
 
     const lastMessageContent =
-        lastMessage?.type === 'IMAGE' ? '이미지를 보냈습니다' :
-            lastMessage?.type === 'STICKER' ? '스티커를 보냈습니다' :
-                lastMessage?.content ?? '대화를 시작해보세요';
+        lastMessage?.type === 'IMAGE' ? '사진' :
+            lastMessage?.type === 'STICKER' ? '스티커' :
+                lastMessage?.content ?? '새로운 메시지를 보내보세요';
+
+    const formatTime = (timestamp: string) => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffMins < 1) return '방금';
+        if (diffMins < 60) return `${diffMins}분`;
+        if (diffHours < 24) return `${diffHours}시간`;
+        if (diffDays < 7) return `${diffDays}일`;
+        return date.toLocaleDateString();
+    };
 
     return (
         <div className="character-group">
-            {/* 캐릭터 헤더 (중복 제거, onClick 단 한 곳) */}
+            {/* Instagram DM Style Character Item */}
             <div
                 onClick={() => setIsExpanded(prev => !prev)}
-                className="character-header group p-3 md:p-4 rounded-xl cursor-pointer transition-all duration-200 relative hover:bg-gray-800/50"
+                className="character-header group px-4 py-3 cursor-pointer transition-all duration-200 relative hover:bg-gray-50"
             >
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
+                <div className="absolute top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -62,7 +77,7 @@ function CharacterList({
                                 unreadCount: 0,
                             }));
                         }}
-                        className="p-1 bg-gray-700 hover:bg-blue-600 rounded text-gray-300 hover:text-white transition-colors"
+                        className="p-1 bg-gray-100 hover:bg-blue-500 rounded-full text-gray-600 hover:text-white transition-colors"
                         title="새 채팅방"
                     >
                         <Plus className="w-3 h-3" />
@@ -73,7 +88,7 @@ function CharacterList({
                             dispatch(charactersActions.setEditingCharacterId(character.id));
                             toggleCharacterPanel();
                         }}
-                        className="p-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 hover:text-white transition-colors"
+                        className="p-1 bg-gray-100 hover:bg-gray-400 rounded-full text-gray-600 hover:text-white transition-colors"
                         title="수정"
                     >
                         <Edit3 className="w-3 h-3" />
@@ -85,46 +100,71 @@ function CharacterList({
                                 dispatch(charactersActions.removeOne(character.id));
                             }
                         }}
-                        className="p-1 bg-gray-700 hover:bg-red-600 rounded text-gray-300 hover:text-white transition-colors"
+                        className="p-1 bg-gray-100 hover:bg-red-500 rounded-full text-gray-600 hover:text-white transition-colors"
                         title="삭제"
                     >
                         <Trash2 className="w-3 h-3" />
                     </button>
                 </div>
 
-                <div className="flex items-center space-x-3 md:space-x-4">
-                    <Avatar char={character} size="md" />
+                <div className="flex items-center space-x-3">
+                    <div className="relative">
+                        <Avatar char={character} size="md" />
+                        {/* Online indicator */}
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+                    </div>
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-semibold text-white text-sm truncate">{character.name}</h3>
-                            <div className="flex items-center gap-2">
-                                {totalUnreadCount > 0 && (
-                                    <span className="bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full leading-none">
-                                        {totalUnreadCount}
-                                    </span>
-                                )}
-                                <span className="text-xs text-gray-500 shrink-0">{lastMessage?.createdAt ? new Date(lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
-                                {isExpanded ? (
-                                    <ChevronDown className={`w-4 h-4 text-gray-400`} />
-                                ) : (
-                                    <ChevronRight className={`w-4 h-4 text-gray-400`} />
-                                )}
+                        <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2">
+                                    <h3 className="font-semibold text-gray-900 text-sm truncate">{character.name}</h3>
+                                    {totalUnreadCount > 0 && (
+                                        <span className="bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium min-w-[18px] text-center">
+                                            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center justify-between mt-1">
+                                    <p className="text-gray-500 text-sm truncate flex-1 mr-2">
+                                        {lastMessageContent}
+                                        {chatRooms.length > 1 && (
+                                            <span className="text-gray-400"> · {chatRooms.length}개 채팅</span>
+                                        )}
+                                    </p>
+                                    <div className="flex items-center space-x-1 flex-shrink-0">
+                                        {lastMessage?.createdAt && (
+                                            <span className="text-xs text-gray-400">
+                                                {formatTime(lastMessage.createdAt)}
+                                            </span>
+                                        )}
+                                        {isExpanded ?
+                                            <ChevronDown className="w-4 h-4 text-gray-400" /> :
+                                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                                        }
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <p className={`text-xs md:text-sm truncate ${lastMessage?.isError ? 'text-red-400' : 'text-gray-400'}`}>
-                            {lastMessageContent}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">{chatRooms.length}개 채팅방</p>
                     </div>
                 </div>
             </div>
 
-            {/* 채팅방 목록 */}
+            {/* Chat Rooms List - Instagram DM Style */}
             {isExpanded && (
-                <div className="ml-6 space-y-1 pb-2">
-                    {chatRooms.map(room => (
-                        <div key={room.id}>
-                            <RoomList room={room} unreadCount={room.unreadCount || 0} setRoomId={setRoomId} isSelected={selectedRoomId === room.id} />
+                <div className="bg-gray-50 border-t border-gray-100">
+                    {chatRooms.map((room, index) => (
+                        <div
+                            key={room.id}
+                            className={`pl-16 pr-4 py-2 hover:bg-gray-100 cursor-pointer ${index !== chatRooms.length - 1 ? 'border-b border-gray-100' : ''
+                                }`}
+                            onClick={() => setRoomId(room.id)}
+                        >
+                            <RoomList
+                                room={room}
+                                unreadCount={room.unreadCount || 0}
+                                setRoomId={setRoomId}
+                                isSelected={selectedRoomId === room.id}
+                            />
                         </div>
                     ))}
                 </div>

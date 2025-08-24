@@ -139,41 +139,41 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-2xl w-full max-w-2xl mx-4 flex flex-col" style={{ maxHeight: '90vh' }}>
-                <div className="flex items-center justify-between p-6 border-b border-gray-700 shrink-0">
-                    <h3 className="text-lg font-semibold text-white">프롬프트 수정</h3>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-700 rounded-full"><X className="w-5 h-5" /></button>
+            <div className="bg-white rounded-2xl w-full max-w-2xl mx-4 flex flex-col shadow-2xl" style={{ maxHeight: '90vh' }}>
+                <div className="flex items-center justify-between p-6 border-b border-gray-200 shrink-0">
+                    <h3 className="text-lg font-semibold text-gray-900">프롬프트 수정</h3>
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-500" /></button>
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto">
-                    <h4 className="text-base font-semibold text-blue-300 border-b border-blue-300/20 pb-2">메인 채팅 프롬프트</h4>
+                    <h4 className="text-base font-semibold text-blue-600 border-b border-blue-100 pb-2">메인 채팅 프롬프트</h4>
                     {Object.entries(mainPromptSections).map(([title, key]) => {
                         if (key === 'message_writing_style') {
                             return (
-                                <details key={key} className="group bg-gray-900/50 rounded-lg">
+                                <details key={key} className="group bg-gray-50 rounded-lg border border-gray-200">
                                     <summary className="flex items-center justify-between cursor-pointer list-none p-4">
-                                        <span className="text-base font-medium text-gray-200">{title}</span>
+                                        <span className="text-base font-medium text-gray-900">{title}</span>
                                         <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
                                     </summary>
                                     <div className="content-wrapper">
-                                        <div className="content-inner p-4 border-t border-gray-700">
+                                        <div className="content-inner p-4 border-t border-gray-200">
                                             <div className="flex items-center gap-2 mb-3">
                                                 <button onClick={() => {
                                                     setPromptToDefault('message_writing_style');
-                                                }} className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
+                                                }} className="py-1 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs flex items-center gap-1 border border-gray-200">
                                                     <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                                 </button>
                                             </div>
-                                            <h5 className="text-sm font-semibold text-gray-300 mb-2">Structured</h5>
+                                            <h5 className="text-sm font-semibold text-gray-700 mb-2">Structured</h5>
                                             <textarea
                                                 value={localPrompts.main.message_writing_structured}
                                                 onChange={e => handleMainPromptChange('message_writing_structured', e.target.value)}
-                                                className="w-full h-64 p-3 bg-gray-700 text-white rounded-lg text-sm font-mono mb-4" />
+                                                className="w-full h-64 p-3 bg-gray-50 text-gray-900 rounded-lg text-sm font-mono mb-4 border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500" />
 
-                                            <h5 className="text-sm font-semibold text-gray-300 mb-2">Unstructured</h5>
+                                            <h5 className="text-sm font-semibold text-gray-700 mb-2">Unstructured</h5>
                                             <textarea
                                                 value={localPrompts.main.message_writing_unstructured}
                                                 onChange={e => handleMainPromptChange('message_writing_unstructured', e.target.value)}
-                                                className="w-full h-64 p-3 bg-gray-700 text-white rounded-lg text-sm font-mono" />
+                                                className="w-full h-64 p-3 bg-gray-50 text-gray-900 rounded-lg text-sm font-mono border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500" />
                                         </div>
                                     </div>
                                 </details>
@@ -181,71 +181,71 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         }
 
                         return (
-                            <details key={key} className="group bg-gray-900/50 rounded-lg">
+                            <details key={key} className="group bg-gray-50 rounded-lg border border-gray-200">
                                 <summary className="flex items-center justify-between cursor-pointer list-none p-4">
-                                    <span className="text-base font-medium text-gray-200">{title}</span>
+                                    <span className="text-base font-medium text-gray-900">{title}</span>
                                     <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
                                 </summary>
                                 <div className="content-wrapper">
-                                    <div className="content-inner p-4 border-t border-gray-700">
+                                    <div className="content-inner p-4 border-t border-gray-200">
                                         <div className="flex items-center gap-2 mb-3">
-                                            <button onClick={() => setPromptToDefault(key as keyof Prompts['main'])} className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
+                                            <button onClick={() => setPromptToDefault(key as keyof Prompts['main'])} className="py-1 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs flex items-center gap-1 border border-gray-200">
                                                 <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                             </button>
                                         </div>
                                         <textarea
                                             value={localPrompts.main[key as keyof Prompts['main']]}
                                             onChange={e => handleMainPromptChange(key as keyof Prompts['main'], e.target.value)}
-                                            className="w-full h-64 p-3 bg-gray-700 text-white rounded-lg text-sm font-mono" />
+                                            className="w-full h-64 p-3 bg-gray-50 text-gray-900 rounded-lg text-sm font-mono border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500" />
                                     </div>
                                 </div>
                             </details>
                         );
                     })}
 
-                    <h4 className="text-base font-semibold text-blue-300 border-b border-blue-300/20 pb-2 mt-6">랜덤 선톡 캐릭터 생성 프롬프트</h4>
-                    <details className="group bg-gray-900/50 rounded-lg">
+                    <h4 className="text-base font-semibold text-blue-600 border-b border-blue-100 pb-2 mt-6">랜덤 선톡 캐릭터 생성 프롬프트</h4>
+                    <details className="group bg-gray-50 rounded-lg border border-gray-200">
                         <summary className="flex items-center justify-between cursor-pointer list-none p-4">
-                            <span className="text-base font-medium text-gray-200"># 캐릭터 생성 규칙 (Profile Creation Rules)</span>
+                            <span className="text-base font-medium text-gray-900"># 캐릭터 생성 규칙 (Profile Creation Rules)</span>
                             <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
                         </summary>
                         <div className="content-wrapper">
-                            <div className="content-inner p-4 border-t border-gray-700">
+                            <div className="content-inner p-4 border-t border-gray-200">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <button onClick={() => setPromptToDefault('profile_creation')} className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
+                                    <button onClick={() => setPromptToDefault('profile_creation')} className="py-1 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs flex items-center gap-1 border border-gray-200">
                                         <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                     </button>
                                 </div>
                                 <textarea
                                     value={localPrompts.profile_creation}
                                     onChange={e => setLocalPrompts(prev => ({ ...prev, profile_creation: e.target.value }))}
-                                    className="w-full h-64 p-3 bg-gray-700 text-white rounded-lg text-sm font-mono" />
+                                    className="w-full h-64 p-3 bg-gray-50 text-gray-900 rounded-lg text-sm font-mono border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500" />
                             </div>
                         </div>
                     </details>
 
-                    <h4 className="text-base font-semibold text-green-300 border-b border-green-300/20 pb-2 mt-6">초대하기 AI 캐릭터 시트 생성 프롬프트</h4>
-                    <details className="group bg-gray-900/50 rounded-lg">
+                    <h4 className="text-base font-semibold text-green-600 border-b border-green-100 pb-2 mt-6">초대하기 AI 캐릭터 시트 생성 프롬프트</h4>
+                    <details className="group bg-gray-50 rounded-lg border border-gray-200">
                         <summary className="flex items-center justify-between cursor-pointer list-none p-4">
-                            <span className="text-base font-medium text-gray-200"># 캐릭터 시트 생성 규칙 (Character Sheet Generation Rules)</span>
+                            <span className="text-base font-medium text-gray-900"># 캐릭터 시트 생성 규칙 (Character Sheet Generation Rules)</span>
                             <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
                         </summary>
                         <div className="content-wrapper">
-                            <div className="content-inner p-4 border-t border-gray-700">
+                            <div className="content-inner p-4 border-t border-gray-200">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <button onClick={() => setPromptToDefault('character_sheet_generation')} className="py-1 px-3 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs flex items-center gap-1">
+                                    <button onClick={() => setPromptToDefault('character_sheet_generation')} className="py-1 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs flex items-center gap-1 border border-gray-200">
                                         <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                     </button>
                                 </div>
                                 <textarea
                                     value={localPrompts.character_sheet_generation}
                                     onChange={e => setLocalPrompts(prev => ({ ...prev, character_sheet_generation: e.target.value }))}
-                                    className="w-full h-64 p-3 bg-gray-700 text-white rounded-lg text-sm font-mono" />
+                                    className="w-full h-64 p-3 bg-gray-50 text-gray-900 rounded-lg text-sm font-mono border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500" />
                             </div>
                         </div>
                     </details>
                 </div>
-                <div className="p-6 mt-auto border-t border-gray-700 shrink-0 flex flex-wrap justify-end gap-3">
+                <div className="p-6 mt-auto border-t border-gray-200 shrink-0 flex flex-wrap justify-end gap-3">
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -253,15 +253,15 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         className="hidden"
                         onChange={handleFileChange}
                     />
-                    <button onClick={handleBackup} className="py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm flex items-center gap-2">
+                    <button onClick={handleBackup} className="py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm flex items-center gap-2 border border-gray-200">
                         <Download className="w-4 h-4" /> 프롬프트 백업
                     </button>
-                    <button onClick={handleImportClick} className="py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm flex items-center gap-2">
+                    <button onClick={handleImportClick} className="py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm flex items-center gap-2 border border-gray-200">
                         <Upload className="w-4 h-4" /> 프롬프트 불러오기
                     </button>
                     <div className="flex-grow"></div>
-                    <button onClick={onClose} className="py-2.5 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">취소</button>
-                    <button onClick={handleSave} className="py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">저장</button>
+                    <button onClick={onClose} className="py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">취소</button>
+                    <button onClick={handleSave} className="py-2.5 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">저장</button>
                 </div>
             </div>
         </div>
