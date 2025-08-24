@@ -21,4 +21,5 @@ export interface Room {
     unreadCount: number
     groupSettings?: GroupChatSettings
     currentParticipants?: number[]
+    authorNote?: string
 }

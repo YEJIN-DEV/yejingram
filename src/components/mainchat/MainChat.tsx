@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, Bot, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Send, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle } from 'lucide-react';
+import { Menu, Bot, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Send, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -12,6 +12,7 @@ import { Avatar } from '../../utils/Avatar';
 import { SendMessage, SendGroupChatMessage, SendOpenChatMessage } from '../../services/LLMcaller';
 import type { Sticker } from '../../entities/character/types';
 import { StickerPanel } from './StickerPanel';
+import type { ImageToSend } from '../../entities/message/types';
 
 interface MainChatProps {
   room: Room | null;
@@ -28,6 +29,8 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   const [newRoomName, setNewRoomName] = useState('');
   const [imageToSend, setImageToSend] = useState<ImageToSend | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAuthorNoteOpen, setIsAuthorNoteOpen] = useState(false);
+  const [tempAuthorNote, setTempAuthorNote] = useState('');
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -88,6 +91,18 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
     if (!room) return;
     setNewRoomName(room.name);
     setIsEditingRoomName(true);
+  };
+
+  const openAuthorNote = () => {
+    if (!room) return;
+    setTempAuthorNote(room.authorNote || '');
+    setIsAuthorNoteOpen(true);
+  };
+
+  const saveAuthorNote = () => {
+    if (!room) return;
+    dispatch(roomsActions.upsertOne({ ...room, authorNote: tempAuthorNote }));
+    setIsAuthorNoteOpen(false);
   };
 
   const handleSaveRoomName = () => {
@@ -222,6 +237,13 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   else {
     return (
       <>
+        <AuthorNoteModal
+          open={isAuthorNoteOpen}
+          onClose={() => setIsAuthorNoteOpen(false)}
+          value={tempAuthorNote}
+          onChange={setTempAuthorNote}
+          onSave={saveAuthorNote}
+        />
         {room.type == "Open" ? (
           <>
             <header className="p-4 bg-gray-900/80 border-b border-gray-800 glass-effect flex items-center justify-between z-10">
@@ -270,6 +292,9 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 </button>
                 <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={startVideoCall} */}
                   <Video className="w-4 h-4 text-gray-300" />
+                </button>
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700" title="작가의 노트" onClick={openAuthorNote}>
+                  <StickyNote className="w-4 h-4 text-gray-300" />
                 </button>
                 <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
                   <MoreHorizontal className="w-4 h-4 text-gray-300" />
@@ -348,6 +373,9 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={startVideoCall} */}
                   <Video className="w-4 h-4 text-gray-300" />
                 </button>
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700" title="작가의 노트" onClick={openAuthorNote}>
+                  <StickyNote className="w-4 h-4 text-gray-300" />
+                </button>
                 <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
                   <MoreHorizontal className="w-4 h-4 text-gray-300" />
                 </button>
@@ -423,6 +451,9 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
                   <Video className="w-4 h-4 text-gray-300" />
                 </button>
+                <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700" title="작가의 노트" onClick={openAuthorNote}>
+                  <StickyNote className="w-4 h-4 text-gray-300" />
+                </button>
                 <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"> {/* onClick={openChatSettings} */}
                   <MoreHorizontal className="w-4 h-4 text-gray-300" />
                 </button>
@@ -467,9 +498,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   }
 }
 
-import type { ImageToSend } from '../../entities/message/types';
-
-export interface InputAreaProps {
+interface InputAreaProps {
   room: Room;
   isWaitingForResponse: boolean;
   imageToSend?: ImageToSend | null;
@@ -488,7 +517,7 @@ export interface InputAreaProps {
   renderUserStickerPanel?: () => React.ReactNode;
 }
 
-export function InputArea({
+function InputArea({
   isWaitingForResponse,
   imageToSend,
   stickerToSend,
@@ -634,6 +663,34 @@ export function InputArea({
 
           {/* 사용자 스티커 패널 */}
           {renderUserStickerPanel?.()}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthorNoteModal({ open, onClose, value, onChange, onSave }: { open: boolean; onClose: () => void; value: string; onChange: (v: string) => void; onSave: () => void; }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-lg mx-4 bg-gray-900 rounded-2xl border border-gray-800 shadow-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 text-white font-semibold">
+            <StickyNote className="w-4 h-4" /> 작가의 노트
+          </div>
+          <button className="p-2 rounded-full hover:bg-gray-800 text-gray-300" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <textarea
+          className="w-full h-48 p-3 bg-gray-800 text-white rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          placeholder="방 전체에 적용될 메타 지침을 적어주세요. (예: 톤, 금지사항, 세계관 규칙, 줄거리 방향 등)"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <div className="mt-3 flex justify-end gap-2">
+          <button className="px-3 py-2 rounded-lg bg-gray-800 text-gray-200 hover:bg-gray-700" onClick={onClose}>취소</button>
+          <button className="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700" onClick={onSave}>저장</button>
         </div>
       </div>
     </div>

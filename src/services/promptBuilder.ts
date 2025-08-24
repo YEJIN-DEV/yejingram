@@ -4,6 +4,8 @@ import type { Message } from "../entities/message/types";
 import { selectPrompts } from "../entities/setting/selectors";
 import type { GeminiApiPayload, ClaudeApiPayload } from "./type";
 import { filterActiveLores } from "../entities/lorebook/match";
+import { getActiveRoomId } from "../utils/activeRoomTracker";
+import { selectRoomById } from "../entities/room/selectors";
 
 const TEMPERATURE = 1.25;
 const TOP_K = 40;
@@ -81,6 +83,10 @@ function buildMasterPrompt(
     const prompts = selectPrompts(store.getState());
     const guidelines = buildGuidelinesPrompt(prompts, character, messages, isProactive, useStructuredOutput);
     const lorebookSection = buildActiveLorebookSection(character, messages);
+    const state = store.getState();
+    const activeRoomId = getActiveRoomId();
+    const room = activeRoomId ? selectRoomById(state, activeRoomId) : null;
+    const authorsNote = room?.authorNote?.trim();
 
     return `# System Rules
 ${prompts.main.system_rules}
@@ -104,6 +110,11 @@ ${character.prompt}
 # Memory
 This is a list of key memories the character has. Use them to maintain consistency and recall past events.
 ${character.memories && character.memories.length > 0 ? character.memories.map(mem => `- ${mem}`).join('\n') : 'No specific memories recorded yet.'}
+
+${authorsNote ? `# Author's Note
+Treat the following as high-priority memory for this chat room. It provides meta-guidance and context that should subtly influence behavior and tone without being quoted explicitly.
+- ${authorsNote}
+` : ''}
 
 ${lorebookSection}
 
