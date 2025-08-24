@@ -367,9 +367,9 @@ export function buildOpenAIApiPayload(
             { role: 'system', content: systemPrompt },
             ...history,
         ],
-        temperature: TEMPERATURE,
-        top_p: TOP_P,
-        max_tokens: 2048,
+        temperature: model == "gpt-5" ? 1 : TEMPERATURE,
+        top_p: model == "gpt-5" ? undefined : TOP_P,
+        max_completion_tokens: 8096,
         response_format: useStructuredOutput ? { type: 'json_object' } : { type: 'text' },
     };
     return payload;

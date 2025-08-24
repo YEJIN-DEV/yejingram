@@ -90,7 +90,7 @@ export interface OpenAIApiPayload {
     }>;
     temperature?: number;
     top_p?: number;
-    max_tokens?: number;
+    max_completion_tokens?: number;
     // Supported by Chat Completions for JSON-mode on modern models
     response_format?: { type: 'json_object' } | { type: 'text' };
 }
