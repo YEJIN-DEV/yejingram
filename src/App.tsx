@@ -11,6 +11,7 @@ import EditGroupChatModal from './components/modals/EditGroupChatModal'
 import { ChevronLeft } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
+import { selectEditingCharacterId } from './entities/character/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -27,9 +28,17 @@ function App() {
   const [isCreateOpenChatModalOpen, setIsCreateOpenChatModalOpen] = useState(false);
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
 
+  const editingCharacterId = useSelector(selectEditingCharacterId);
+
   useEffect(() => {
     setActiveRoomId(roomId);
   }, [roomId]);
+
+  useEffect(() => {
+    if (editingCharacterId === null && isCharacterPanelOpen) {
+      setIsCharacterPanelOpen(false);
+    }
+  }, [editingCharacterId, isCharacterPanelOpen]);
 
   const toggleMobileSidebar = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
