@@ -55,7 +55,7 @@ function CharacterPanel() {
     const proactiveChatEnabled = useSelector((state: RootState) => state.settings.proactiveChatEnabled)
 
     const [char, setChar] = useState<Character>(newCharacterDefault);
-    const [activeTab, setActiveTab] = useState<'basicInfo' | 'lorebook' | 'backup'>('basicInfo');
+    const [activeTab, setActiveTab] = useState<'basicInfo' | 'memory' | 'lorebook' | 'backup'>('basicInfo');
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
     const isNew = !editingId;
@@ -190,6 +190,12 @@ function CharacterPanel() {
                     기본정보
                 </button>
                 <button
+                    className={`py-3 px-6 text-sm font-medium ${activeTab === 'memory' ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'}`}
+                    onClick={() => setActiveTab('memory')}
+                >
+                    메모리
+                </button>
+                <button
                     className={`py-3 px-6 text-sm font-medium ${activeTab === 'lorebook' ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'}`}
                     onClick={() => setActiveTab('lorebook')}
                 >
@@ -258,13 +264,7 @@ function CharacterPanel() {
                                         </summary>
                                         <StickerManager stickers={char.stickers || []} onStickersChange={handleStickersChange} />
                                     </details>
-                                    <details className="group border-t border-gray-700 pt-2">
-                                        <summary className="flex items-center justify-between cursor-pointer list-none py-2">
-                                            <h4 className="text-sm font-medium text-gray-300">메모리</h4>
-                                            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
-                                        </summary>
-                                        <MemoryManager memories={char.memories || []} handleMemoryChange={handleMemoryChange} addMemory={addMemory} deleteMemory={deleteMemory} />
-                                    </details>
+                                    {/* 메모리는 별도 탭으로 이동 */}
                                     <details className="group border-t border-gray-700 pt-2">
                                         <summary className="flex items-center justify-between cursor-pointer list-none py-2">
                                             <h4 className="text-sm font-medium text-gray-300">메시지 응답성</h4>
@@ -280,6 +280,16 @@ function CharacterPanel() {
                 {activeTab === 'lorebook' && (
                     <div className="space-y-6">
                         <LorebookEditor lores={char.lorebook || []} onChange={handleLoresChange} />
+                    </div>
+                )}
+                {activeTab === 'memory' && (
+                    <div className="space-y-6">
+                        <MemoryManager
+                            memories={char.memories || []}
+                            handleMemoryChange={handleMemoryChange}
+                            addMemory={addMemory}
+                            deleteMemory={deleteMemory}
+                        />
                     </div>
                 )}
                 {activeTab === 'backup' && (
