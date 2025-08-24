@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Bot, Plus } from 'lucide-react';
+import { Settings, Bot, Plus, X } from 'lucide-react';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
@@ -17,9 +17,10 @@ interface SidebarProps {
     openCreateGroupChatModal: () => void;
     openCreateOpenChatModal: () => void;
     openEditGroupChatModal: () => void;
+    onCloseMobile?: () => void;
 }
 
-function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, openCreateGroupChatModal, openCreateOpenChatModal, openEditGroupChatModal }: SidebarProps) {
+function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, openCreateGroupChatModal, openCreateOpenChatModal, openEditGroupChatModal, onCloseMobile }: SidebarProps) {
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const rooms = useSelector(selectAllRooms);
@@ -42,7 +43,16 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
             {/* Instagram DM Style Header */}
             <header className="p-4 border-b border-gray-100 bg-white">
                 <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
+                        {/* Mobile close button */}
+                        <button
+                            id="close-sidebar-mobile"
+                            onClick={onCloseMobile}
+                            className="p-2 -ml-2 rounded-full hover:bg-gray-100 md:hidden"
+                            title="닫기"
+                        >
+                            <X className="w-5 h-5 text-gray-600" />
+                        </button>
                         <h1 className="text-2xl font-bold text-gray-900">예진그램</h1>
                     </div>
                     <div className="flex items-center space-x-2">

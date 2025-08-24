@@ -181,8 +181,8 @@ const MessageList: React.FC<MessageListProps> = ({
                 return (
                   <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
                     <div className={`px-4 py-2 rounded-2xl text-sm leading-relaxed max-w-xs ${isMe
-                        ? 'bg-blue-500 text-white rounded-br-md'
-                        : 'bg-gray-200 text-gray-900 rounded-bl-md'
+                      ? 'bg-blue-500 text-white rounded-br-md'
+                      : 'bg-gray-200 text-gray-900 rounded-bl-md'
                       }`}>
                       <div className="break-words">{msg.content}</div>
                     </div>
@@ -206,8 +206,8 @@ const MessageList: React.FC<MessageListProps> = ({
 
               const captionTag = msg.content && msg.content.trim() ? (
                 <div className={`mt-1 px-4 py-2 rounded-2xl text-sm leading-relaxed max-w-xs ${isMe
-                    ? 'bg-blue-500 text-white rounded-br-md'
-                    : 'bg-gray-200 text-gray-900 rounded-bl-md'
+                  ? 'bg-blue-500 text-white rounded-br-md'
+                  : 'bg-gray-200 text-gray-900 rounded-bl-md'
                   }`}>
                   <div className="break-words">{msg.content}</div>
                 </div>
@@ -222,8 +222,8 @@ const MessageList: React.FC<MessageListProps> = ({
             } else if (msg.type === 'TEXT') {
               return (
                 <div className={`px-4 py-2 rounded-2xl text-sm leading-relaxed max-w-xs ${isMe
-                    ? 'bg-blue-500 text-white rounded-br-md'
-                    : 'bg-gray-200 text-gray-900 rounded-bl-md'
+                  ? 'bg-blue-500 text-white rounded-br-md'
+                  : 'bg-gray-200 text-gray-900 rounded-bl-md'
                   }`}>
                   <div className="break-words">{msg.content}</div>
                 </div>
@@ -256,8 +256,8 @@ const MessageList: React.FC<MessageListProps> = ({
                 </div>
               )}
               {msg.type !== 'SYSTEM' && (
-                <div className={`group flex w-full mb-1 ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`flex items-end max-w-[75%] ${isMe ? 'flex-row-reverse' : ''} ${isMe ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
+                <div className={`group flex w-full mb-2 md:mb-3 ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`flex items-end max-w-[75%] ${isMe ? 'flex-row-reverse' : ''} gap-3 md:gap-4`}>
 
                     {/* Avatar - only for non-me messages at start of group */}
                     {!isMe && showSenderInfo && senderCharacter && (
@@ -332,7 +332,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
                       {/* Timestamp and read status */}
                       {(i === groupInfo.endIndex || (i < messages.length - 1 && messages[i + 1].authorId !== msg.authorId)) && (
-                        <div className={`flex items-center mt-1 ${isMe ? 'flex-row-reverse' : ''} space-x-1`}>
+                        <div className={`flex items-center mt-2 md:mt-3 ${isMe ? 'flex-row-reverse' : ''} gap-2`}>
                           <p className="text-xs text-gray-400">
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
@@ -350,7 +350,7 @@ const MessageList: React.FC<MessageListProps> = ({
         })}
 
         {typingCharacterId && (
-          <div className="flex items-end space-x-2 mb-4 animate-slideUp">
+          <div className="flex items-end space-x-2 mt-2 md:mt-3 mb-4 animate-slideUp">
             <div className="shrink-0 w-8 h-8">
               {(() => {
                 const typingChar = allCharacters.find(c => c.id === typingCharacterId);
@@ -358,7 +358,7 @@ const MessageList: React.FC<MessageListProps> = ({
               })()}
             </div>
             <div className="px-4 py-2 rounded-2xl bg-gray-200 rounded-bl-md">
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1.4s' }}></span>
                 <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1.4s' }}></span>
                 <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1.4s' }}></span>

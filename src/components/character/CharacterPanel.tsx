@@ -48,7 +48,11 @@ const characterToPersonaCard = (character: Character): PersonaChatAppCharacterCa
     };
 };
 
-function CharacterPanel() {
+interface CharacterPanelProps {
+    onClose: () => void;
+}
+
+function CharacterPanel({ onClose }: CharacterPanelProps) {
     const dispatch = useDispatch();
     const editingId = useSelector(selectEditingCharacterId);
     const editingCharacter = useSelector((state: RootState) => editingId ? selectCharacterById(state, editingId) : null);
@@ -73,6 +77,7 @@ function CharacterPanel() {
             const characterToSave = { ...newCharacterDefault, ...char, id: editingId || Date.now() };
             dispatch(charactersActions.upsertOne(characterToSave as Character));
             dispatch(charactersActions.resetEditingCharacterId());
+            onClose();
         }
     };
 
@@ -307,7 +312,7 @@ function CharacterPanel() {
                 )}
             </div>
             <div className="p-6 mt-auto border-t border-gray-200 shrink-0 flex justify-end space-x-3">
-                <button onClick={() => dispatch(charactersActions.resetEditingCharacterId())} className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">취소</button>
+                <button onClick={() => { dispatch(charactersActions.resetEditingCharacterId()); onClose(); }} className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">취소</button>
                 <button onClick={handleSave} className="flex-1 py-2.5 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">저장</button>
             </div>
             {/* 숨겨진 파일 입력: 어디서든 아바타 업로드 버튼이 동작하도록 전역 배치 */}

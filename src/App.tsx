@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import Sidebar from './components/sidebar/Sidebar'
 import MainChat from './components/mainchat/MainChat'
@@ -8,7 +8,7 @@ import CharacterPanel from './components/character/CharacterPanel'
 import CreateGroupChatModal from './components/modals/CreateGroupChatModal'
 import CreateOpenChatModal from './components/modals/CreateOpenChatModal'
 import EditGroupChatModal from './components/modals/EditGroupChatModal'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, Menu } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { selectEditingCharacterId } from './entities/character/selectors'
@@ -33,10 +33,14 @@ function App() {
     setActiveRoomId(roomId);
   }, [roomId]);
 
+  // 패널 자동 닫힘: "편집 중이었다가" editingCharacterId가 null이 될 때만 닫기
+  const prevEditingIdRef = useRef<number | null>(editingCharacterId);
   useEffect(() => {
-    if (editingCharacterId === null && isCharacterPanelOpen) {
+    const prev = prevEditingIdRef.current;
+    if (isCharacterPanelOpen && prev !== null && editingCharacterId === null) {
       setIsCharacterPanelOpen(false);
     }
+    prevEditingIdRef.current = editingCharacterId;
   }, [editingCharacterId, isCharacterPanelOpen]);
 
   const toggleMobileSidebar = () => {
@@ -59,13 +63,14 @@ function App() {
 
             <div id="sidebar-content" className="flex h-full flex-col">
               <Sidebar
-                setRoomId={setRoomId}
+                setRoomId={(id) => { setRoomId(id); setIsMobileSidebarOpen(false); }}
                 roomId={roomId}
                 openSettingsModal={() => setIsSettingsModalOpen(true)}
                 toggleCharacterPanel={toggleCharacterPanel}
                 openCreateGroupChatModal={() => setIsCreateGroupChatModalOpen(true)}
                 openCreateOpenChatModal={() => setIsCreateOpenChatModalOpen(true)}
                 openEditGroupChatModal={() => setIsEditGroupChatModalOpen(true)}
+                onCloseMobile={() => setIsMobileSidebarOpen(false)}
               />
             </div>
           </aside>
@@ -73,7 +78,7 @@ function App() {
           {/* Character Panel - Floating on right side */}
           {isCharacterPanelOpen && (
             <div className="fixed right-0 top-0 bottom-0 z-40 w-96 lg:w-[450px]">
-              <CharacterPanel />
+              <CharacterPanel onClose={() => setIsCharacterPanelOpen(false)} />
             </div>
           )}
 
@@ -83,7 +88,15 @@ function App() {
               } ${isCharacterPanelOpen ? 'md:mr-96 lg:mr-[450px]' : ''}`}>
 
             {!room ? (
-              <div className="flex-1 flex items-center justify-center bg-gray-50">
+              <div className="flex-1 flex items-center justify-center bg-gray-50 relative">
+                {/* Mobile: Sidebar toggle button (when no room selected) */}
+                <button
+                  id="mobile-sidebar-toggle"
+                  className="absolute top-4 left-4 p-2 rounded-full hover:bg-gray-100 md:hidden"
+                  onClick={toggleMobileSidebar}
+                >
+                  <Menu className="h-5 w-5 text-gray-600" />
+                </button>
                 <div className="text-center">
                   <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                     <MessageCircle className="w-12 h-12 text-gray-400" />
