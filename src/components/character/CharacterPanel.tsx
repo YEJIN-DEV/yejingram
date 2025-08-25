@@ -9,6 +9,7 @@ import { AttributeSliders } from './AttributeSliders';
 import { MemoryManager } from './MemoryManager';
 import { StickerManager } from './StickerManager';
 import { decodeText, encodeText } from '../../utils/imageStego';
+import { extractBasicCharacterInfo } from '../../utils/risuai/basicCharacterInfo';
 import { LorebookEditor } from './LorebookEditor';
 import type { Lore } from '../../entities/lorebook/types';
 
@@ -123,45 +124,75 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
     const importPersonaImage = () => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = "image/png";
+        input.accept = "image/png,image/jpeg,.json,.charx";
 
         input.onchange = async (e: Event) => {
             const target = e.target as HTMLInputElement;
             const file = target.files?.[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = async (ev) => {
-                const src = String(ev.target?.result || "");
-                try {
-                    const decodeResult = await decodeText(src);
-                    if (decodeResult.text) {
-                        try {
-                            let characterFromCard: Character;
-                            if (decodeResult.method === "png-trailer") {
-                                characterFromCard = JSON.parse(decodeResult.text) as Character;
-                            } else {
-                                const jsonData = JSON.parse(decodeResult.text) as PersonaChatAppCharacterCard;
-                                if (jsonData.source !== 'PersonaChatAppCharacterCard') {
-                                    throw new Error("Invalid character card format.");
-                                }
-                                characterFromCard = personaCardToCharacter(jsonData);
-                            }
-                            console.log("불러온 연락처 데이터:", characterFromCard);
-                            setChar(characterFromCard);
-                        } catch (e) {
-                            console.error("Failed to parse character card:", e);
-                            alert("유효하지 않은 연락처 카드 형식입니다.");
-                        }
-                    } else {
-                        alert("이 이미지에는 연락처 데이터가 없습니다.");
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert("연락처 불러오기 실패");
+            // 1) 우선 extractBasicCharacterInfo로 시도 (PNG/JSON/CHARX/JPEG 지원)
+            try {
+                const info = await extractBasicCharacterInfo({ name: file.name, data: file });
+                if (info) {
+                    const promptParts: string[] = [];
+                    if (info.description) promptParts.push(info.description);
+                    if (info.personality) promptParts.push(`성격: ${info.personality}`);
+                    if (info.scenario) promptParts.push(`상황: ${info.scenario}`);
+                    if (info.first_mes) promptParts.push(`첫 메시지: ${info.first_mes}`);
+
+                    const characterFromCard: Character = {
+                        ...newCharacterDefault,
+                        id: Date.now(),
+                        name: info.name || '',
+                        prompt: promptParts.join('\n\n'),
+                        avatar: info.avatarDataUrl ?? null,
+                    } as Character;
+                    setChar(characterFromCard);
+                    return;
                 }
-            };
-            reader.readAsDataURL(file);
+            } catch (err) {
+                // 무시하고 기존 PNG 스테가노 경로로 폴백
+                console.warn('extractBasicCharacterInfo 실패, decodeText로 폴백:', err);
+            }
+
+            // 2) 폴백: 기존 PNG 스테가노 방식 (PersonaChatAppCharacterCard/예진그램 png-trailer)
+            if (file.type === 'image/png' || /\.png$/i.test(file.name)) {
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    const src = String(ev.target?.result || "");
+                    try {
+                        const decodeResult = await decodeText(src);
+                        if (decodeResult.text) {
+                            try {
+                                let characterFromCard: Character;
+                                if (decodeResult.method === "png-trailer") {
+                                    characterFromCard = JSON.parse(decodeResult.text) as Character;
+                                } else {
+                                    const jsonData = JSON.parse(decodeResult.text) as PersonaChatAppCharacterCard;
+                                    if (jsonData.source !== 'PersonaChatAppCharacterCard') {
+                                        throw new Error("Invalid character card format.");
+                                    }
+                                    characterFromCard = personaCardToCharacter(jsonData);
+                                }
+                                console.log("불러온 연락처 데이터:", characterFromCard);
+                                setChar(characterFromCard);
+                            } catch (e) {
+                                console.error("Failed to parse character card:", e);
+                                alert("유효하지 않은 연락처 카드 형식입니다.");
+                            }
+                        } else {
+                            alert("이 이미지에는 연락처 데이터가 없습니다.");
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert("연락처 불러오기 실패");
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('지원하지 않는 파일 형식입니다. PNG/JPEG/JSON/CHARX를 사용하세요.');
+            }
         };
 
         input.click();
