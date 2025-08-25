@@ -16,7 +16,7 @@ import { nanoid } from "@reduxjs/toolkit";
 
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
-const CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1/messages/";
+const CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1/messages";
 const OPENAI_API_BASE_URL = "https://api.openai.com/v1/chat/completions";
 
 // Remove leading speaker/meta tags like [From: XXX] or [Name: XXX] from model output
@@ -35,9 +35,7 @@ function sanitizeOutputContent(text?: string): string | undefined {
         return s.replace(/\s{2,}/g, ' ').replace(/^\s+/, '');
     };
 
-    let out = text.split(/\r?\n/).map(clean).join('\n').replace(/^\s+/, '');
-    out = out.replace(/([.!?…。！？]+)(["')\]]*)(\s+)(?=[A-Za-z가-힣0-9“"'[\(])/gu, '$1$2\n');
-    return out;
+    return text.split(/\r?\n/).map(clean).join('\n').replace(/^\s+/, '');
 }
 
 async function handleApiResponse(
