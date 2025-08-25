@@ -142,6 +142,14 @@ function exactArrayBuffer(view: Uint8Array): ArrayBuffer {
     return ab;
 }
 
+function isPng(bytes: Uint8Array): boolean {
+    if (bytes.length < 8) return false;
+    for (let i = 0; i < 8; i++) {
+        if (bytes[i] !== PNG_SIG[i]) return false;
+    }
+    return true;
+}
+
 export async function bytesToDataURLPNGAsync(bytes: Uint8Array): Promise<string> {
     const blob = new Blob([exactArrayBuffer(bytes)], { type: "image/png" });
     return new Promise<string>((resolve, reject) => {
@@ -154,7 +162,7 @@ export async function bytesToDataURLPNGAsync(bytes: Uint8Array): Promise<string>
 
 export function appendTrailerToPng(pngBytes: Uint8Array, text: string): Uint8Array {
     // 1) PNG 시그니처 확인
-    if (pngBytes.length < 8 || !pngBytes.slice(0, 8).every((v, i) => v === PNG_SIG[i])) {
+    if (!isPng(pngBytes)) {
         throw new Error("PNG 파일이 아닙니다. (신규 방식은 PNG에서만 사용 가능합니다)");
     }
 
@@ -173,7 +181,7 @@ export function appendTrailerToPng(pngBytes: Uint8Array, text: string): Uint8Arr
 
 export function extractTrailerFromPng(pngOrWithTrailer: Uint8Array): string | null {
     // PNG 시그니처 확인
-    if (pngOrWithTrailer.length < 8 || !pngOrWithTrailer.slice(0, 8).every((v, i) => v === PNG_SIG[i])) {
+    if (!isPng(pngOrWithTrailer)) {
         return null; // PNG가 아니면 신규 방식은 패스
     }
     if (pngOrWithTrailer.length < 8 + 8) { // 최소: 시그니처 + trailer(8)
@@ -210,6 +218,12 @@ export async function encodeText(src: string, text: string, method: EncodeMethod
     let bytes: Uint8Array = await fetchBytes(src);
 
     if (method === "png-trailer") {
+        // PNG가 아니면 먼저 PNG로 변환 (캔버스 -> PNG DataURL -> 바이트)
+        if (!isPng(bytes)) {
+            const imageData = await getImageDataFromSrc(src);
+            const pngDataUrl = imageDataToDataURL(imageData, "image/png");
+            bytes = await fetchBytes(pngDataUrl);
+        }
         const out = appendTrailerToPng(bytes, text);
         return await bytesToDataURLPNGAsync(out);
     } else {
