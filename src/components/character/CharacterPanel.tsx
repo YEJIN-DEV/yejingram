@@ -136,9 +136,8 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                 if (info) {
                     const promptParts: string[] = [];
                     if (info.description) promptParts.push(info.description);
-                    if (info.personality) promptParts.push(`성격: ${info.personality}`);
-                    if (info.scenario) promptParts.push(`상황: ${info.scenario}`);
-                    if (info.first_mes) promptParts.push(`첫 메시지: ${info.first_mes}`);
+                    if (info.personality) promptParts.push(`personality: ${info.personality}`);
+                    if (info.scenario) promptParts.push(`scenario: ${info.scenario}`);
 
                     const characterFromCard: Character = {
                         ...newCharacterDefault,
