@@ -9,10 +9,46 @@ import { selectRoomById } from "../entities/room/selectors";
 import { selectCurrentApiConfig } from "../entities/setting/selectors";
 import { selectCharacterById } from "../entities/character/selectors";
 
-const TEMPERATURE = selectCurrentApiConfig(store.getState()).temperature;
-const MAX_TOKENS = selectCurrentApiConfig(store.getState()).maxTokens;
-const TOP_K = selectCurrentApiConfig(store.getState()).topK;
-const TOP_P = selectCurrentApiConfig(store.getState()).topP;
+const structuredOutputSchema = {
+    type: "OBJECT",
+    properties: {
+        "reactionDelay": { "type": "INTEGER" },
+        "messages": {
+            type: "ARRAY",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    "delay": { "type": "INTEGER" },
+                    "content": { "type": "STRING" },
+                    "sticker": { "type": "STRING" }
+                },
+                required: ["delay"]
+            }
+        },
+        "characterState": {
+            type: "OBJECT",
+            properties: {
+                "mood": { "type": "NUMBER" },
+                "energy": { "type": "NUMBER" },
+                "socialBattery": { "type": "NUMBER" },
+                "personality": {
+                    type: "OBJECT",
+                    properties: {
+                        "extroversion": { "type": "NUMBER" },
+                        "openness": { "type": "NUMBER" },
+                        "conscientiousness": { "type": "NUMBER" },
+                        "agreeableness": { "type": "NUMBER" },
+                        "neuroticism": { "type": "NUMBER" }
+                    },
+                    required: ["extroversion", "openness", "conscientiousness", "agreeableness", "neuroticism"]
+                }
+            },
+            required: ["mood", "energy", "socialBattery", "personality"]
+        },
+        "newMemory": { "type": "STRING" }
+    },
+    required: ["reactionDelay", "messages"]
+}
 
 function buildTimeContext(messages: Message[], isProactive: boolean) {
     const currentTime = new Date();
@@ -147,7 +183,7 @@ ${guidelines}
 - If you have nothing new to add, ask a short, relevant question instead of echoing.
 
 ## Output Format (Strict)
-- Output plain text only, as {{char}}. No speaker tags, no bracketed metadata, no role labels.
+- ${(useStructuredOutput) ? `You MUST respond with a pure JSON object that strictly adheres to the provided schema. DO NOT include any other text, context, or markdown outside the JSON. The output MUST follow THE EXACT FORMAT IN GUIDELINES ABOVE.` : `Output plain text only, as {{char}}. No speaker tags, no bracketed metadata, no role labels.`}
 - Avoid square brackets [] in your output unless they are in-character content required by the story. Prefer parentheses () for brief asides if needed.
 - If you accidentally included any of the forbidden prefixes or tags, silently rewrite the line to comply before final output.
 
@@ -220,53 +256,19 @@ export function buildGeminiApiPayload(
     const contents = buildGeminiContents(messages, isProactive, userName);
 
     const generationConfig: any = {
-        temperature: TEMPERATURE || 1.25,
-        topK: TOP_K || 40,
-        topP: TOP_P || 0.95,
+        temperature: selectCurrentApiConfig(store.getState()).temperature || 1.25,
+        topP: selectCurrentApiConfig(store.getState()).topP || 0.95,
     };
+
+    const topK = selectCurrentApiConfig(store.getState()).topK;
+
+    if (topK) {
+        generationConfig.topK = topK;
+    }
 
     if (useStructuredOutput) {
         generationConfig.responseMimeType = "application/json";
-        generationConfig.responseSchema = {
-            type: "OBJECT",
-            properties: {
-                "reactionDelay": { "type": "INTEGER" },
-                "messages": {
-                    type: "ARRAY",
-                    items: {
-                        type: "OBJECT",
-                        properties: {
-                            "delay": { "type": "INTEGER" },
-                            "content": { "type": "STRING" },
-                            "sticker": { "type": "STRING" }
-                        },
-                        required: ["delay"]
-                    }
-                },
-                "characterState": {
-                    type: "OBJECT",
-                    properties: {
-                        "mood": { "type": "NUMBER" },
-                        "energy": { "type": "NUMBER" },
-                        "socialBattery": { "type": "NUMBER" },
-                        "personality": {
-                            type: "OBJECT",
-                            properties: {
-                                "extroversion": { "type": "NUMBER" },
-                                "openness": { "type": "NUMBER" },
-                                "conscientiousness": { "type": "NUMBER" },
-                                "agreeableness": { "type": "NUMBER" },
-                                "neuroticism": { "type": "NUMBER" }
-                            },
-                            required: ["extroversion", "openness", "conscientiousness", "agreeableness", "neuroticism"]
-                        }
-                    },
-                    required: ["mood", "energy", "socialBattery", "personality"]
-                },
-                "newMemory": { "type": "STRING" }
-            },
-            required: ["reactionDelay", "messages"]
-        };
+        generationConfig.responseSchema = structuredOutputSchema;
     }
 
     return {
@@ -357,10 +359,10 @@ export function buildClaudeApiPayload(
             type: "text",
             text: masterPrompt
         }],
-        temperature: TEMPERATURE || 1,
-        top_k: TOP_K || 40,
-        top_p: TOP_P || 0.95,
-        max_tokens: MAX_TOKENS || 8192,
+        temperature: selectCurrentApiConfig(store.getState()).temperature || 1,
+        top_k: selectCurrentApiConfig(store.getState()).topK || 40,
+        top_p: selectCurrentApiConfig(store.getState()).topP || 0.95,
+        max_tokens: selectCurrentApiConfig(store.getState()).maxTokens || 8192,
     };
 }
 
@@ -424,9 +426,9 @@ export function buildOpenAIApiPayload(
             { role: 'system', content: systemPrompt },
             ...history,
         ],
-        temperature: model == "gpt-5" ? 1 : TEMPERATURE,
-        top_p: model == "gpt-5" ? undefined : TOP_P,
-        max_completion_tokens: 8096,
+        temperature: model == "gpt-5" ? 1 : selectCurrentApiConfig(store.getState()).temperature,
+        top_p: model == "gpt-5" ? undefined : selectCurrentApiConfig(store.getState()).topP,
+        max_completion_tokens: selectCurrentApiConfig(store.getState()).maxTokens,
         response_format: useStructuredOutput ? { type: 'json_object' } : { type: 'text' },
     };
     return payload;
