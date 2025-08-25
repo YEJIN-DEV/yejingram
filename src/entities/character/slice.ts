@@ -5,7 +5,7 @@ import { defaultCharacters } from "./types";
 
 export const charactersAdapter = createEntityAdapter<Character>()
 const initialState = charactersAdapter.getInitialState({
-  isCharacterModalOpen: false,
+  isCharacterPanelOpen: false,
   editingCharacterId: null as number | null,
 })
 

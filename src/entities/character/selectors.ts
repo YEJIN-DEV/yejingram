@@ -6,5 +6,5 @@ export const {
     selectById: selectCharacterById,
 } = charactersAdapter.getSelectors((state: RootState) => state.characters);
 
-export const selectIsCharacterModalOpen = (state: RootState) => state.characters.isCharacterModalOpen;
+export const selectIsCharacterPanelOpen = (state: RootState) => state.characters.isCharacterPanelOpen;
 export const selectEditingCharacterId = (state: RootState) => state.characters.editingCharacterId;
