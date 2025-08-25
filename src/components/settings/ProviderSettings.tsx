@@ -47,7 +47,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
     const models = providerModels[provider] || [];
 
     const minTemp = 0;
-    const maxTemp = (provider === 'gemini' || provider === 'vertexai') ? 2 : 1;
+    const maxTemp = (provider === 'gemini' || provider === 'vertexai' || provider === 'openai') ? 2 : 1;
 
     const handleConfigChange = (key: keyof ApiConfig, value: any) => {
         setSettings(prev => {
@@ -88,6 +88,9 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         구조화된 출력 사용
                     </label>
                     <p className="text-xs text-gray-500">LLM이 응답 시간과 메시지를 직접 제어합니다. (권장)</p>
+                    {provider === 'claude' && (
+                        <p className="text-xs text-gray-500 mt-1">주의: Claude의 경우 요청에 실패할 가능성이 있습니다.</p>
+                    )}
                 </div>
                 <label htmlFor="structured-output-toggle" className="relative flex items-center cursor-pointer">
                     <input
@@ -228,30 +231,32 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                 </div>
                 <div>
                     <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-                        <span className="flex items-center"><Percent className="w-4 h-4 mr-2" />Top-P</span>
+                        <span className="flex items-center"><Percent className="w-4 h-4 mr-2" />Top-p</span>
                         <span className="text-blue-500 font-semibold">{config.topP || 1}</span>
                     </label>
                     <input id="settings-topk" type="range" min="0" max="1" step="0.01" value={config.topP || 1} onChange={e => handleConfigChange('topP', +e.target.value)} className="w-full accent-blue-500" />
                     <div className="flex justify-between text-xs text-gray-500 mt-1"><span>0</span><span>1</span></div>
                 </div>
-                <div>
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Hash className="w-4 h-4 mr-2" />Top-K</label>
-                    <input
-                        type="number"
-                        value={config.topK || 40}
-                        onChange={e => handleConfigChange('topK', e.target.value)}
-                        placeholder="40"
-                        className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
-                    />
-                </div>
+                {provider !== 'openai' && (
+                    <div>
+                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Hash className="w-4 h-4 mr-2" />Top-k</label>
+                        <input
+                            type="number"
+                            value={config.topK ?? undefined}
+                            onChange={e => handleConfigChange('topK', e.target.value === '' ? null : +e.target.value)}
+                            placeholder={provider !== 'claude' ? '비워둘 경우 비활성화됩니다. (초기값: 40)' : '기본값: 40'}
+                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+                        />
+                    </div>
+                )}
                 {provider === 'claude' && (
                     <div>
                         <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><ArrowUpToLine className="w-4 h-4 mr-2" />Max Tokens</label>
                         <input
                             type="number"
-                            value={config.maxTokens || 8192}
+                            value={config.maxTokens ?? 8192}
                             onChange={e => handleConfigChange('maxTokens', e.target.value)}
-                            placeholder="8192"
+                            placeholder="기본값: 8192"
                             className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
                         />
                     </div>
