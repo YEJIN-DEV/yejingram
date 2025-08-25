@@ -31,7 +31,10 @@ const providerModels: Record<string, string[]> = {
         'gpt-4o',
         'chatgpt-4o-latest',
     ],
-    grok: [],
+    grok: [
+        'grok-4-0709',
+        'grok-3'
+    ],
     openrouter: [],
     customOpenAI: []
 };
@@ -47,7 +50,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
     const models = providerModels[provider] || [];
 
     const minTemp = 0;
-    const maxTemp = (provider === 'gemini' || provider === 'vertexai' || provider === 'openai') ? 2 : 1;
+    const maxTemp = (provider !== 'claude') ? 2 : 1;
 
     const handleConfigChange = (key: keyof ApiConfig, value: any) => {
         setSettings(prev => {

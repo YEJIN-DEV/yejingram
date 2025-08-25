@@ -18,6 +18,7 @@ const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/mo
 const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
 const CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1/messages";
 const OPENAI_API_BASE_URL = "https://api.openai.com/v1/chat/completions";
+const GROK_API_BASE_URL = "https://api.x.ai/v1/chat/completions";
 
 // Remove leading speaker/meta tags like [From: XXX] or [Name: XXX] from model output
 function sanitizeOutputContent(text?: string): string | undefined {
@@ -108,6 +109,7 @@ async function callApi(
             payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
             break;
         case 'claude':
+        case 'grok':
             payload = buildClaudeApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
             break;
         case 'openai':
@@ -151,8 +153,8 @@ async function callApi(
             "content-type": "application/json",
             "anthropic-dangerous-direct-browser-access": "true"
         };
-    } else { // openai & customOpenAI
-        const baseUrl = (apiProvider === 'customOpenAI' && apiConfig.baseUrl) ? apiConfig.baseUrl : OPENAI_API_BASE_URL;
+    } else { // openai & customOpenAI & grok
+        const baseUrl = (apiProvider === 'customOpenAI' && apiConfig.baseUrl) ? apiConfig.baseUrl : (apiProvider === 'grok' ? GROK_API_BASE_URL : OPENAI_API_BASE_URL);
         url = baseUrl;
         headers = {
             'Content-Type': 'application/json',

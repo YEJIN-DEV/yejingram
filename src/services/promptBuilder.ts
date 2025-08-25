@@ -286,7 +286,7 @@ export function buildGeminiApiPayload(
     };
 }
 
-function buildClaudeContents(messages: Message[], isProactive: boolean, userName: string) {
+function buildClaudeContents(messages: Message[], isProactive: boolean, userName: string, model?: string) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const room = activeRoomId ? selectRoomById(state, activeRoomId) : null;
@@ -301,7 +301,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, userName
         { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[]
             = [{ type: 'text', text: msg.content ? `${header}${msg.content}` : (useSpeakerTag ? header : '') }];
 
-        if (msg.image) {
+        if (msg.image && model !== "grok-3") {
             const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
             if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
                 throw new Error(`Unsupported image type: ${mimeType} `);
@@ -350,7 +350,7 @@ export function buildClaudeApiPayload(
     extraSystemInstruction?: string
 ): ClaudeApiPayload {
     const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, extraSystemInstruction);
-    const contents = buildClaudeContents(messages, isProactive, userName);
+    const contents = buildClaudeContents(messages, isProactive, userName, model);
 
     return {
         model: model,
@@ -426,9 +426,9 @@ export function buildOpenAIApiPayload(
             { role: 'system', content: systemPrompt },
             ...history,
         ],
-        temperature: model == "gpt-5" ? 1 : selectCurrentApiConfig(store.getState()).temperature,
-        top_p: model == "gpt-5" ? undefined : selectCurrentApiConfig(store.getState()).topP,
-        max_completion_tokens: selectCurrentApiConfig(store.getState()).maxTokens,
+        temperature: model == "gpt-5" ? 1 : selectCurrentApiConfig(store.getState()).temperature || 1.25,
+        top_p: model == "gpt-5" ? undefined : selectCurrentApiConfig(store.getState()).topP || 0.95,
+        max_completion_tokens: selectCurrentApiConfig(store.getState()).maxTokens || 8192,
         response_format: useStructuredOutput ? { type: 'json_object' } : { type: 'text' },
     };
     return payload;

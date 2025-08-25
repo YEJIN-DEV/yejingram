@@ -6,8 +6,8 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     gemini: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], temperature: 1.25, topK: 40, topP: 0.95 },
     vertexai: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], projectId: '', location: 'global', accessToken: '', temperature: 1.25, topK: 40, topP: 0.95  },
     claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [], temperature: 1, topK: 40, topP: 0.95, maxTokens: 8192 },
-    openai: { apiKey: '', model: 'gpt-5', customModels: [] },
-    grok: { apiKey: '', model: 'grok-4', customModels: [] },
+    openai: { apiKey: '', model: 'gpt-5', customModels: [], temperature: 1.25, topP: 0.95, maxTokens: 8192 },
+    grok: { apiKey: '', model: 'grok-4-0709', customModels: [], temperature: 1.25, topP: 0.95, maxTokens: 8192 },
     openrouter: { apiKey: '', model: '', customModels: [] },
     customOpenAI: { apiKey: '', baseUrl: '', model: '', customModels: [] },
 };
