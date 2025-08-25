@@ -9,10 +9,9 @@ import { AttributeSliders } from './AttributeSliders';
 import { MemoryManager } from './MemoryManager';
 import { StickerManager } from './StickerManager';
 import { decodeText, encodeText } from '../../utils/imageStego';
-import { extractBasicCharacterInfo } from '../../utils/risuai/basicCharacterInfo';
 import { LorebookEditor } from './LorebookEditor';
 import type { Lore } from '../../entities/lorebook/types';
-
+import { extractBasicCharacterInfo } from '../../utils/risuai/risuCharacterCard';
 
 const personaCardToCharacter = (card: PersonaChatAppCharacterCard): Character => {
     const { name, prompt, responseTime, thinkingTime, reactivity, tone, memories, proactiveEnabled } = card;
@@ -147,6 +146,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                         name: info.name || '',
                         prompt: promptParts.join('\n\n'),
                         avatar: info.avatarDataUrl ?? null,
+                        lorebook: info.lorebook ?? [],
                     } as Character;
                     setChar(characterFromCard);
                     return;

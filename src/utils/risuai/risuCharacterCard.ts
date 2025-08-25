@@ -1,4 +1,5 @@
 import * as fflate from 'fflate';
+import type { Lore } from '../../entities/lorebook/types';
 
 export type BasicCharacterInfo = {
     spec: 'chara_card_v2' | 'chara_card_v3' | 'offspec' | 'unknown'
@@ -16,11 +17,13 @@ export type BasicCharacterInfo = {
     hasAsset?: boolean
     // Optional avatar image as Data URL (when derivable from input)
     avatarDataUrl?: string
+    // Flattened lorebook entries (folderless)
+    lorebook?: Lore[]
 }
 
 // Minimal shapes used for type narrowing only
-interface CharacterBookMini { entries?: any[] }
-interface CardDataBaseMini {
+interface CharacterLoreBook { entries?: RisuBookEntry[] }
+interface CardData {
     name?: string
     description?: string
     personality?: string
@@ -29,11 +32,23 @@ interface CardDataBaseMini {
     tags?: string[]
     creator?: string
     character_version?: string | number
-    character_book?: CharacterBookMini
+    character_book?: CharacterLoreBook
     extensions?: any
 }
-interface CharacterCardV2Mini { spec: 'chara_card_v2'; spec_version?: string; data: CardDataBaseMini }
-interface CharacterCardV3Mini { spec: 'chara_card_v3'; spec_version?: string; data: CardDataBaseMini & { assets?: any[] } }
+
+type RisuBookEntry = {
+    name?: string
+    comment?: string
+    keys?: Array<string | number>
+    secondary_keys?: Array<string | number>
+    selective?: boolean
+    insertion_order?: number
+    content?: string
+    constant?: boolean
+}
+
+interface CharacterCardV2Mini { spec: 'chara_card_v2'; spec_version?: string; data: CardData }
+interface CharacterCardV3Mini { spec: 'chara_card_v3'; spec_version?: string; data: CardData & { assets?: any[] } }
 
 type AnyCard = CharacterCardV2Mini | CharacterCardV3Mini
 
@@ -176,6 +191,8 @@ function extractFromCard(card: AnyCard): BasicCharacterInfo {
         : (Array.isArray(d?.extensions?.risuai?.additionalAssets) && d.extensions.risuai.additionalAssets.length > 0)
     const hasLore = !!d?.character_book && Array.isArray(d.character_book.entries) && d.character_book.entries.length > 0
 
+    const lorebook = hasLore ? mapLorebook(d.character_book) : undefined
+
     return {
         spec: card.spec,
         spec_version: (card as any).spec_version,
@@ -190,6 +207,7 @@ function extractFromCard(card: AnyCard): BasicCharacterInfo {
         hasLore,
         hasEmotion,
         hasAsset,
+        lorebook,
     }
 }
 
@@ -211,6 +229,31 @@ function extractFromOldTavern(ch: OldTavernChar): BasicCharacterInfo {
     }
 }
 
+function mapLorebook(charbook: CharacterLoreBook): Lore[] {
+    const entries: RisuBookEntry[] = Array.isArray(charbook?.entries) ? (charbook.entries as RisuBookEntry[]) : []
+    const out: Lore[] = []
+    for (let i = 0; i < entries.length; i++) {
+        const e: RisuBookEntry = entries[i] ?? {}
+        const name = e.name || e.comment || `Entry ${i + 1}`
+        const keys: string[] = Array.isArray(e.keys) ? e.keys.map((k: any) => String(k)).filter(Boolean) : []
+        const secondary: string[] = Array.isArray(e.secondary_keys) ? e.secondary_keys.map((k: any) => String(k)).filter(Boolean) : []
+        const selective: boolean = !!e.selective
+        const activationKeys = selective && secondary.length > 0
+            ? [keys[0] || '', secondary[0]].filter(Boolean)
+            : [keys[0] || ''].filter(Boolean)
+        out.push({
+            id: `lore-${i}`,
+            name,
+            activationKeys,
+            order: typeof e.insertion_order === 'number' ? e.insertion_order : i,
+            prompt: String(e.content ?? ''),
+            alwaysActive: !!e.constant,
+            multiKey: selective && activationKeys.length === 2,
+        })
+    }
+    return out
+}
+
 // Public API
 export async function extractBasicCharacterInfo(input: {
     name: string
@@ -224,7 +267,10 @@ export async function extractBasicCharacterInfo(input: {
             const bytes = await readAllBytes(input.data)
             const obj = JSON.parse(new TextDecoder().decode(bytes))
             if (obj?.spec === 'chara_card_v2' || obj?.spec === 'chara_card_v3') {
-                return extractFromCard(obj as AnyCard)
+                const base = extractFromCard(obj as AnyCard)
+                // Ensure lorebook from card if present
+                const lorebook = (obj as any)?.data?.character_book ? mapLorebook((obj as any).data.character_book) : base.lorebook
+                return { ...base, lorebook }
             }
             return extractFromOldTavern(obj as OldTavernChar)
         } catch {
@@ -255,6 +301,7 @@ export async function extractBasicCharacterInfo(input: {
             const card = JSON.parse(text)
             if (card?.spec === 'chara_card_v2' || card?.spec === 'chara_card_v3') {
                 const base = extractFromCard(card as AnyCard)
+                const lorebook = (card as any)?.data?.character_book ? mapLorebook((card as any).data.character_book) : base.lorebook
                 // Try to extract avatar from ZIP
                 let avatarDataUrl: string | undefined
                 // Prioritize common Risu CharX icon paths
@@ -272,7 +319,7 @@ export async function extractBasicCharacterInfo(input: {
                         avatarDataUrl = await bytesToDataURL(bytes, 'image/jpeg')
                     }
                 }
-                return { ...base, avatarDataUrl }
+                return { ...base, avatarDataUrl, lorebook }
             }
             return null
         } catch {
@@ -313,8 +360,9 @@ export async function extractBasicCharacterInfo(input: {
             }
             if (obj?.spec === 'chara_card_v2' || obj?.spec === 'chara_card_v3') {
                 const base = extractFromCard(obj as AnyCard)
+                const lorebook = (obj as any)?.data?.character_book ? mapLorebook((obj as any).data.character_book) : base.lorebook
                 const avatarDataUrl = await bytesToDataURL(bytes, 'image/png')
-                return { ...base, avatarDataUrl }
+                return { ...base, avatarDataUrl, lorebook }
             }
             try {
                 const off = obj as OldTavernChar
