@@ -123,7 +123,7 @@ async function callImageGeneration(imageGenerationSetting: { prompt: string; isS
     const url = `${GEMINI_API_BASE_URL}${apiConfig.imageModel}:generateContent?key=${apiConfig.apiKey}`;
     const headers = { 'Content-Type': 'application/json' };
 
-    let payload: { contents: { parts: { text?: string, inline_data?: { mime_type: string, data: string } }[] }[] };
+    let payload: { contents: { parts: { text?: string, inline_data?: { mime_type: string, data: string } }[] }[], safetySettings: { category: string, threshold: string }[] };
     if (imageGenerationSetting.isSelfie && char.avatar) {
         payload = {
             contents: [{
@@ -131,7 +131,13 @@ async function callImageGeneration(imageGenerationSetting: { prompt: string; isS
                     { "text": imageGenerationSetting.prompt + `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` },
                     { "inline_data": { "mime_type": char.avatar.split(',')[0].split(':')[1].split(';')[0], "data": char.avatar.split(',')[1] } }
                 ]
-            }]
+            }],
+            safetySettings: [
+                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+            ]
         };
     } else {
         payload = {
@@ -139,7 +145,13 @@ async function callImageGeneration(imageGenerationSetting: { prompt: string; isS
                 parts: [
                     { "text": imageGenerationSetting.prompt }
                 ]
-            }]
+            }],
+            safetySettings: [
+                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+            ]
         };
     }
 
