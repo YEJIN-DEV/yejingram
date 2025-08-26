@@ -35,6 +35,13 @@ const roomsSlice = createSlice({
         },
         importRooms: (state, action: PayloadAction<Room[]>) => {
             roomsAdapter.upsertMany(state, action); // 호출만
+        },
+        duplicateRoom: (state, action: { payload: { originalId: string, newId: string } }) => {
+            const room = state.entities[action.payload.originalId];
+            if (room) {
+                const newRoom = { ...room, id: action.payload.newId };
+                roomsAdapter.upsertOne(state, newRoom);
+            }
         }
     }
 })

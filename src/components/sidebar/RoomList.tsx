@@ -1,9 +1,10 @@
-import { Trash2 } from 'lucide-react';
+import { Trash2, Copy } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import type { Room } from '../../entities/room/types';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import { roomsActions } from '../../entities/room/slice';
+import { messagesActions } from '../../entities/message/slice';
 
 interface RoomListProps {
     room: Room;
@@ -48,6 +49,12 @@ function RoomList({
         setRoomId(room.id);
     };
 
+    const duplicateRoom = () => {
+        const newRoomId = `${room.id.split('-')[0]}-${Date.now()}`;
+        dispatch(roomsActions.duplicateRoom({ originalId: room.id, newId: newRoomId }));
+        dispatch(messagesActions.duplicateMessages({ originalId: room.id, newId: newRoomId }));
+    };
+
     return (
         <div
             className={`chat-room-item group relative cursor-pointer transition-all duration-200 select-none ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
@@ -84,18 +91,31 @@ function RoomList({
                 </div>
             </div>
 
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm('채팅방을 삭제하시겠습니까?')) {
-                        dispatch(roomsActions.removeOne(room.id));
-                    }
-                }}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-red-100 hover:bg-red-200 rounded-full text-red-600"
-                title="채팅방 삭제"
-            >
-                <Trash2 className="w-3 h-3" />
-            </button>
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        duplicateRoom();
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600"
+                    title="채팅방 복제"
+                >
+                    <Copy className="w-3 h-3" />
+                </button>
+
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('채팅방을 삭제하시겠습니까?')) {
+                            dispatch(roomsActions.removeOne(room.id));
+                        }
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-red-100 hover:bg-red-200 rounded-full text-red-600"
+                    title="채팅방 삭제"
+                >
+                    <Trash2 className="w-3 h-3" />
+                </button>
+            </div>
         </div>
     );
 }
