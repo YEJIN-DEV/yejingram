@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { SettingsState, ApiConfig } from '../../entities/setting/types';
-import { Key, Cpu, Link, Plus, X, Briefcase, Globe, Thermometer, Hash, Percent, ArrowUpToLine } from 'lucide-react';
+import { Key, Cpu, Link, Plus, X, Briefcase, Globe, Thermometer, Hash, Percent, ArrowUpToLine, Image } from 'lucide-react';
 import { initialApiConfigs } from '../../entities/setting/slice';
 
 interface ProviderSettingsProps {
@@ -39,6 +39,11 @@ const providerModels: Record<string, string[]> = {
     customOpenAI: []
 };
 
+const imageModels: string[] = [
+    'gemini-2.5-flash-image-preview',
+    'gemini-2.0-flash-preview-image-generation'
+];
+
 export function ProviderSettings({ settings, setSettings }: ProviderSettingsProps) {
     const [customModelInput, setCustomModelInput] = useState('');
     const provider = settings.apiProvider;
@@ -67,6 +72,10 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
     const handleModelSelect = (model: string) => {
         handleConfigChange('model', model);
+    };
+
+    const handleImageModelSelect = (model: string) => {
+        handleConfigChange('imageModel', model);
     };
 
     const handleAddCustomModel = () => {
@@ -106,6 +115,26 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                     <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                 </label>
             </div>
+            {((provider === 'gemini' || provider === 'vertexai') && settings.useStructuredOutput) && (
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex flex-col">
+                        <label htmlFor="image-response-toggle" className="font-medium text-gray-900 cursor-pointer">
+                            이미지 응답 허용
+                        </label>
+                        <p className="text-xs text-gray-500">대화 컨텍스트에 따라서 이미지 응답을 허용합니다.</p>
+                    </div>
+                    <label htmlFor="image-response-toggle" className="relative flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            id="image-response-toggle"
+                            className="sr-only peer"
+                            checked={settings.useImageResponse}
+                            onChange={e => setSettings(prev => ({ ...prev, useImageResponse: e.target.checked }))}
+                        />
+                        <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                    </label>
+                </div>
+            )}
             {provider !== 'vertexai' && (
                 <div>
                     <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Key className="w-4 h-4 mr-2" />API 키</label>
@@ -222,6 +251,26 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                     </div>
                 )}
             </div>
+
+            {settings.useImageResponse && (
+                <div>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Image className="w-4 h-4 mr-2" />이미지 생성 모델</label>
+
+                    {imageModels.length > 0 && (
+                        <div className="grid grid-cols-1 gap-2 mb-3">
+                            {imageModels.map(model => (
+                                <button
+                                    key={model}
+                                    type="button"
+                                    onClick={() => handleImageModelSelect(model)}
+                                    className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors border ${config.imageModel === model ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'}`}>
+                                    {model}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="content-inner pt-4 space-y-4">
                 <div>

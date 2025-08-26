@@ -72,29 +72,98 @@ async function handleApiResponse(
 
         for (const messagePart of res.messages) {
             await sleep(messagePart.delay || 1000);
-            const message = createMessageFromPart(messagePart, room.id, char);
+            const message = await createMessageFromPart(messagePart, room.id, char);
             dispatch(messagesActions.upsertOne(message));
         }
     }
 }
 
-function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Message {
-    const message: Message = {
+async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Promise<Message> {
+    let message = {
         id: nanoid(),
         roomId: roomId,
         authorId: char.id,
         content: messagePart.content,
         createdAt: new Date().toISOString(),
-        type: messagePart.sticker ? 'STICKER' : 'TEXT',
-    };
+        type: messagePart.imageGenerationSetting ? 'IMAGE' : messagePart.sticker ? 'STICKER' : 'TEXT',
+    } as Message;
 
     if (messagePart.sticker) {
         const foundSticker = char.stickers?.find(s => s.id == messagePart.sticker || s.name === messagePart.sticker);
         if (foundSticker) {
-            message.sticker = foundSticker;
+            message = {
+                ...message,
+                sticker: foundSticker
+            };
         }
     }
+
+    if (messagePart.imageGenerationSetting) {
+        const imageResponse = await callImageGeneration(messagePart.imageGenerationSetting, char);
+        const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+        console.log(84)
+        if (inlineDataBody) {
+            message = {
+                ...message,
+                image: {
+                    dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`
+                }
+            };
+        } else {
+            throw new Error('이미지 생성에 실패했습니다:', imageResponse.candidates[0].finishReason ?? '');
+        }
+    }
+
     return message;
+}
+
+async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
+    // 이미지 생성 API 호출
+    const apiConfig = selectCurrentApiConfig(store.getState());
+    const url = `${GEMINI_API_BASE_URL}${apiConfig.imageModel}:generateContent?key=${apiConfig.apiKey}`;
+    const headers = { 'Content-Type': 'application/json' };
+
+    let payload: { contents: { parts: { text?: string, inline_data?: { mime_type: string, data: string } }[] }[] };
+    if (imageGenerationSetting.isSelfie && char.avatar) {
+        payload = {
+            contents: [{
+                parts: [
+                    { "text": imageGenerationSetting.prompt + `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` },
+                    { "inline_data": { "mime_type": char.avatar.split(',')[0].split(':')[1].split(';')[0], "data": char.avatar.split(',')[1] } }
+                ]
+            }]
+        };
+    } else {
+        payload = {
+            contents: [{
+                parts: [
+                    { "text": imageGenerationSetting.prompt }
+                ]
+            }]
+        };
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("API Error:", data);
+            const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
+            throw new Error(errorMessage);
+        }
+
+        return data;
+
+    } catch (error: unknown) {
+        console.error(`이미지 생성 API 호출 중 오류 발생:`, error);
+        throw error;
+    }
 }
 
 function handleError(error: unknown, roomId: string, charId: number, dispatch: AppDispatch) {
@@ -126,7 +195,7 @@ async function callApi(
     switch (apiProvider) {
         case 'gemini':
         case 'vertexai':
-            payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
+            payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, extraSystemInstruction);
             break;
         case 'claude':
         case 'grok':

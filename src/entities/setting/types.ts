@@ -4,6 +4,7 @@ export interface ApiConfig {
     apiKey: string;
     baseUrl?: string;
     model: string;
+    imageModel?: string;
     customModels: string[];
     projectId?: string;
     location?: string;
@@ -31,7 +32,7 @@ export interface MainPrompts {
 export interface Prompts {
     main: MainPrompts;
     profile_creation: string;
-    character_sheet_generation: string;
+    image_response_generation: string;
 }
 
 export interface SettingsState {
@@ -53,5 +54,6 @@ export interface SettingsState {
     randomMessageFrequencyMax: number;
     prompts: Prompts;
     useStructuredOutput: boolean;
+    useImageResponse: boolean;
     speedup: number;
 }
