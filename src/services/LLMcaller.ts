@@ -14,6 +14,7 @@ import { calcReactionDelay, sleep } from "../utils/reactionDelay";
 import { replacePlaceholders } from "../utils/placeholder";
 import { nanoid } from "@reduxjs/toolkit";
 import { charactersActions } from "../entities/character/slice";
+import toast from 'react-hot-toast';
 
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
@@ -54,10 +55,13 @@ async function handleApiResponse(
             const trimmed = mem.trim();
             if (trimmed.length > 0) {
                 const nextMemories = Array.isArray(char.memories) ? [...char.memories] : [];
-                // Avoid duplicates (case-insensitive, trim)
                 const exists = nextMemories.some(m => m.trim().toLowerCase() === trimmed.toLowerCase());
                 if (!exists) {
-                    dispatch(charactersActions.upsertOne({ ...char, memories: [...nextMemories, trimmed] }));
+                    dispatch(charactersActions.addMemory({ characterId: char.id, value: trimmed }));
+                    // Toast 알림으로 새로운 메모리 추가를 알림
+                    toast.success(`새로운 기억이 추가되었습니다:\n"${trimmed}"`, {
+                        duration: 5000,
+                    });
                 }
             }
         }

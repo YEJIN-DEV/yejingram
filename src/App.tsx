@@ -15,6 +15,7 @@ import { selectEditingCharacterId } from './entities/character/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   const [roomId, setRoomId] = useState<string | null>(null)
@@ -153,6 +154,23 @@ function App() {
           className={`fixed inset-0 z-20 bg-black/50 md:hidden ${isMobileSidebarOpen ? 'block' : 'hidden'}`}
         />
       </div>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1f2937',
+            color: '#f3f4f6',
+            border: '1px solid #374151',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#1f2937',
+            },
+          },
+        }}
+      />
       <SpeedInsights />
     </>
   )
