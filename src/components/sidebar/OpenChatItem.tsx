@@ -100,7 +100,6 @@ function OpenChatItem({ room, setRoomId, isSelected }: OpenChatItemProps) {
                     <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
                         <Globe className="w-6 h-6 text-white" />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                 </div>
 
                 <div className="flex-1 min-w-0">

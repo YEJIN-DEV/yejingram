@@ -73,7 +73,6 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
                         <Users className="w-6 h-6 text-white" />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                 </div>
 
                 <div className="flex-1 min-w-0">
