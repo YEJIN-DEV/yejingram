@@ -4,13 +4,12 @@ import { Image, Upload, Download, Sparkles, MessageSquarePlus, ChevronDown } fro
 import { selectEditingCharacterId, selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
 import type { RootState } from '../../app/store';
-import { newCharacterDefault, type Character, type PersonaChatAppCharacterCard, type Sticker } from '../../entities/character/types';
+import { newCharacterDefault, type Character, type PersonaChatAppCharacterCard } from '../../entities/character/types';
 import { AttributeSliders } from './AttributeSliders';
 import { MemoryManager } from './MemoryManager';
 import { StickerManager } from './StickerManager';
 import { decodeText, encodeText } from '../../utils/imageStego';
 import { LorebookEditor } from './LorebookEditor';
-import type { Lore } from '../../entities/lorebook/types';
 import { extractBasicCharacterInfo } from '../../utils/risuai/risuCharacterCard';
 
 const personaCardToCharacter = (card: PersonaChatAppCharacterCard): Character => {
@@ -74,8 +73,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
 
     const handleSave = () => {
         if (char.name) {
-            const characterToSave = { ...newCharacterDefault, ...char, id: editingId || Date.now() };
-            dispatch(charactersActions.upsertOne(characterToSave as Character));
+            dispatch(charactersActions.upsertOne(char));
             dispatch(charactersActions.resetEditingCharacterId());
             onClose();
         }
@@ -83,31 +81,6 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
 
     const handleInputChange = (field: keyof Character, value: any) => {
         setChar(prev => ({ ...prev, [field]: value }));
-    };
-
-    const handleMemoryChange = (index: number, value: string) => {
-        const newMemories = [...(char.memories || [])];
-        newMemories[index] = value;
-        setChar(prev => ({ ...prev, memories: newMemories }));
-    };
-
-    const addMemory = () => {
-        const newMemories = [...(char.memories || []), ''];
-        setChar(prev => ({ ...prev, memories: newMemories }));
-    };
-
-    const deleteMemory = (index: number) => {
-        const newMemories = [...(char.memories || [])];
-        newMemories.splice(index, 1);
-        setChar(prev => ({ ...prev, memories: newMemories }));
-    };
-
-    const handleStickersChange = (stickers: Sticker[]) => {
-        setChar(prev => ({ ...prev, stickers }));
-    };
-
-    const handleLoresChange = (lores: Lore[]) => {
-        setChar(prev => ({ ...prev, lorebook: lores }));
     };
 
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -297,7 +270,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                                             <h4 className="text-sm font-medium text-gray-700">스티커</h4>
                                             <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
                                         </summary>
-                                        <StickerManager stickers={char.stickers || []} onStickersChange={handleStickersChange} />
+                                        <StickerManager characterId={char.id} draft={char} onDraftChange={setChar} />
                                     </details>
                                     {/* 메모리는 별도 탭으로 이동 */}
                                     <details className="group border-t border-gray-200 pt-2">
@@ -305,7 +278,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                                             <h4 className="text-sm font-medium text-gray-700">메시지 응답성</h4>
                                             <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
                                         </summary>
-                                        <AttributeSliders char={char} handleInputChange={handleInputChange} />
+                                        <AttributeSliders characterId={char.id} draft={char} onDraftChange={setChar} />
                                     </details>
                                 </div>
                             </div>
@@ -314,16 +287,15 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                 )}
                 {activeTab === 'lorebook' && (
                     <div className="space-y-6">
-                        <LorebookEditor lores={char.lorebook || []} onChange={handleLoresChange} />
+                        <LorebookEditor characterId={char.id} draft={char} onDraftChange={setChar} />
                     </div>
                 )}
                 {activeTab === 'memory' && (
                     <div className="space-y-6">
                         <MemoryManager
-                            memories={char.memories || []}
-                            handleMemoryChange={handleMemoryChange}
-                            addMemory={addMemory}
-                            deleteMemory={deleteMemory}
+                            characterId={char.id}
+                            draft={char}
+                            onDraftChange={setChar}
                         />
                     </div>
                 )}

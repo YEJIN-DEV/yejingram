@@ -1,13 +1,51 @@
 import { PlusCircle, Trash2 } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCharacterById } from '../../entities/character/selectors';
+import { charactersActions } from '../../entities/character/slice';
+import type { RootState } from '../../app/store';
+import type { Character } from '../../entities/character/types';
 
 interface MemoryManagerProps {
-    memories: string[];
-    handleMemoryChange: (index: number, value: string) => void;
-    addMemory: () => void;
-    deleteMemory: (index: number) => void;
+    characterId: number;
+    draft?: Character;
+    onDraftChange?: (character: Character) => void;
 }
 
-export function MemoryManager({ memories, handleMemoryChange, addMemory, deleteMemory }: MemoryManagerProps) {
+export function MemoryManager({ characterId, draft, onDraftChange }: MemoryManagerProps) {
+    const dispatch = useDispatch();
+    const characterFromStore = useSelector((state: RootState) => selectCharacterById(state, characterId));
+    const source = draft && draft.id === characterId ? draft : characterFromStore;
+    if (!source) return null;
+    const memories = source.memories || [];
+
+    const handleMemoryChange = (index: number, value: string) => {
+        if (draft && onDraftChange) {
+            const newMemories = [...memories];
+            newMemories[index] = value;
+            onDraftChange({ ...draft, memories: newMemories });
+        } else {
+            dispatch(charactersActions.setMemory({ characterId, index, value }));
+        }
+    };
+
+    const addMemory = () => {
+        if (draft && onDraftChange) {
+            const newMemories = [...memories, ''];
+            onDraftChange({ ...draft, memories: newMemories });
+        } else {
+            dispatch(charactersActions.addMemory({ characterId }));
+        }
+    };
+
+    const deleteMemory = (index: number) => {
+        if (draft && onDraftChange) {
+            const newMemories = [...memories];
+            newMemories.splice(index, 1);
+            onDraftChange({ ...draft, memories: newMemories });
+        } else {
+            dispatch(charactersActions.removeMemory({ characterId, index }));
+        }
+    };
     return (
         <div className="content-inner pt-4 space-y-3">
             <div id="memory-container" className="space-y-3">
