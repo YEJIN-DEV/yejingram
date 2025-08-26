@@ -13,6 +13,7 @@ import type { ApiConfig, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
 import { replacePlaceholders } from "../utils/placeholder";
 import { nanoid } from "@reduxjs/toolkit";
+import { charactersActions } from "../entities/character/slice";
 
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
@@ -46,6 +47,21 @@ async function handleApiResponse(
     dispatch: AppDispatch,
     setTypingCharacterId: (id: number | null) => void
 ) {
+    // If structured output included a newMemory field, append it to the character
+    if (res && 'newMemory' in res) {
+        const mem = res.newMemory;
+        if (typeof mem === 'string') {
+            const trimmed = mem.trim();
+            if (trimmed.length > 0) {
+                const nextMemories = Array.isArray(char.memories) ? [...char.memories] : [];
+                // Avoid duplicates (case-insensitive, trim)
+                const exists = nextMemories.some(m => m.trim().toLowerCase() === trimmed.toLowerCase());
+                if (!exists) {
+                    dispatch(charactersActions.upsertOne({ ...char, memories: [...nextMemories, trimmed] }));
+                }
+            }
+        }
+    }
     if (res && res.messages && Array.isArray(res.messages) && res.messages.length > 0) {
         await sleep(res.reactionDelay || 1000);
         setTypingCharacterId(char.id);

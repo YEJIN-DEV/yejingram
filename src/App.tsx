@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import Sidebar from './components/sidebar/Sidebar'
 import MainChat from './components/mainchat/MainChat'
-import SettingsModal from './components/settings/SettingsModal'
+import SettingsPanel from './components/settings/SettingsPanel'
 import PromptModal from './components/settings/PromptModal'
 import CharacterPanel from './components/character/CharacterPanel'
 import CreateGroupChatModal from './components/modals/CreateGroupChatModal'
@@ -20,7 +20,7 @@ function App() {
   const [roomId, setRoomId] = useState<string | null>(null)
   const room = useSelector((state: RootState) => roomId ? selectRoomById(state, roomId) : null)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const [isCharacterPanelOpen, setIsCharacterPanelOpen] = useState(false);
   const [isCreateGroupChatModalOpen, setIsCreateGroupChatModalOpen] = useState(false);
@@ -65,7 +65,7 @@ function App() {
               <Sidebar
                 setRoomId={(id) => { setRoomId(id); setIsMobileSidebarOpen(false); }}
                 roomId={roomId}
-                openSettingsModal={() => setIsSettingsModalOpen(true)}
+                openSettingsModal={() => setIsSettingsPanelOpen(true)}
                 toggleCharacterPanel={toggleCharacterPanel}
                 openCreateGroupChatModal={() => setIsCreateGroupChatModalOpen(true)}
                 openCreateOpenChatModal={() => setIsCreateOpenChatModalOpen(true)}
@@ -74,6 +74,23 @@ function App() {
               />
             </div>
           </aside>
+
+          {/* Settings Panel - Next to sidebar */}
+          {isSettingsPanelOpen && (
+            <>
+              <div className="fixed md:relative top-0 bottom-0 z-40 min-w-fit max-w-lg left-0 md:left-auto bg-white border-r border-gray-200">
+                <SettingsPanel
+                  openPromptModal={() => setIsPromptModalOpen(true)}
+                  onClose={() => setIsSettingsPanelOpen(false)}
+                />
+              </div>
+              {/* Settings Panel Backdrop (mobile only) */}
+              <div
+                onClick={() => setIsSettingsPanelOpen(false)}
+                className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm md:hidden"
+              />
+            </>
+          )}
 
           {/* Character Panel - Floating on right side */}
           {isCharacterPanelOpen && (
@@ -112,11 +129,6 @@ function App() {
         </div>
 
         {/* Global Modals (rendered above sidebar/main) */}
-        <SettingsModal
-          isOpen={isSettingsModalOpen}
-          onClose={() => setIsSettingsModalOpen(false)}
-          openPromptModal={() => setIsPromptModalOpen(true)}
-        />
         <PromptModal
           isOpen={isPromptModalOpen}
           onClose={() => setIsPromptModalOpen(false)}

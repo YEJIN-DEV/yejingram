@@ -1,11 +1,17 @@
 import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCharacterById } from '../../entities/character/selectors';
+import { charactersActions } from '../../entities/character/slice';
+import type { RootState } from '../../app/store';
 import type { Lore } from '../../entities/lorebook/types';
 import { nanoid } from '@reduxjs/toolkit';
+import type { Character } from '../../entities/character/types';
 
 export interface LorebookEditorProps {
-    lores: Lore[];
-    onChange: (lores: Lore[]) => void;
+    characterId: number;
+    draft?: Character;
+    onDraftChange?: (character: Character) => void;
 }
 
 const emptyLore = (nextOrder: number): Lore => ({
@@ -18,50 +24,84 @@ const emptyLore = (nextOrder: number): Lore => ({
     multiKey: false,
 });
 
-export function LorebookEditor({ lores, onChange }: LorebookEditorProps) {
+export function LorebookEditor({ characterId, draft, onDraftChange }: LorebookEditorProps) {
+    const dispatch = useDispatch();
+    const characterFromStore = useSelector((state: RootState) => selectCharacterById(state, characterId));
+    const character = draft && draft.id === characterId ? draft : characterFromStore;
+    if (!character) return null;
+    const lores = character.lorebook || [];
     const [expandedId, setExpandedId] = useState<string | null>(null);
-    const sorted = useMemo(() => [...(lores || [])].sort((a, b) => a.order - b.order), [lores]);
+    const sorted = useMemo(() => [...lores].sort((a, b) => a.order - b.order), [lores]);
 
     const renumber = (items: Lore[]) => items.map((l, i) => ({ ...l, order: i }));
 
+    const onChange = (newLores: Lore[]) => {
+        if (draft && onDraftChange) {
+            onDraftChange({ ...draft, lorebook: newLores });
+        } else {
+            // keep for compatibility if we ever need bulk replace
+            dispatch(charactersActions.updateLorebook({ characterId, lorebook: newLores }));
+        }
+    };
+
     const addLore = () => {
         const next = emptyLore(sorted.length);
-        onChange(renumber([...sorted, next]));
+        if (draft && onDraftChange) {
+            onChange(renumber([...sorted, next]));
+        } else {
+            dispatch(charactersActions.addLore({ characterId, lore: next }));
+        }
         setExpandedId(next.id);
     };
 
     const updateLore = (id: string, patch: Partial<Lore>) => {
-        const next = sorted.map(l => l.id === id ? { ...l, ...patch } : l);
-        onChange(next);
+        if (draft && onDraftChange) {
+            const next = sorted.map(l => l.id === id ? { ...l, ...patch } : l);
+            onChange(next);
+        } else {
+            dispatch(charactersActions.updateLore({ characterId, id, patch }));
+        }
     };
 
     const removeLore = (id: string) => {
-        const next = sorted.filter(l => l.id !== id);
-        onChange(renumber(next));
+        if (draft && onDraftChange) {
+            const next = sorted.filter(l => l.id !== id);
+            onChange(renumber(next));
+        } else {
+            dispatch(charactersActions.removeLore({ characterId, id }));
+        }
         if (expandedId === id) setExpandedId(null);
     };
 
     const moveLore = (id: string, dir: -1 | 1) => {
-        const idx = sorted.findIndex(l => l.id === id);
-        const j = idx + dir;
-        if (idx < 0 || j < 0 || j >= sorted.length) return;
-        const next = [...sorted];
-        [next[idx], next[j]] = [next[j], next[idx]];
-        onChange(renumber(next));
+        if (draft && onDraftChange) {
+            const idx = sorted.findIndex(l => l.id === id);
+            const j = idx + dir;
+            if (idx < 0 || j < 0 || j >= sorted.length) return;
+            const next = [...sorted];
+            [next[idx], next[j]] = [next[j], next[idx]];
+            onChange(renumber(next));
+        } else {
+            dispatch(charactersActions.moveLore({ characterId, id, direction: dir }));
+        }
     };
 
     // multiKey 토글과 activationKeys 길이를 동기화
     const setMultiKey = (id: string, value: boolean) => {
-        const lore = sorted.find(x => x.id === id);
-        if (!lore) return;
-        let keys = [...(lore.activationKeys || [''])];
-        if (value) {
-            while (keys.length < 2) keys.push('');
-            keys = keys.slice(0, 2);
+        if (draft && onDraftChange) {
+            const lore = sorted.find(x => x.id === id);
+            if (!lore) return;
+            let keys = [...(lore.activationKeys || [''])];
+            if (value) {
+                while (keys.length < 2) keys.push('');
+                keys = keys.slice(0, 2);
+            } else {
+                keys = [keys[0] ?? ''];
+            }
+            updateLore(id, { multiKey: value, activationKeys: keys });
         } else {
-            keys = [keys[0] ?? ''];
+            dispatch(charactersActions.setLoreMultiKey({ characterId, id, value }));
         }
-        updateLore(id, { multiKey: value, activationKeys: keys });
     };
 
     return (
