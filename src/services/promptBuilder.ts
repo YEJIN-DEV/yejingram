@@ -72,7 +72,7 @@ function buildTimeContext(messages: Message[], isProactive: boolean) {
     return timeContext;
 }
 
-function buildGuidelinesPrompt(prompts: any, character: Character, messages: Message[], isProactive: boolean, useStructuredOutput: boolean, useImageResponse: boolean): string {
+function buildGuidelinesPrompt(prompts: any, character: Character, messages: Message[], isProactive: boolean, useStructuredOutput: boolean, useImageResponse?: boolean | undefined): string {
     const availableStickers = character.stickers?.map(sticker => `${sticker.id} (${sticker.name})`).join(', ') || 'none';
     
     const imageGeneration = useImageResponse
@@ -123,7 +123,7 @@ function buildMasterPrompt(
     messages: Message[],
     isProactive: boolean,
     useStructuredOutput: boolean,
-    useImageResponse: boolean,
+    useImageResponse?: boolean | undefined,
     extraSystemInstruction?: string
 ): string {
     const prompts = selectPrompts(store.getState());
@@ -256,7 +256,7 @@ export function buildGeminiApiPayload(
     messages: Message[],
     isProactive: boolean,
     useStructuredOutput: boolean,
-    useImageResponse: boolean,
+    useImageResponse: boolean | undefined,
     extraSystemInstruction?: string
 ): GeminiApiPayload {
     const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, useImageResponse, extraSystemInstruction);
@@ -366,7 +366,7 @@ export function buildClaudeApiPayload(
     useStructuredOutput: boolean,
     extraSystemInstruction?: string
 ): ClaudeApiPayload {
-    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, extraSystemInstruction);
+    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, undefined, extraSystemInstruction);
     const contents = buildClaudeContents(messages, isProactive, userName, model);
 
     return {
@@ -434,7 +434,7 @@ export function buildOpenAIApiPayload(
     useStructuredOutput: boolean,
     extraSystemInstruction?: string
 ): OpenAIApiPayload {
-    const systemPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, extraSystemInstruction);
+    const systemPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, undefined, extraSystemInstruction);
     const history = buildOpenAIContents(messages, isProactive, userName);
 
     const payload: OpenAIApiPayload = {

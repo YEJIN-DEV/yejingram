@@ -54,6 +54,6 @@ export interface SettingsState {
     randomMessageFrequencyMax: number;
     prompts: Prompts;
     useStructuredOutput: boolean;
-    useImageResponse: boolean;
+    useImageResponse?: boolean | undefined;
     speedup: number;
 }
