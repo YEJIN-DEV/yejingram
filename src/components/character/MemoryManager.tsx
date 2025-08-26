@@ -12,15 +12,26 @@ export function MemoryManager({ memories, handleMemoryChange, addMemory, deleteM
         <div className="content-inner pt-4 space-y-3">
             <div id="memory-container" className="space-y-3">
                 {memories.map((mem, index) => (
-                    <div key={index} className="memory-item flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <input
-                            type="text"
-                            className="memory-input flex-1 px-3 py-2 bg-white text-gray-900 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm"
+                    <div key={index} className="memory-item flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <textarea
+                            className="memory-input flex-1 px-3 py-2 bg-white text-gray-900 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm leading-relaxed resize-y min-h-[44px] max-h-[300px] whitespace-pre-wrap"
                             value={mem}
-                            onChange={(e) => handleMemoryChange(index, e.target.value)}
-                            placeholder="기억할 내용을 입력하세요..."
+                            rows={2}
+                            ref={(el) => {
+                                if (el) {
+                                    el.style.height = 'auto';
+                                    el.style.height = Math.min(el.scrollHeight, 300) + 'px';
+                                }
+                            }}
+                            onChange={(e) => {
+                                handleMemoryChange(index, e.target.value);
+                                e.currentTarget.style.height = 'auto';
+                                e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 300) + 'px';
+                            }}
+                            placeholder="기억할 내용을 입력하세요... (여러 줄 입력 가능)"
+                            aria-label={`메모리 ${index + 1}`}
                         />
-                        <button onClick={() => deleteMemory(index)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
+                        <button onClick={() => deleteMemory(index)} className="p-2 mt-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
                             <Trash2 className="w-4 h-4 pointer-events-none" />
                         </button>
                     </div>

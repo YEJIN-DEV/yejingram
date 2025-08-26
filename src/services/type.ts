@@ -19,6 +19,8 @@ export interface ChatResponse {
         };
         socialBattery: number; // 사회적 배터리 (0~1)
     };
+    // 모델이 구조화된 출력으로 제공하는 신규 메모리(선택)
+    newMemory?: string;
 }
 
 export interface GeminiApiPayload {
