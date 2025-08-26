@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { RootState } from '../../app/store';
 import type { Character } from '../../entities/character/types';
+import type { Message } from '../../entities/message/types';
 import { Plus, Edit3, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectAllRooms } from '../../entities/room/selectors';
@@ -9,6 +10,7 @@ import { charactersActions } from '../../entities/character/slice';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import RoomList from './RoomList';
 import { Avatar } from '../../utils/Avatar';
+import { useCharacterOnlineStatus } from '../../utils/simulateOnline';
 
 interface CharacterListProps {
     character: Character;
@@ -27,12 +29,12 @@ function CharacterList({
     const [isExpanded, setIsExpanded] = useState(false);
     const dispatch = useDispatch();
 
-    let lastMessage: any = null;
+    let lastMessage: Message | null = null as Message | null;
     let totalUnreadCount = 0;
     const state = useSelector((state: RootState) => state);
 
     chatRooms.forEach(room => {
-        const last = selectMessagesByRoomId(state, room.id).slice(-1)[0];
+        const last = selectMessagesByRoomId(state, room.id).slice(-1)[0] as Message | undefined;
         if (last && (!lastMessage || last.createdAt > lastMessage.createdAt)) lastMessage = last;
         totalUnreadCount += room.unreadCount || 0;
     });
@@ -111,7 +113,7 @@ function CharacterList({
                     <div className="relative">
                         <Avatar char={character} size="md" />
                         {/* Online indicator */}
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 ${useCharacterOnlineStatus(character.id) ? 'bg-green-500' : 'bg-gray-500'} border-2 border-white rounded-full`}></div>
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
@@ -132,9 +134,9 @@ function CharacterList({
                                         )}
                                     </p>
                                     <div className="flex items-center space-x-1 flex-shrink-0">
-                                        {lastMessage?.createdAt && (
+                                        {lastMessage && typeof lastMessage === 'object' && 'createdAt' in lastMessage && (lastMessage as Message).createdAt && (
                                             <span className="text-xs text-gray-400">
-                                                {formatTime(lastMessage.createdAt)}
+                                                {formatTime((lastMessage as Message).createdAt)}
                                             </span>
                                         )}
                                         {isExpanded ?

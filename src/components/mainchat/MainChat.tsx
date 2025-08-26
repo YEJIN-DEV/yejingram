@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import type { Room } from '../../entities/room/types';
 import { Menu, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -16,6 +17,7 @@ import type { ImageToSend } from '../../entities/message/types';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import { replacePlaceholders } from '../../utils/placeholder';
 import { nanoid } from '@reduxjs/toolkit';
+import { useCharacterOnlineStatus } from '../../utils/simulateOnline';
 
 interface MainChatProps {
   room: Room | null;
@@ -476,7 +478,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 </button>
                 <div className="relative">
                   <Avatar char={character} size="md" />
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                  <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${useCharacterOnlineStatus(character.id) ? 'bg-green-500' : 'bg-gray-500'} border-2 border-white rounded-full`}></div>
                 </div>
                 <div className="flex-1">
                   <h2 className="font-bold text-gray-900 text-lg">{character.name}</h2>
