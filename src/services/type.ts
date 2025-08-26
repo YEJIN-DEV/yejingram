@@ -2,6 +2,10 @@ export interface MessagePart {
     delay: number;      // 밀리초 단위 지연시간
     content: string;    // 메시지 내용
     sticker?: string;   // 스티커 (옵션)
+    imageGenerationSetting?: {
+        prompt: string;   // 프롬프트
+        isSelfie: boolean; // 셀카 여부
+    }; // 이미지 생성 설정 (옵션)
 }
 
 export interface ChatResponse {

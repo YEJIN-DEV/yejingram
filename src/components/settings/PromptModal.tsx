@@ -47,7 +47,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
         setLocalPrompts(prev => ({ ...prev, main: { ...prev.main, [key]: value } }));
     };
 
-    const setPromptToDefault = (key: keyof Prompts['main'] | "message_writing_style" | "profile_creation" | "character_sheet_generation") => {
+    const setPromptToDefault = (key: keyof Prompts['main'] | "message_writing_style" | "profile_creation" | "image_response_generation") => {
         if (confirm('기본값으로 되돌리시겠습니까?')) {
             if (key === "message_writing_style") {
                 setLocalPrompts(prev => ({
@@ -58,7 +58,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         message_writing_unstructured: initialState.prompts.main.message_writing_unstructured
                     }
                 }));
-            } else if (key === "profile_creation" || key === "character_sheet_generation") {
+            } else if (key === "profile_creation" || key === "image_response_generation") {
                 setLocalPrompts(prev => ({
                     ...prev,
                     [key]: initialState.prompts[key]
@@ -224,22 +224,22 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         </div>
                     </details>
 
-                    <h4 className="text-base font-semibold text-green-600 border-b border-green-100 pb-2 mt-6">초대하기 AI 캐릭터 시트 생성 프롬프트</h4>
+                    <h4 className="text-base font-semibold text-green-600 border-b border-green-100 pb-2 mt-6">이미지 응답 생성 프롬프트</h4>
                     <details className="group bg-gray-50 rounded-lg border border-gray-200">
                         <summary className="flex items-center justify-between cursor-pointer list-none p-4">
-                            <span className="text-base font-medium text-gray-900"># 캐릭터 시트 생성 규칙 (Character Sheet Generation Rules)</span>
+                            <span className="text-base font-medium text-gray-900"># 이미지 응답 생성 규칙 (Image Response Generation Rules)</span>
                             <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
                         </summary>
                         <div className="content-wrapper">
                             <div className="content-inner p-4 border-t border-gray-200">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <button onClick={() => setPromptToDefault('character_sheet_generation')} className="py-1 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs flex items-center gap-1 border border-gray-200">
+                                    <button onClick={() => setPromptToDefault('image_response_generation')} className="py-1 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs flex items-center gap-1 border border-gray-200">
                                         <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                     </button>
                                 </div>
                                 <textarea
-                                    value={localPrompts.character_sheet_generation}
-                                    onChange={e => setLocalPrompts(prev => ({ ...prev, character_sheet_generation: e.target.value }))}
+                                    value={localPrompts.image_response_generation}
+                                    onChange={e => setLocalPrompts(prev => ({ ...prev, image_response_generation: e.target.value }))}
                                     className="w-full h-64 p-3 bg-gray-50 text-gray-900 rounded-lg text-sm font-mono border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500" />
                             </div>
                         </div>

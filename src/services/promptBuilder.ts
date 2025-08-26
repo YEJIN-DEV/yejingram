@@ -72,15 +72,20 @@ function buildTimeContext(messages: Message[], isProactive: boolean) {
     return timeContext;
 }
 
-function buildGuidelinesPrompt(prompts: any, character: Character, messages: Message[], isProactive: boolean, useStructuredOutput: boolean): string {
+function buildGuidelinesPrompt(prompts: any, character: Character, messages: Message[], isProactive: boolean, useStructuredOutput: boolean, useImageResponse: boolean): string {
     const availableStickers = character.stickers?.map(sticker => `${sticker.id} (${sticker.name})`).join(', ') || 'none';
+    
+    const imageGeneration = useImageResponse
+        ? prompts.image_response_generation
+        : undefined;
+
     const messageWritingStyle = useStructuredOutput
-        ? prompts.main.message_writing_structured
+        ? prompts.main.message_writing_structured + "\n" + imageGeneration
         : prompts.main.message_writing_unstructured;
 
     const sticker_usage = useStructuredOutput
         ? prompts.main.sticker_usage
-        : undefined
+        : undefined;
 
     const memory_generation = useStructuredOutput
         ? prompts.main.memory_generation
@@ -118,10 +123,11 @@ function buildMasterPrompt(
     messages: Message[],
     isProactive: boolean,
     useStructuredOutput: boolean,
+    useImageResponse: boolean,
     extraSystemInstruction?: string
 ): string {
     const prompts = selectPrompts(store.getState());
-    const guidelines = buildGuidelinesPrompt(prompts, character, messages, isProactive, useStructuredOutput);
+    const guidelines = buildGuidelinesPrompt(prompts, character, messages, isProactive, useStructuredOutput, useImageResponse);
     const lorebookSection = buildActiveLorebookSection(character, messages);
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
@@ -250,9 +256,10 @@ export function buildGeminiApiPayload(
     messages: Message[],
     isProactive: boolean,
     useStructuredOutput: boolean,
+    useImageResponse: boolean,
     extraSystemInstruction?: string
 ): GeminiApiPayload {
-    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, extraSystemInstruction);
+    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, useImageResponse, extraSystemInstruction);
     const contents = buildGeminiContents(messages, isProactive, userName);
 
     const generationConfig: any = {
@@ -269,6 +276,16 @@ export function buildGeminiApiPayload(
     if (useStructuredOutput) {
         generationConfig.responseMimeType = "application/json";
         generationConfig.responseSchema = structuredOutputSchema;
+        if (useImageResponse) {
+            generationConfig.responseSchema.properties.messages.items.properties.imageGenerationSetting = {
+                type: "OBJECT",
+                properties: {
+                    "prompt": { "type": "STRING" },
+                    "isSelfie": { "type": "BOOLEAN" }
+                },
+                required: ["prompt", "isSelfie"]
+            };
+        }
     }
 
     return {
