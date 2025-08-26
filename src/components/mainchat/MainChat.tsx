@@ -617,6 +617,13 @@ function InputArea({
   const [text, setText] = useState("");
   const [showInputOptions, setInputOptions] = useState(false);
   const hasImage = !!imageToSend;
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!isWaitingForResponse && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isWaitingForResponse]);
 
   const placeholder = useMemo(() => {
     if (hasImage) return "캡션 추가...";
@@ -687,7 +694,7 @@ function InputArea({
       )}
 
       {/* Main Input Container - Instagram DM Style */}
-      <div className="flex items-end space-x-3">
+      <div className="flex items-center space-x-3">
         {/* Plus Button */}
         {!hasImage && (
           <button
@@ -706,6 +713,7 @@ function InputArea({
           <div className="flex items-end bg-gray-100 rounded-3xl px-4 py-2">
             <textarea
               id="new-message-input"
+              ref={inputRef}
               placeholder={placeholder}
               className="flex-1 bg-transparent text-gray-900 resize-none border-none outline-none text-sm placeholder-gray-500 max-h-20"
               rows={1}
