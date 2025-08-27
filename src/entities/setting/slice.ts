@@ -1,10 +1,11 @@
 import { createEntityAdapter, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { SettingsState, ApiProvider, ApiConfig, Prompts } from './types';
+import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona } from './types';
+import { nanoid } from '@reduxjs/toolkit';
 
 export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     gemini: { apiKey: '', model: 'gemini-2.5-pro', imageModel: 'gemini-2.5-flash-image-preview', customModels: [], temperature: 1.25, topK: 40, topP: 0.95 },
-    vertexai: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], projectId: '', location: 'global', accessToken: '', temperature: 1.25, topK: 40, topP: 0.95  },
+    vertexai: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], projectId: '', location: 'global', accessToken: '', temperature: 1.25, topK: 40, topP: 0.95 },
     claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [], temperature: 1, topK: 40, topP: 0.95, maxTokens: 8192 },
     openai: { apiKey: '', model: 'gpt-5', customModels: [], temperature: 1.25, topP: 0.95, maxTokens: 8192 },
     grok: { apiKey: '', model: 'grok-4-0709', customModels: [], temperature: 1.25, topP: 0.95, maxTokens: 8192 },
@@ -48,6 +49,8 @@ export const initialState: SettingsState = {
     randomMessageFrequencyMax: 60,
     useStructuredOutput: true,
     speedup: 2,
+    personas: [],
+    selectedPersonaId: null,
 };
 
 export const settingsAdapter = createEntityAdapter<SettingsState, string>({
@@ -64,8 +67,18 @@ const settingsSlice = createSlice({
         resetEditingRoomId: (state) => {
             state.editingRoomId = null;
         },
-        setSettings: (state, action: PayloadAction<Partial<SettingsState>>) => {
-            return { ...state, ...action.payload };
+        setSettings: (state, action: PayloadAction<SettingsState>) => {
+            const newSettings = action.payload;
+            const merged: SettingsState = { ...state, ...newSettings } as SettingsState;
+            // If there's exactly one persona and nothing selected or selected is invalid, auto-select it
+            const personas = merged.personas ?? [];
+            const hasOnlyOne = personas.length === 1;
+            const currentId = merged.selectedPersonaId ?? null;
+            const exists = currentId ? personas.some(p => p.id === currentId) : false;
+            if (hasOnlyOne && (!currentId || !exists)) {
+                merged.selectedPersonaId = personas[0].id;
+            }
+            return merged;
         },
         setApiProvider: (state, action: PayloadAction<ApiProvider>) => {
             state.apiProvider = action.payload;
@@ -81,9 +94,75 @@ const settingsSlice = createSlice({
             state.prompts = initialState.prompts;
         },
         importSettings: (_state, action: PayloadAction<SettingsState>) => {
-            return action.payload;
-        }
-    },
+            const imported = action.payload;
+            // sanitize selection if only one persona exists
+            const personas = imported.personas ?? [];
+            if (personas.length === 1) {
+                const onlyId = personas[0].id;
+                if (!imported.selectedPersonaId || !personas.some(p => p.id === imported.selectedPersonaId)) {
+                    imported.selectedPersonaId = onlyId;
+                }
+            }
+            return imported;
+        },
+        addPersona: (state, action: PayloadAction<Omit<Persona, 'id'>>) => {
+            // personas 배열이 없으면 초기화
+            if (!state.personas) {
+                state.personas = [];
+            }
+
+            const newPersona: Persona = {
+                ...action.payload,
+                id: nanoid(),
+            };
+            state.personas.push(newPersona);
+            // If it's the only persona now, auto-select it
+            if (state.personas.length === 1) {
+                state.selectedPersonaId = newPersona.id;
+            }
+        },
+        updatePersona: (state, action: PayloadAction<Persona>) => {
+            if (!state.personas) {
+                state.personas = [];
+                return;
+            }
+
+            const index = state.personas.findIndex(p => p.id === action.payload.id);
+            if (index !== -1) {
+                state.personas[index] = action.payload;
+            }
+        },
+        deletePersona: (state, action: PayloadAction<string>) => {
+            if (!state.personas) {
+                return;
+            }
+
+            const index = state.personas.findIndex(p => p.id === action.payload);
+            if (index !== -1) {
+                state.personas.splice(index, 1);
+                // 선택값 보정: 유일한 페르소나가 되면 자동 선택, 아니면 선택 무효화만 처리
+                const remaining = state.personas;
+                const hasOnlyOne = remaining.length === 1;
+                const exists = state.selectedPersonaId ? remaining.some(p => p.id === state.selectedPersonaId) : false;
+                if (hasOnlyOne && (!state.selectedPersonaId || !exists)) {
+                    state.selectedPersonaId = remaining[0].id;
+                } else if (!exists) {
+                    // 선택된 것이 삭제로 인해 사라졌지만 여러 개 남아있는 경우 첫 번째로 대체
+                    state.selectedPersonaId = remaining[0]?.id ?? null;
+                }
+            }
+        },
+        selectPersona: (state, action: PayloadAction<string>) => {
+            if (!state.personas) {
+                return;
+            }
+
+            const personaExists = state.personas.some(p => p.id === action.payload);
+            if (personaExists) {
+                state.selectedPersonaId = action.payload;
+            }
+        },
+    }
 });
 
 export const settingsActions = settingsSlice.actions

@@ -1,7 +1,7 @@
 import { store } from "../app/store";
 import type { Character } from "../entities/character/types";
 import type { Message } from "../entities/message/types";
-import { selectPrompts } from "../entities/setting/selectors";
+import { selectPrompts, selectUserName, selectUserDescription } from "../entities/setting/selectors";
 import type { GeminiApiPayload, ClaudeApiPayload, OpenAIApiPayload } from "./type";
 import { filterActiveLores } from "../entities/lorebook/match";
 import { getActiveRoomId } from "../utils/activeRoomTracker";
@@ -117,8 +117,6 @@ function buildActiveLorebookSection(character: Character, messages: Message[]): 
 }
 
 function buildMasterPrompt(
-    userName: string,
-    userDescription: string,
     character: Character,
     messages: Message[],
     isProactive: boolean,
@@ -127,6 +125,8 @@ function buildMasterPrompt(
     extraSystemInstruction?: string
 ): string {
     const prompts = selectPrompts(store.getState());
+    const userName = selectUserName(store.getState());
+    const userDescription = selectUserDescription(store.getState());
     const guidelines = buildGuidelinesPrompt(prompts, character, messages, isProactive, useStructuredOutput, useImageResponse);
     const lorebookSection = buildActiveLorebookSection(character, messages);
     const state = store.getState();
@@ -251,8 +251,6 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, userName
 }
 
 export function buildGeminiApiPayload(
-    userName: string,
-    userDescription: string,
     character: Character,
     messages: Message[],
     isProactive: boolean,
@@ -260,7 +258,8 @@ export function buildGeminiApiPayload(
     useImageResponse: boolean | undefined,
     extraSystemInstruction?: string
 ): GeminiApiPayload {
-    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, useImageResponse, extraSystemInstruction);
+    const userName = selectUserName(store.getState());
+    const masterPrompt = buildMasterPrompt(character, messages, isProactive, useStructuredOutput, useImageResponse, extraSystemInstruction);
     const contents = buildGeminiContents(messages, isProactive, userName);
 
     const generationConfig: any = {
@@ -359,15 +358,14 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, userName
 
 export function buildClaudeApiPayload(
     model: string,
-    userName: string,
-    userDescription: string,
     character: Character,
     messages: Message[],
     isProactive: boolean,
     useStructuredOutput: boolean,
     extraSystemInstruction?: string
 ): ClaudeApiPayload {
-    const masterPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, undefined, extraSystemInstruction);
+    const userName = selectUserName(store.getState());
+    const masterPrompt = buildMasterPrompt(character, messages, isProactive, useStructuredOutput, undefined, extraSystemInstruction);
     const contents = buildClaudeContents(messages, isProactive, userName, model);
 
     return {
@@ -427,15 +425,14 @@ function buildOpenAIContents(messages: Message[], isProactive: boolean, userName
 
 export function buildOpenAIApiPayload(
     model: string,
-    userName: string,
-    userDescription: string,
     character: Character,
     messages: Message[],
     isProactive: boolean,
     useStructuredOutput: boolean,
     extraSystemInstruction?: string
 ): OpenAIApiPayload {
-    const systemPrompt = buildMasterPrompt(userName, userDescription, character, messages, isProactive, useStructuredOutput, undefined, extraSystemInstruction);
+    const userName = selectUserName(store.getState());
+    const systemPrompt = buildMasterPrompt(character, messages, isProactive, useStructuredOutput, undefined, extraSystemInstruction);
     const history = buildOpenAIContents(messages, isProactive, userName);
 
     const payload: OpenAIApiPayload = {
