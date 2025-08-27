@@ -95,16 +95,14 @@ function App() {
 
           {/* Character Panel - Floating on right side */}
           {isCharacterPanelOpen && (
-            <div className="fixed right-0 top-0 bottom-0 z-40 w-96 lg:w-[450px]">
+            <div className="fixed right-0 top-0 bottom-0 z-40 w-96">
               <CharacterPanel onClose={() => setIsCharacterPanelOpen(false)} />
             </div>
           )}
 
           {/* Main Chat Area */}
           <main id="main-chat"
-            className={`flex-1 flex flex-col bg-white ${isMobileSidebarOpen ? 'hidden md:flex' : 'flex'
-              } ${isCharacterPanelOpen ? 'md:mr-96 lg:mr-[450px]' : ''}`}>
-
+            className={`flex-1 flex flex-col bg-white ${isMobileSidebarOpen ? 'hidden md:flex' : 'flex'}`}>
             {!room ? (
               <div className="flex-1 flex items-center justify-center bg-gray-50 relative">
                 {/* Mobile: Sidebar toggle button (when no room selected) */}
