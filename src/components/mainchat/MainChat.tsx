@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import type { Room } from '../../entities/room/types';
-import { Menu, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote } from 'lucide-react';
+import { Menu, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -18,6 +18,7 @@ import { selectAllSettings } from '../../entities/setting/selectors';
 import { replacePlaceholders } from '../../utils/placeholder';
 import { nanoid } from '@reduxjs/toolkit';
 import { useCharacterOnlineStatus } from '../../utils/simulateOnline';
+import { MemoryManager } from '../character/MemoryManager';
 
 interface MainChatProps {
   room: Room | null;
@@ -36,6 +37,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAuthorNoteOpen, setIsAuthorNoteOpen] = useState(false);
   const [tempAuthorNote, setTempAuthorNote] = useState('');
+  const [isRoomMemoryOpen, setIsRoomMemoryOpen] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -252,6 +254,11 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
           onChange={setTempAuthorNote}
           onSave={saveAuthorNote}
         />
+        <RoomMemoryModal
+          open={isRoomMemoryOpen}
+          onClose={() => setIsRoomMemoryOpen(false)}
+          roomId={room.id}
+        />
         {room.type == "Open" ? (
           <>
             {/* Instagram DM Style Header for Open Chat */}
@@ -318,6 +325,9 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 </button>
                 <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={openAuthorNote}>
                   <StickyNote className="w-5 h-5" />
+                </button>
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={() => setIsRoomMemoryOpen(true)}>
+                  <Brain className="w-5 h-5" />
                 </button>
                 <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
                   <MoreHorizontal className="w-5 h-5" />
@@ -426,6 +436,9 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={openAuthorNote}>
                   <StickyNote className="w-5 h-5" />
                 </button>
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={() => setIsRoomMemoryOpen(true)}>
+                  <Brain className="w-5 h-5" />
+                </button>
                 <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
@@ -527,6 +540,9 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
                 </button>
                 <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={openAuthorNote}>
                   <StickyNote className="w-5 h-5" />
+                </button>
+                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={() => setIsRoomMemoryOpen(true)}>
+                  <Brain className="w-5 h-5" />
                 </button>
                 <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
                   <MoreHorizontal className="w-5 h-5" />
@@ -800,3 +816,26 @@ function AuthorNoteModal({ open, onClose, value, onChange, onSave }: { open: boo
 }
 
 export default MainChat;
+
+function RoomMemoryModal({ open, onClose, roomId }: { open: boolean; onClose: () => void; roomId: string; }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-2xl mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-gray-900 font-semibold">
+            <Brain className="w-5 h-5 text-blue-500" /> 방 메모리
+          </div>
+          <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors" onClick={onClose}>
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mb-3">이 방에만 적용되는 기억을 관리합니다. 모델은 여기의 메모리를 우선적으로 참고합니다.</p>
+        <MemoryManager roomId={roomId} />
+        <div className="mt-4 flex justify-end">
+          <button className="px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium" onClick={onClose}>닫기</button>
+        </div>
+      </div>
+    </div>
+  );
+}

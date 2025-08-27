@@ -13,6 +13,38 @@ const roomsSlice = createSlice({
         upsertOne: roomsAdapter.upsertOne,
         upsertMany: roomsAdapter.upsertMany,
         removeOne: roomsAdapter.removeOne,
+        setRoomMemory: (state, action: PayloadAction<{ roomId: string; index: number; value: string }>) => {
+            const { roomId, index, value } = action.payload;
+            const room = state.entities[roomId];
+            if (room) {
+                const memories = room.memories ?? (room.memories = []);
+                if (index >= 0 && index < memories.length) {
+                    memories[index] = value;
+                }
+            }
+        },
+        addRoomMemory: (state, action: PayloadAction<{ roomId: string; value?: string }>) => {
+            const { roomId, value = '' } = action.payload;
+            const room = state.entities[roomId];
+            if (room) {
+                const memories = room.memories ?? (room.memories = []);
+                memories.push(value);
+            }
+        },
+        removeRoomMemory: (state, action: PayloadAction<{ roomId: string; index: number }>) => {
+            const { roomId, index } = action.payload;
+            const room = state.entities[roomId];
+            if (room && room.memories && index >= 0 && index < room.memories.length) {
+                room.memories.splice(index, 1);
+            }
+        },
+        updateRoomMemories: (state, action: PayloadAction<{ roomId: string; memories: string[] }>) => {
+            const { roomId, memories } = action.payload;
+            const room = state.entities[roomId];
+            if (room) {
+                room.memories = memories;
+            }
+        },
         incrementUnread: (state, action: { payload: string }) => {
             const room = state.entities[action.payload];
             if (room) {

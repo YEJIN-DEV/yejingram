@@ -23,28 +23,6 @@ const charactersSlice = createSlice({
     resetEditingCharacterId: (state) => {
       state.editingCharacterId = null;
     },
-    // Memories
-    setMemory: (state, action: PayloadAction<{ characterId: number; index: number; value: string }>) => {
-      const { characterId, index, value } = action.payload;
-      const character = state.entities[characterId];
-      if (character && index >= 0 && index < character.memories.length) {
-        character.memories[index] = value;
-      }
-    },
-    addMemory: (state, action: PayloadAction<{ characterId: number; value?: string }>) => {
-      const { characterId, value = '' } = action.payload;
-      const character = state.entities[characterId];
-      if (character) {
-        character.memories.push(value);
-      }
-    },
-    removeMemory: (state, action: PayloadAction<{ characterId: number; index: number }>) => {
-      const { characterId, index } = action.payload;
-      const character = state.entities[characterId];
-      if (character && index >= 0 && index < character.memories.length) {
-        character.memories.splice(index, 1);
-      }
-    },
     addSticker: (state, action: PayloadAction<{ characterId: number; sticker: Sticker }>) => {
       const { characterId, sticker } = action.payload;
       const character = state.entities[characterId];
@@ -67,13 +45,6 @@ const charactersSlice = createSlice({
         if (sticker) {
           sticker.name = newName;
         }
-      }
-    },
-    updateMemories: (state, action: PayloadAction<{ characterId: number; memories: string[] }>) => {
-      const { characterId, memories } = action.payload;
-      const character = state.entities[characterId];
-      if (character) {
-        character.memories = memories;
       }
     },
     // Lorebook granular actions

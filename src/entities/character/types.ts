@@ -16,7 +16,6 @@ export interface Character {
     thinkingTime: number
     reactivity: number
     tone: number
-    memories: string[]
     proactiveEnabled: boolean
     messageCountSinceLastSummary: number
     media: string[]
@@ -32,7 +31,6 @@ export interface PersonaChatAppCharacterCard {
     reactivity: string;
     tone: string;
     source: "PersonaChatAppCharacterCard"; // 리터럴 타입으로 고정
-    memories: any[];        // 추후에 세부 타입이 있으면 any 대신 구체적으로 정의 가능
     proactiveEnabled: boolean;
 }
 
@@ -46,7 +44,6 @@ export const defaultCharacters = [
         thinkingTime: 10,
         reactivity: 1,
         tone: 10,
-        memories: [],
         proactiveEnabled: true,
         messageCountSinceLastSummary: 0,
         media: [], // Add media storage for images
@@ -64,7 +61,6 @@ export const newCharacterDefault: Character = {
     thinkingTime: 5,
     reactivity: 5,
     tone: 5,
-    memories: [],
     proactiveEnabled: true,
     messageCountSinceLastSummary: 0,
     media: [],

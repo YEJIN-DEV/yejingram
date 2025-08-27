@@ -13,7 +13,6 @@ import type { ApiConfig, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
 import { replacePlaceholders } from "../utils/placeholder";
 import { nanoid } from "@reduxjs/toolkit";
-import { charactersActions } from "../entities/character/slice";
 import toast from 'react-hot-toast';
 
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
@@ -54,10 +53,9 @@ async function handleApiResponse(
         if (typeof mem === 'string') {
             const trimmed = mem.trim();
             if (trimmed.length > 0) {
-                const nextMemories = Array.isArray(char.memories) ? [...char.memories] : [];
-                const exists = nextMemories.some(m => m.trim().toLowerCase() === trimmed.toLowerCase());
+                const exists = room.memories?.some(m => m.trim().toLowerCase() === trimmed.toLowerCase());
                 if (!exists) {
-                    dispatch(charactersActions.addMemory({ characterId: char.id, value: trimmed }));
+                    dispatch(roomsActions.addRoomMemory({ roomId: room.id, value: trimmed }));
                     // Toast 알림으로 새로운 메모리 추가를 알림
                     toast.success(`새로운 기억이 추가되었습니다:\n"${trimmed}"`, {
                         duration: 5000,

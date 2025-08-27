@@ -6,14 +6,13 @@ import { charactersActions } from '../../entities/character/slice';
 import type { RootState } from '../../app/store';
 import { newCharacterDefault, type Character, type PersonaChatAppCharacterCard } from '../../entities/character/types';
 import { AttributeSliders } from './AttributeSliders';
-import { MemoryManager } from './MemoryManager';
 import { StickerManager } from './StickerManager';
 import { decodeText, encodeText } from '../../utils/imageStego';
 import { LorebookEditor } from './LorebookEditor';
 import { extractBasicCharacterInfo } from '../../utils/risuai/risuCharacterCard';
 
 const personaCardToCharacter = (card: PersonaChatAppCharacterCard): Character => {
-    const { name, prompt, responseTime, thinkingTime, reactivity, tone, memories, proactiveEnabled } = card;
+    const { name, prompt, responseTime, thinkingTime, reactivity, tone, proactiveEnabled } = card;
 
     return {
         id: Date.now(),
@@ -23,7 +22,6 @@ const personaCardToCharacter = (card: PersonaChatAppCharacterCard): Character =>
         thinkingTime: parseInt(thinkingTime, 10),
         reactivity: parseInt(reactivity, 10),
         tone: parseInt(tone, 10),
-        memories: Array.isArray(memories) ? memories.map(String) : [], // Ensure memories is an array of strings
         proactiveEnabled,
         // Fields not in PersonaChatAppCharacterCard are set to default values
         avatar: null,
@@ -42,7 +40,6 @@ const characterToPersonaCard = (character: Character): PersonaChatAppCharacterCa
         reactivity: String(character.reactivity),
         tone: String(character.tone),
         source: "PersonaChatAppCharacterCard",
-        memories: character.memories,
         proactiveEnabled: character.proactiveEnabled,
     };
 };
@@ -58,7 +55,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
     const proactiveChatEnabled = useSelector((state: RootState) => state.settings.proactiveChatEnabled)
 
     const [char, setChar] = useState<Character>(newCharacterDefault);
-    const [activeTab, setActiveTab] = useState<'basicInfo' | 'memory' | 'lorebook' | 'backup'>('basicInfo');
+    const [activeTab, setActiveTab] = useState<'basicInfo' | 'lorebook' | 'backup'>('basicInfo');
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
     const isNew = !editingId;
@@ -198,12 +195,6 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                     기본정보
                 </button>
                 <button
-                    className={`py-3 px-6 text-sm font-medium transition-colors ${activeTab === 'memory' ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700'}`}
-                    onClick={() => setActiveTab('memory')}
-                >
-                    메모리
-                </button>
-                <button
                     className={`py-3 px-6 text-sm font-medium transition-colors ${activeTab === 'lorebook' ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700'}`}
                     onClick={() => setActiveTab('lorebook')}
                 >
@@ -288,15 +279,6 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                 {activeTab === 'lorebook' && (
                     <div className="space-y-6">
                         <LorebookEditor characterId={char.id} draft={char} onDraftChange={setChar} />
-                    </div>
-                )}
-                {activeTab === 'memory' && (
-                    <div className="space-y-6">
-                        <MemoryManager
-                            characterId={char.id}
-                            draft={char}
-                            onDraftChange={setChar}
-                        />
                     </div>
                 )}
                 {activeTab === 'backup' && (

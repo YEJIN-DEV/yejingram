@@ -74,7 +74,7 @@ function buildTimeContext(messages: Message[], isProactive: boolean) {
 
 function buildGuidelinesPrompt(prompts: any, character: Character, messages: Message[], isProactive: boolean, useStructuredOutput: boolean, useImageResponse?: boolean | undefined): string {
     const availableStickers = character.stickers?.map(sticker => `${sticker.id} (${sticker.name})`).join(', ') || 'none';
-    
+
     const imageGeneration = useImageResponse
         ? prompts.image_response_generation
         : undefined;
@@ -133,6 +133,7 @@ function buildMasterPrompt(
     const activeRoomId = getActiveRoomId();
     const room = activeRoomId ? selectRoomById(state, activeRoomId) : null;
     const authorsNote = room?.authorNote?.trim();
+    const roomMemories = room?.memories ?? [];
 
     return `# System Rules
 ${prompts.main.system_rules}
@@ -154,8 +155,8 @@ Settings of Worldview, features, and Memories of {{char}} and {{user}}, etc.
     ${character.prompt}
 
 # Memory
-This is a list of key memories the character has.Use them to maintain consistency and recall past events.
-    ${character.memories && character.memories.length > 0 ? character.memories.map(mem => `- ${mem}`).join('\n') : 'No specific memories recorded yet.'}
+This is a list of key memories recorded for this chat room. Use them to maintain consistency and recall past events.
+    ${roomMemories.length > 0 ? roomMemories.map(mem => `- ${mem}`).join('\n') : 'No specific memories recorded yet.'}
 
 ${authorsNote ? `# Author's Note
 Treat the following as high-priority memory for this chat room. It provides meta-guidance and context that should subtly influence behavior and tone without being quoted explicitly.
