@@ -1,7 +1,6 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { Menu, Globe, Users, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { useMemo, useState, useRef, useEffect } from 'react';
