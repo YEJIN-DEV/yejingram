@@ -122,7 +122,7 @@ function App() {
                 </div>
               </div>
             ) : (
-              <MainChat room={room} onToggleMobileSidebar={toggleMobileSidebar} />
+              <MainChat room={room} onToggleMobileSidebar={toggleMobileSidebar} onToggleCharacterPanel={toggleCharacterPanel} />
             )}
           </main>
         </div>

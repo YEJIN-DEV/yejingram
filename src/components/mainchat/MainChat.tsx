@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain } from 'lucide-react';
+import { Menu, Globe, Users, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -18,13 +18,15 @@ import { replacePlaceholders } from '../../utils/placeholder';
 import { nanoid } from '@reduxjs/toolkit';
 import { useCharacterOnlineStatus } from '../../utils/simulateOnline';
 import { MemoryManager } from '../character/MemoryManager';
+import { charactersActions } from '../../entities/character/slice';
 
 interface MainChatProps {
   room: Room | null;
   onToggleMobileSidebar: () => void;
+  onToggleCharacterPanel: () => void;
 }
 
-function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
+function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel }: MainChatProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [typingCharacterId, setTypingCharacterId] = useState<number | null>(null);
@@ -271,6 +273,7 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
           onSetNewRoomName={setNewRoomName}
           onOpenAuthorNote={openAuthorNote}
           onOpenRoomMemory={() => setIsRoomMemoryOpen(true)}
+          onOpenCharacterPanel={onToggleCharacterPanel}
         />
 
         {/* Messages Container*/}
@@ -332,6 +335,7 @@ interface ChatHeaderProps {
   onSetNewRoomName: (name: string) => void;
   onOpenAuthorNote: () => void;
   onOpenRoomMemory: () => void;
+  onOpenCharacterPanel: () => void;
 }
 
 function ChatHeader({
@@ -346,8 +350,10 @@ function ChatHeader({
   onCancelEditRoomName,
   onSetNewRoomName,
   onOpenAuthorNote,
-  onOpenRoomMemory
+  onOpenRoomMemory,
+  onOpenCharacterPanel
 }: ChatHeaderProps) {
+  const dispatch = useDispatch();
   const getHeaderAvatar = () => {
     if (room.type === 'Open') {
       return (
@@ -490,23 +496,20 @@ function ChatHeader({
         </div>
       </div>
       <div className="flex items-center space-x-2">
-        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-          <Phone className="w-5 h-5" />
-        </button>
-        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-          <Video className="w-5 h-5" />
-        </button>
         <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={onOpenAuthorNote}>
           <StickyNote className="w-5 h-5" />
         </button>
         <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={onOpenRoomMemory}>
           <Brain className="w-5 h-5" />
         </button>
-        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="캐릭터 설정" onClick={() => {
+          dispatch(charactersActions.setEditingCharacterId(character.id));
+          onOpenCharacterPanel();
+        }}>
           <MoreHorizontal className="w-5 h-5" />
         </button>
       </div>
-    </header>
+    </header >
   );
 }
 
