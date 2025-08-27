@@ -26,8 +26,8 @@ export function MemoryManager({ roomId }: MemoryManagerProps) {
         dispatch(roomsActions.removeRoomMemory({ roomId, index }));
     };
     return (
-        <div className="content-inner pt-4 space-y-3">
-            <div id="memory-container" className="space-y-3">
+        <div className="content-inner pt-4 space-y-3 h-96 flex flex-col">
+            <div id="memory-container" className="space-y-3 flex-1 overflow-y-auto pr-2">
                 {memories.map((mem, index) => (
                     <div key={index} className="memory-item flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <textarea
@@ -54,9 +54,11 @@ export function MemoryManager({ roomId }: MemoryManagerProps) {
                     </div>
                 ))}
             </div>
-            <button onClick={addMemory} id="add-memory-btn" className="mt-3 text-sm text-blue-500 hover:text-blue-600 flex items-center gap-2 py-2 px-3 hover:bg-blue-50 rounded-lg transition-colors">
-                <PlusCircle className="w-4 h-4" /> 메모리 추가
-            </button>
+            <div className="flex-shrink-0 pt-2 border-t border-gray-200">
+                <button onClick={addMemory} id="add-memory-btn" className="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-2 py-2 px-3 hover:bg-blue-50 rounded-lg transition-colors">
+                    <PlusCircle className="w-4 h-4" /> 메모리 추가
+                </button>
+            </div>
         </div>
     );
 }
