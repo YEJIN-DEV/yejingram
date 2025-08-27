@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 import type { Room } from '../../entities/room/types';
 import { Menu, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -259,343 +258,256 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
           onClose={() => setIsRoomMemoryOpen(false)}
           roomId={room.id}
         />
-        {room.type == "Open" ? (
-          <>
-            {/* Instagram DM Style Header for Open Chat */}
-            <header className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  id="mobile-sidebar-toggle"
-                  className="p-2 -ml-2 rounded-full hover:bg-gray-100 md:hidden"
-                  onClick={onToggleMobileSidebar}
-                >
-                  <Menu className="h-5 w-5 text-gray-600" />
-                </button>
-                <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                    <Globe className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  {isEditingRoomName ? (
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="text"
-                        value={newRoomName}
-                        onChange={(e) => setNewRoomName(e.target.value)}
-                        className="bg-gray-100 text-gray-900 text-lg font-semibold rounded-lg px-3 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                            e.preventDefault();
-                            handleSaveRoomName();
-                          }
-                          if (e.key === 'Escape') setIsEditingRoomName(false);
-                        }}
-                      />
-                      <button onClick={handleSaveRoomName} className="p-1 text-green-600 hover:text-green-700">
-                        <Check className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-600 hover:text-red-700">
-                        <XCircle className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="group flex items-center space-x-2">
-                      <h2 className="font-bold text-gray-900 text-lg">{room.name}</h2>
-                      <button
-                        onClick={handleEditRoomName}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                  <p className="text-sm text-gray-500 flex items-center mt-1">
-                    {room.currentParticipants?.length || 0}명 활성 · 오픈 채팅
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                  <Phone className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                  <Video className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={openAuthorNote}>
-                  <StickyNote className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={() => setIsRoomMemoryOpen(true)}>
-                  <Brain className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </div>
-            </header>
+        <ChatHeader
+          room={room}
+          character={character}
+          memberChars={memberChars}
+          isEditingRoomName={isEditingRoomName}
+          newRoomName={newRoomName}
+          onToggleMobileSidebar={onToggleMobileSidebar}
+          onEditRoomName={handleEditRoomName}
+          onSaveRoomName={handleSaveRoomName}
+          onCancelEditRoomName={() => setIsEditingRoomName(false)}
+          onSetNewRoomName={setNewRoomName}
+          onOpenAuthorNote={openAuthorNote}
+          onOpenRoomMemory={() => setIsRoomMemoryOpen(true)}
+        />
 
-            {/* Messages Container - Instagram DM Style */}
-            <div id="messages-container" className="flex-1 overflow-y-auto bg-white" ref={messagesContainerRef}>
-              <MessageList
-                messages={messages}
-                room={room}
-                isWaitingForResponse={isWaitingForResponse}
-                typingCharacterId={typingCharacterId}
-                currentUserId={0}
-                setTypingCharacterId={setTypingCharacterId}
-                setIsWaitingForResponse={setIsWaitingForResponse}
-              />
-              <div id="messages-end-ref"></div>
-            </div>
+        {/* Messages Container*/}
+        <div id="messages-container" className="flex-1 overflow-y-auto bg-white" ref={messagesContainerRef}>
+          <MessageList
+            messages={messages}
+            room={room}
+            isWaitingForResponse={isWaitingForResponse}
+            typingCharacterId={typingCharacterId}
+            currentUserId={0}
+            setTypingCharacterId={setTypingCharacterId}
+            setIsWaitingForResponse={setIsWaitingForResponse}
+          />
+          <div id="messages-end-ref"></div>
+        </div>
 
-            {/* Input Area - Instagram DM Style */}
-            <div className="px-6 py-4 bg-white border-t border-gray-200">
-              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-              <InputArea
-                room={room}
-                isWaitingForResponse={isWaitingForResponse}
-                stickerToSend={stickerToSend}
-                imageToSend={imageToSend}
-                onOpenImageUpload={handleOpenImageUpload}
-                onCancelImagePreview={handleCancelImagePreview}
-                onToggleUserStickerPanel={handleToggleStickerPanel}
-                onStickerClear={handleCancelSticker}
-                onSendMessage={handleSendMessage}
-                onPaste={handlePaste}
-                onFocus={handleInputFocus}
-              />
-            </div>
-          </>
-        ) : room.type == "Group" ? (
-          <>
-            {/* Instagram DM Style Header for Group Chat */}
-            <header className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  id="mobile-sidebar-toggle"
-                  className="p-2 -ml-2 rounded-full hover:bg-gray-100 md:hidden"
-                  onClick={onToggleMobileSidebar}
-                >
-                  <Menu className="h-5 w-5 text-gray-600" />
-                </button>
-                <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                    <Users className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  {isEditingRoomName ? (
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="text"
-                        value={newRoomName}
-                        onChange={(e) => setNewRoomName(e.target.value)}
-                        className="bg-gray-100 text-gray-900 text-lg font-semibold rounded-lg px-3 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                            e.preventDefault();
-                            handleSaveRoomName();
-                          }
-                          if (e.key === 'Escape') setIsEditingRoomName(false);
-                        }}
-                      />
-                      <button onClick={handleSaveRoomName} className="p-1 text-green-600 hover:text-green-700">
-                        <Check className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-600 hover:text-red-700">
-                        <XCircle className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="group flex items-center space-x-2">
-                      <h2 className="font-bold text-gray-900 text-lg">{room.name}</h2>
-                      <button
-                        onClick={handleEditRoomName}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                  <p className="text-sm text-gray-500 flex items-center mt-1">
-                    {memberChars && memberChars.length > 0
-                      ? memberChars.map(char => char?.name).filter(Boolean).join(', ')
-                      : `${room.memberIds.length}명의 참여자`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                  <Phone className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                  <Video className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={openAuthorNote}>
-                  <StickyNote className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={() => setIsRoomMemoryOpen(true)}>
-                  <Brain className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </div>
-            </header>
-
-            {/* Messages Container - Instagram DM Style */}
-            <div id="messages-container" className="flex-1 overflow-y-auto bg-white" ref={messagesContainerRef}>
-              <MessageList
-                messages={messages}
-                room={room}
-                isWaitingForResponse={isWaitingForResponse}
-                typingCharacterId={typingCharacterId}
-                currentUserId={0}
-                setTypingCharacterId={setTypingCharacterId}
-                setIsWaitingForResponse={setIsWaitingForResponse}
-              />
-              <div id="messages-end-ref"></div>
-            </div>
-
-            {/* Input Area - Instagram DM Style */}
-            <div className="px-6 py-4 bg-white border-t border-gray-200">
-              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-              <InputArea
-                room={room}
-                isWaitingForResponse={isWaitingForResponse}
-                stickerToSend={stickerToSend}
-                imageToSend={imageToSend}
-                onOpenImageUpload={handleOpenImageUpload}
-                onCancelImagePreview={handleCancelImagePreview}
-                onToggleUserStickerPanel={handleToggleStickerPanel}
-                onStickerClear={handleCancelSticker}
-                onSendMessage={handleSendMessage}
-                onPaste={handlePaste}
-                onFocus={handleInputFocus}
-              />
-            </div>
-          </>
-        ) : room.type == "Direct" && character && messages ? (
-          <>
-            {/* Instagram DM Style Header for Direct Chat */}
-            <header className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  id="mobile-sidebar-toggle"
-                  className="p-2 -ml-2 rounded-full hover:bg-gray-100 md:hidden"
-                  onClick={onToggleMobileSidebar}
-                >
-                  <Menu className="h-5 w-5 text-gray-600" />
-                </button>
-                <div className="relative">
-                  <Avatar char={character} size="md" />
-                  <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${useCharacterOnlineStatus(character.id) ? 'bg-green-500' : 'bg-gray-500'} border-2 border-white rounded-full`}></div>
-                </div>
-                <div className="flex-1">
-                  <h2 className="font-bold text-gray-900 text-lg">{character.name}</h2>
-                  {isEditingRoomName ? (
-                    <div className="flex items-center space-x-2 mt-1">
-                      <input
-                        type="text"
-                        value={newRoomName}
-                        onChange={(e) => setNewRoomName(e.target.value)}
-                        className="bg-gray-100 text-gray-900 text-sm rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                            e.preventDefault();
-                            handleSaveRoomName();
-                          }
-                          if (e.key === 'Escape') setIsEditingRoomName(false);
-                        }}
-                      />
-                      <button onClick={handleSaveRoomName} className="p-1 text-green-600 hover:text-green-700">
-                        <Check className="w-3 h-3" />
-                      </button>
-                      <button onClick={() => setIsEditingRoomName(false)} className="p-1 text-red-600 hover:text-red-700">
-                        <XCircle className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="group flex items-center space-x-2 mt-1">
-                      <p className="text-sm text-gray-500">{room.name}</p>
-                      <button
-                        onClick={handleEditRoomName}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                  <Phone className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                  <Video className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={openAuthorNote}>
-                  <StickyNote className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={() => setIsRoomMemoryOpen(true)}>
-                  <Brain className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </div>
-            </header>
-
-            {/* Messages Container - Instagram DM Style */}
-            <div id="messages-container" className="flex-1 overflow-y-auto bg-white" ref={messagesContainerRef}>
-              <MessageList
-                messages={messages}
-                room={room}
-                isWaitingForResponse={isWaitingForResponse}
-                typingCharacterId={typingCharacterId}
-                currentUserId={0}
-                setTypingCharacterId={setTypingCharacterId}
-                setIsWaitingForResponse={setIsWaitingForResponse}
-              />
-              <div id="messages-end-ref"></div>
-            </div>
-
-            {/* Input Area - Instagram DM Style */}
-            <div className="px-6 py-4 bg-white border-t border-gray-200">
-              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-              <InputArea
-                room={room}
-                isWaitingForResponse={isWaitingForResponse}
-                stickerToSend={stickerToSend}
-                imageToSend={imageToSend}
-                onOpenImageUpload={handleOpenImageUpload}
-                onCancelImagePreview={handleCancelImagePreview}
-                onToggleUserStickerPanel={handleToggleStickerPanel}
-                onStickerClear={handleCancelSticker}
-                onSendMessage={handleSendMessage}
-                onPaste={handlePaste}
-                onFocus={handleInputFocus}
-                renderUserStickerPanel={() =>
-                  showStickerPanel && character && (
-                    <StickerPanel
-                      characterId={character.id}
-                      stickers={character.stickers}
-                      onSelectSticker={handleSelectSticker}
-                      onClose={handleToggleStickerPanel}
-                    />
-                  )
-                }
-              />
-            </div>
-          </>
-        ) : null}
+        {/* Input Area*/}
+        <div className="px-6 py-4 bg-white border-t border-gray-200">
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+          <InputArea
+            room={room}
+            isWaitingForResponse={isWaitingForResponse}
+            stickerToSend={stickerToSend}
+            imageToSend={imageToSend}
+            onOpenImageUpload={handleOpenImageUpload}
+            onCancelImagePreview={handleCancelImagePreview}
+            onToggleUserStickerPanel={handleToggleStickerPanel}
+            onStickerClear={handleCancelSticker}
+            onSendMessage={handleSendMessage}
+            onPaste={handlePaste}
+            onFocus={handleInputFocus}
+            renderUserStickerPanel={() =>
+              showStickerPanel && character && (
+                <StickerPanel
+                  characterId={character.id}
+                  stickers={character.stickers}
+                  onSelectSticker={handleSelectSticker}
+                  onClose={handleToggleStickerPanel}
+                />
+              )
+            }
+          />
+        </div>
       </>
     );
   }
+}
+
+interface ChatHeaderProps {
+  room: Room;
+  character: any;
+  memberChars: any[] | undefined;
+  isEditingRoomName: boolean;
+  newRoomName: string;
+  onToggleMobileSidebar: () => void;
+  onEditRoomName: () => void;
+  onSaveRoomName: () => void;
+  onCancelEditRoomName: () => void;
+  onSetNewRoomName: (name: string) => void;
+  onOpenAuthorNote: () => void;
+  onOpenRoomMemory: () => void;
+}
+
+function ChatHeader({
+  room,
+  character,
+  memberChars,
+  isEditingRoomName,
+  newRoomName,
+  onToggleMobileSidebar,
+  onEditRoomName,
+  onSaveRoomName,
+  onCancelEditRoomName,
+  onSetNewRoomName,
+  onOpenAuthorNote,
+  onOpenRoomMemory
+}: ChatHeaderProps) {
+  const getHeaderAvatar = () => {
+    if (room.type === 'Open') {
+      return (
+        <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+          <Globe className="w-6 h-6 text-white" />
+        </div>
+      );
+    }
+    if (room.type === 'Group') {
+      return (
+        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+          <Users className="w-6 h-6 text-white" />
+        </div>
+      );
+    }
+    if (room.type === 'Direct' && character) {
+      return (
+        <>
+          <Avatar char={character} size="md" />
+          <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${useCharacterOnlineStatus(character.id) ? 'bg-green-500' : 'bg-gray-500'} border-2 border-white rounded-full`}></div>
+        </>
+      );
+    }
+    return null;
+  };
+
+  const getHeaderTitle = () => {
+    if (room.type === 'Direct' && character) {
+      return character.name;
+    }
+    return room.name;
+  };
+
+  const getHeaderSubtitle = () => {
+    if (room.type === 'Open') {
+      return `${room.currentParticipants?.length || 0}명 활성 · 오픈 채팅`;
+    }
+    if (room.type === 'Group') {
+      return memberChars && memberChars.length > 0
+        ? memberChars.map(char => char?.name).filter(Boolean).join(', ')
+        : `${room.memberIds.length}명의 참여자`;
+    }
+    if (room.type === 'Direct') {
+      return room.name;
+    }
+    return '';
+  };
+
+  const getRoomNameEditSize = () => {
+    if (room.type === 'Direct') {
+      return "bg-gray-100 text-gray-900 text-sm rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500";
+    }
+    return "bg-gray-100 text-gray-900 text-lg font-semibold rounded-lg px-3 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500";
+  };
+
+  const getEditButtonSize = () => {
+    if (room.type === 'Direct') {
+      return "w-3 h-3";
+    }
+    return "w-4 h-4";
+  };
+
+  const getEditPosition = () => {
+    if (room.type === 'Direct') {
+      return "mt-1";
+    }
+    return "";
+  };
+
+  return (
+    <header className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+      <div className="flex items-center space-x-4">
+        <button
+          id="mobile-sidebar-toggle"
+          className="p-2 -ml-2 rounded-full hover:bg-gray-100 md:hidden"
+          onClick={onToggleMobileSidebar}
+        >
+          <Menu className="h-5 w-5 text-gray-600" />
+        </button>
+        <div className="relative">
+          {getHeaderAvatar()}
+        </div>
+        <div className="flex-1">
+          {isEditingRoomName ? (
+            <div className={`flex items-center space-x-2 ${getEditPosition()}`}>
+              <input
+                type="text"
+                value={newRoomName}
+                onChange={(e) => onSetNewRoomName(e.target.value)}
+                className={getRoomNameEditSize()}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    onSaveRoomName();
+                  }
+                  if (e.key === 'Escape') onCancelEditRoomName();
+                }}
+              />
+              <button onClick={onSaveRoomName} className="p-1 text-green-600 hover:text-green-700">
+                <Check className={getEditButtonSize()} />
+              </button>
+              <button onClick={onCancelEditRoomName} className="p-1 text-red-600 hover:text-red-700">
+                <XCircle className={getEditButtonSize()} />
+              </button>
+            </div>
+          ) : (
+            <>
+              {room.type === 'Direct' ? (
+                <>
+                  <h2 className="font-bold text-gray-900 text-lg">{getHeaderTitle()}</h2>
+                  <div className={`group flex items-center space-x-2 ${getEditPosition()}`}>
+                    <p className="text-sm text-gray-500">{getHeaderSubtitle()}</p>
+                    <button
+                      onClick={onEditRoomName}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
+                    >
+                      <Edit2 className={getEditButtonSize()} />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="group flex items-center space-x-2">
+                    <h2 className="font-bold text-gray-900 text-lg">{getHeaderTitle()}</h2>
+                    <button
+                      onClick={onEditRoomName}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
+                    >
+                      <Edit2 className={getEditButtonSize()} />
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-500 flex items-center mt-1">
+                    {getHeaderSubtitle()}
+                  </p>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center space-x-2">
+        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+          <Phone className="w-5 h-5" />
+        </button>
+        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+          <Video className="w-5 h-5" />
+        </button>
+        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={onOpenAuthorNote}>
+          <StickyNote className="w-5 h-5" />
+        </button>
+        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={onOpenRoomMemory}>
+          <Brain className="w-5 h-5" />
+        </button>
+        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+          <MoreHorizontal className="w-5 h-5" />
+        </button>
+      </div>
+    </header>
+  );
 }
 
 interface InputAreaProps {
@@ -654,7 +566,7 @@ function InputArea({
 
   return (
     <div className="input-area-container relative">
-      {/* Image Preview - Instagram DM Style */}
+      {/* Image Preview*/}
       {hasImage && imageToSend?.dataUrl && (
         <div className="mb-3 p-3 bg-gray-50 rounded-xl">
           <div className="relative w-16 h-16">
@@ -674,7 +586,7 @@ function InputArea({
         </div>
       )}
 
-      {/* Selected Sticker Display - Instagram DM Style */}
+      {/* Selected Sticker Display*/}
       {stickerToSend && (
         <div className="mb-3 p-3 bg-gray-50 rounded-xl flex items-center gap-3 text-sm text-gray-600">
           <img
@@ -693,7 +605,7 @@ function InputArea({
         </div>
       )}
 
-      {/* Input Options Popover - Instagram DM Style */}
+      {/* Input Options Popover*/}
       {showInputOptions && (
         <div className="absolute bottom-full left-4 mb-2 w-48 bg-white rounded-2xl shadow-lg border border-gray-200 p-2 animate-fadeIn">
           <button
@@ -709,7 +621,7 @@ function InputArea({
         </div>
       )}
 
-      {/* Main Input Container - Instagram DM Style */}
+      {/* Main Input Container*/}
       <div className="flex items-center space-x-3">
         {/* Plus Button */}
         {!hasImage && (
@@ -815,8 +727,6 @@ function AuthorNoteModal({ open, onClose, value, onChange, onSave }: { open: boo
   );
 }
 
-export default MainChat;
-
 function RoomMemoryModal({ open, onClose, roomId }: { open: boolean; onClose: () => void; roomId: string; }) {
   if (!open) return null;
   return (
@@ -839,3 +749,6 @@ function RoomMemoryModal({ open, onClose, roomId }: { open: boolean; onClose: ()
     </div>
   );
 }
+
+export default MainChat;
+
