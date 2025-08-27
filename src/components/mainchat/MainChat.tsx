@@ -1,5 +1,6 @@
 import type { Room } from '../../entities/room/types';
 import { Menu, Globe, Users, Phone, Video, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -171,6 +172,12 @@ function MainChat({ room, onToggleMobileSidebar }: MainChatProps) {
   const handleSendMessage = (text: string) => {
     if (!room) return;
     if (!text.trim() && !stickerToSend && !imageToSend) return;
+
+    // Warn when no persona is explicitly selected
+    if (settings?.selectedPersonaId == null) {
+      toast.error('선택된 페르소나가 없습니다. 설정 > 페르소나에서 선택 또는 추가해주세요.');
+      return;
+    }
 
     setIsWaitingForResponse(true);
 

@@ -2,7 +2,7 @@ import { store, type AppDispatch } from "../app/store";
 import { selectCharacterById, selectAllCharacters } from "../entities/character/selectors";
 import type { Message } from "../entities/message/types";
 import type { Room } from "../entities/room/types";
-import { selectAllSettings, selectCurrentApiConfig } from "../entities/setting/selectors";
+import { selectAllSettings, selectCurrentApiConfig, selectUserName, selectUserDescription } from "../entities/setting/selectors";
 import { messagesActions } from "../entities/message/slice";
 import { roomsActions } from "../entities/room/slice";
 import type { ChatResponse, MessagePart } from "./type";
@@ -196,7 +196,6 @@ async function callApi(
     character: Character,
     messages: Message[],
     isProactive: boolean,
-    userDescription?: string,
     extraSystemInstruction?: string
 ): Promise<ChatResponse> {
     const { apiProvider } = settings;
@@ -205,20 +204,21 @@ async function callApi(
     switch (apiProvider) {
         case 'gemini':
         case 'vertexai':
-            payload = buildGeminiApiPayload(settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, extraSystemInstruction);
+            payload = buildGeminiApiPayload(character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, extraSystemInstruction);
             break;
         case 'claude':
         case 'grok':
-            payload = buildClaudeApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
+            payload = buildClaudeApiPayload(apiConfig.model, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
             break;
         case 'openai':
         case 'customOpenAI':
-            payload = buildOpenAIApiPayload(apiConfig.model, settings.userName, userDescription ?? settings.userDescription, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
+            payload = buildOpenAIApiPayload(apiConfig.model, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
             break;
     }
 
+    const userName = selectUserName(store.getState());
     const placeholders = {
-        user: settings.userName,
+        user: userName,
         char: character.name,
     };
 
@@ -346,7 +346,7 @@ async function LLMSend(
     const settings = selectAllSettings(state);
     const messages = selectMessagesByRoomId(state, room.id);
 
-    let finalUserDescription = settings.userDescription;
+    let finalUserDescription = selectUserDescription(state);
 
     if (room.type === 'Group' && allParticipants) {
         const otherParticipants = allParticipants.filter(p => p.id !== char.id);
@@ -424,7 +424,6 @@ async function LLMSend(
                 char,
                 messages,
                 false,
-                finalUserDescription,
                 extraInstruction
             );
 

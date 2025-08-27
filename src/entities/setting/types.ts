@@ -56,4 +56,12 @@ export interface SettingsState {
     useStructuredOutput: boolean;
     useImageResponse?: boolean | undefined;
     speedup: number;
+    personas: Persona[];
+    selectedPersonaId: string | null;
+}
+
+export interface Persona {
+    id: string;
+    name: string;
+    description: string;
 }
