@@ -47,6 +47,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
 
     const handleSave = () => {
         dispatch(settingsActions.setSettings(localSettings));
+        onClose();
     };
 
     const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
