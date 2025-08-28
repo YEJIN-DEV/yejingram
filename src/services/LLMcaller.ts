@@ -68,8 +68,11 @@ async function handleApiResponse(
         await sleep(res.reactionDelay || 1000);
         setTypingCharacterId(char.id);
 
-        for (const messagePart of res.messages) {
-            await sleep(messagePart.delay || 1000);
+        for (let i = 0; i < res.messages.length; i++) {
+            const messagePart = res.messages[i];
+            if (i > 0) {
+                await sleep(messagePart.delay || 1000);
+            }
             const message = await createMessageFromPart(messagePart, room.id, char);
             dispatch(messagesActions.upsertOne(message));
         }
