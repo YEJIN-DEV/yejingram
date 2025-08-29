@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { LogOut, X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '../../app/store';
 import { selectRoomById } from '../../entities/room/selectors';
@@ -31,6 +31,12 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
     const [selectedInviteId, setSelectedInviteId] = useState<number | null>(null);
     const uninvitedCharacters = allCharacters.filter(c => !room?.memberIds.includes(c.id));
     const getInitialParticipantSettings = () => ({ isActive: true, responseProbability: 0.9 });
+
+    // State for leave modal
+    const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+    const [leavingCharId, setLeavingCharId] = useState<number | null>(null);
+    const [leaveReason, setLeaveReason] = useState('채팅방을 나갔습니다');
+    const [customLeaveReason, setCustomLeaveReason] = useState('');
 
     useEffect(() => {
         if (room) {
@@ -112,6 +118,57 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
         setSelectedInviteId(null);
     };
 
+    // Handle leave button click
+    const handleLeave = (charId: number) => {
+        setLeavingCharId(charId);
+        setLeaveReason('나갔습니다.');
+        setCustomLeaveReason('');
+        setLeaveDialogOpen(true);
+    };
+
+    // Confirm leave
+    const handleLeaveConfirm = () => {
+        if (leavingCharId == null || !room || !settings) return;
+        // Remove from memberIds
+        const updatedMemberIds = room.memberIds.filter(id => id !== leavingCharId);
+        // Remove from participantSettings
+        const { [leavingCharId]: _, ...updatedParticipantSettings } = settings.participantSettings;
+        dispatch(roomsActions.upsertOne({
+            ...room,
+            memberIds: updatedMemberIds,
+            groupSettings: {
+                ...settings,
+                participantSettings: updatedParticipantSettings,
+            },
+        }));
+        // Add system message
+        const leavingUserName = allCharacters.find(c => c.id === leavingCharId)?.name || 'Unknown';
+        let reasonText = leaveReason;
+        if (leaveReason === '직접 입력') {
+            reasonText = customLeaveReason.trim() ? customLeaveReason : '방을 떠났습니다';
+        }
+        const leaveMessage = {
+            id: nanoid(),
+            roomId: room.id,
+            authorId: 0,
+            content: `${leavingUserName}님이 ${reasonText}`,
+            createdAt: new Date().toISOString(),
+            type: 'SYSTEM',
+        } as Message;
+        dispatch(messagesActions.upsertOne(leaveMessage));
+        setLeaveDialogOpen(false);
+        setLeavingCharId(null);
+        setLeaveReason('나갔습니다.');
+        setCustomLeaveReason('');
+    };
+
+    const handleLeaveCancel = () => {
+        setLeaveDialogOpen(false);
+        setLeavingCharId(null);
+        setLeaveReason('나갔습니다.');
+        setCustomLeaveReason('');
+    };
+
     return (
         <>
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -158,14 +215,13 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                             <h3 className="text-lg font-semibold text-gray-900">개별 캐릭터 설정</h3>
                             <div className="space-y-4">
                                 {participants.map(participant => (
-                                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                                        <label key={participant.id} className="flex flex-col p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors border border-gray-100">
+                                    <div key={participant.id} className="space-y-2 max-h-60 overflow-y-auto">
+                                        <label className="flex flex-col p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors border border-gray-100">
                                             <div className="flex items-center flex-1 mb-2">
                                                 <div className="flex items-center gap-3 flex-1">
                                                     <Avatar char={participant} size="md" />
                                                     <div>
                                                         <div className="font-medium text-gray-900">{participant.name}</div>
-                                                        {/* <div className="text-sm text-gray-500 truncate">{char.description}</div> */}
                                                     </div>
                                                 </div>
                                                 <input
@@ -176,6 +232,14 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                                                     className="group-chat-participant mr-3 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
                                                 />
                                                 응답 활성화
+                                                <button
+                                                    type="button"
+                                                    className="ml-2 opacity-100 transition-opacity duration-200 p-1 bg-red-100 hover:bg-red-200 rounded-full text-red-600"
+                                                    title="내보내기"
+                                                    onClick={() => handleLeave(participant.id)}
+                                                >
+                                                    <LogOut className="w-4 h-4" />
+                                                </button>
                                             </div>
                                             <div className="flex-1">
                                                 <label className="block text-sm font-medium text-gray-700">
@@ -242,6 +306,54 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                                 disabled={selectedInviteId === null}
                             >
                                 초대
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Leave Dialog */}
+            {leaveDialogOpen && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-xl max-h-[80vh] flex flex-col">
+                        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-gray-900">퇴장 문구 입력</h3>
+                            <button onClick={handleLeaveCancel} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4 overflow-y-auto flex-1">
+                            <label className="block text-m font-medium text-gray-700 mb-5">{allCharacters.find(c => c.id === leavingCharId)?.name || 'Unknown'}님이</label>
+                            <select
+                                className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
+                                value={leaveReason}
+                                onChange={e => setLeaveReason(e.target.value)}
+                            >
+                                <option value="나갔습니다.">나갔습니다.</option>
+                                <option value="방을 떠났습니다.">방을 떠났습니다.</option>
+                                <option value="퇴장했습니다.">퇴장했습니다.</option>
+                                <option value="강제 퇴장되었습니다.">강제 퇴장되었습니다.</option>
+                                <option value="차단되었습니다.">차단되었습니다.</option>
+                                <option value="직접 입력">직접 입력</option>
+                            </select>
+                            {leaveReason === '직접 입력' && (
+                                <>
+                                    <textarea
+                                        className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none min-h-[80px]"
+                                        placeholder="사유를 입력하세요"
+                                        value={customLeaveReason}
+                                        onChange={e => setCustomLeaveReason(e.target.value)}
+                                    />
+                                </>
+                            )}
+                        </div>
+                        <div className="p-6 border-t border-gray-200 flex gap-3">
+                            <button onClick={handleLeaveCancel} className="flex-1 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors font-medium">취소</button>
+                            <button
+                                onClick={handleLeaveConfirm}
+                                className="flex-1 py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors font-medium"
+                                disabled={leaveReason === '직접 입력' && !customLeaveReason.trim()}
+                            >
+                                내보내기
                             </button>
                         </div>
                     </div>
