@@ -6,6 +6,7 @@ import { roomsActions } from '../../entities/room/slice';
 import type { Character } from '../../entities/character/types';
 import { Avatar } from '../../utils/Avatar';
 import { nanoid } from '@reduxjs/toolkit';
+import type { ParticipantSettings } from '../../entities/room/types';
 
 interface CreateGroupChatModalProps {
     isOpen: boolean;
@@ -17,10 +18,17 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
     const characters = useSelector(selectAllCharacters);
     const [groupName, setGroupName] = useState('');
     const [selectedParticipantIds, setSelectedParticipantIds] = useState<number[]>([]);
+    const [participantSettings, setParticipantSettings] = useState<Record<number, ParticipantSettings>>({});
 
     if (!isOpen) {
         return null;
     }
+
+    const initializeState = () => {
+        setGroupName('');
+        setSelectedParticipantIds([]);
+        setParticipantSettings({});
+    };
 
     const handleParticipantSelect = (characterId: number) => {
         setSelectedParticipantIds(prev =>
@@ -28,6 +36,10 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                 ? prev.filter(id => id !== characterId)
                 : [...prev, characterId]
         );
+        setParticipantSettings(prev => ({
+            ...prev,
+            [characterId]: prev[characterId] || { isActive: true, responseProbability: 0.9 }
+        }));
     };
 
     const handleCreateGroupChat = () => {
@@ -43,10 +55,11 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                     responseFrequency: 0.8,
                     maxRespondingCharacters: 2,
                     responseDelay: 800,
-                    participantSettings: {},
+                    participantSettings: participantSettings,
                 }
             };
             dispatch(roomsActions.upsertOne(newRoom));
+            initializeState();
             onClose();
         }
     };
@@ -98,7 +111,10 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                     </div>
                 </div>
                 <div className="p-6 border-t border-gray-200 flex gap-3">
-                    <button onClick={onClose} className="flex-1 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors font-medium">
+                    <button onClick={() => {
+                        initializeState();
+                        onClose();
+                    }} className="flex-1 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors font-medium">
                         취소
                     </button>
                     <button onClick={handleCreateGroupChat} className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors disabled:bg-gray-300 disabled:text-gray-500 font-medium" disabled={!groupName.trim() || selectedParticipantIds.length < 2}>

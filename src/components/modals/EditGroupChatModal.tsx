@@ -85,7 +85,8 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                         <h3 className="text-lg font-semibold text-gray-900">응답 설정</h3>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <span>전체 응답 빈도 ({Math.round(settings.responseFrequency * 100)}%)</span>
+                                <span>채팅방 응답 빈도 ({Math.round(settings.responseFrequency * 100)}%)</span>
+                                <span className="text-xs text-gray-500 ml-2">0%: 입력에 반응하지 않음, 100%: 입력에 항상 반응함</span>
                             </label>
                             <input type="range" min="0" max="100" value={Math.round(settings.responseFrequency * 100)}
                                 onChange={e => handleSettingChange('responseFrequency', parseInt(e.target.value) / 100)}
@@ -93,12 +94,12 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">최대 동시 응답 캐릭터 수</label>
-                            <select value={settings.maxRespondingCharacters} onChange={e => handleSettingChange('maxRespondingCharacters', parseInt(e.target.value))}
-                                className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none">
-                                {[...Array(participants.length).keys()].map(i => (
-                                    <option key={i + 1} value={i + 1}>{i + 1}명</option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <input type="number" min="1" max={participants.length} value={settings.maxRespondingCharacters}
+                                    onChange={e => handleSettingChange('maxRespondingCharacters', parseInt(e.target.value))}
+                                    className="w-full p-3 pr-10 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none" />
+                                <span className="absolute inset-y-0 right-3 flex items-center text-gray-500">명</span>
+                            </div>
                         </div>
                     </div>
 
@@ -107,22 +108,33 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                         <div className="space-y-4">
                             {participants.map(participant => (
                                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                                    <label key={participant.id} className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors border border-gray-100">
-                                        <div className="flex items-center gap-3 flex-1">
-                                            <Avatar char={participant} size="md" />
-                                            <div>
-                                                <div className="font-medium text-gray-900">{participant.name}</div>
-                                                {/* <div className="text-sm text-gray-500 truncate">{char.description}</div> */}
+                                    <label key={participant.id} className="flex flex-col p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors border border-gray-100">
+                                        <div className="flex items-center flex-1 mb-2">
+                                            <div className="flex items-center gap-3 flex-1">
+                                                <Avatar char={participant} size="md" />
+                                                <div>
+                                                    <div className="font-medium text-gray-900">{participant.name}</div>
+                                                    {/* <div className="text-sm text-gray-500 truncate">{char.description}</div> */}
+                                                </div>
                                             </div>
+                                            <input
+                                                id={`active-${participant.id}`}
+                                                type="checkbox"
+                                                checked={settings.participantSettings[participant.id]?.isActive !== false}
+                                                onChange={e => handleParticipantSettingChange(participant.id, 'isActive', e.target.checked)}
+                                                className="group-chat-participant mr-3 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
+                                            />
+                                            응답 활성화
                                         </div>
-                                        <input
-                                            id={`active-${participant.id}`}
-                                            type="checkbox"
-                                            checked={settings.participantSettings[participant.id]?.isActive !== false}
-                                            onChange={e => handleParticipantSettingChange(participant.id, 'isActive', e.target.checked)}
-                                            className="group-chat-participant mr-3 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
-                                        />
-                                        응답 활성화
+                                        <div className="flex-1">
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                <span>캐릭터 응답 빈도 ({Math.round(settings.participantSettings[participant.id]?.responseProbability * 100)}%)</span>
+                                                <span className="text-xs text-gray-500 ml-2">0%: 응답하지 않음, 100%: 항상 응답</span>
+                                            </label>
+                                            <input type="range" min="0" max="100" value={Math.round(settings.participantSettings[participant.id]?.responseProbability * 100)}
+                                                onChange={e => handleParticipantSettingChange(participant.id, 'responseProbability', parseInt(e.target.value) / 100)}
+                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb" />
+                                        </div>
                                     </label>
                                 </div>
                             ))}
