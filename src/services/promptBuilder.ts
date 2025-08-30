@@ -107,7 +107,7 @@ function buildGroupDescription(
             .join('\n');
     };
 
-    return { participantDetails: getParticipantDetails(), participantCount: room.memberIds.length };
+    return { participantDetails: getParticipantDetails(), participantCount: room.memberIds.length + 1 }; // Include the current user
 }
 
 function buildSystemPrompt(persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean): string {

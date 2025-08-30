@@ -16,15 +16,18 @@ export function replacePlaceholders(input: string, values: PlaceholderValues): s
     if (!input) return input;
     let output = input;
 
-    const userValue = values.user ?? 'user';
+    const timeContextValue = new Date().toLocaleString() ?? 'No specific time context provided.';
+    output = output.replace(/\{timeContext\}/g, timeContextValue);
+
+    const userValue = values.userName ?? 'user';
     output = output.replace(/\{\{\s*user\s*\}\}/gi, String(userValue));
     output = output.replace(/<\s*user\s*>/gi, String(userValue));
 
-    const charValue = values.char ?? 'characters';
+    const charValue = values.character?.name ?? 'characters';
     output = output.replace(/\{\{\s*char\s*\}\}/gi, String(charValue));
     output = output.replace(/<\s*char\s*>/gi, String(charValue));
 
-    const userNameValue = values.userName ?? 'Not specified.You can ask.';
+    const userNameValue = values.userName ?? 'Not specified. You can ask.';
     output = output.replace(/\{userName\}/g, userNameValue);
 
     const userDescriptionValue = values.userDescription ?? 'No specific information provided about the user.';
@@ -56,6 +59,9 @@ export function replacePlaceholders(input: string, values: PlaceholderValues): s
 
     const participantCountValue = String(values.participantCount ?? '');
     output = output.replace(/\{participantCount\}/g, participantCountValue);
+
+    const availableStickersValue = values.character?.stickers ?? [];
+    output = output.replace(/\{availableStickers\}/g, availableStickersValue.length > 0 ? availableStickersValue.join(', ') : 'NO AVAILABLE STICKERS');
 
     return output;
 }
