@@ -82,7 +82,6 @@ class ErrorBoundary extends Component<Props, State> {
             }));
         }
         this.setState({ hasError: false, error: undefined });
-        window.location.reload();
     };
 
     handleBackup = () => {
