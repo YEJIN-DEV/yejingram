@@ -17,7 +17,18 @@ export interface ApiConfig {
 
 export type PromptRole = 'system' | 'assistant' | 'user';
 
-export type PromptType = 'memory' | 'style-structured' | 'style-unstructured' | 'sticker' | 'context-group' | 'context-open' | 'generation' | 'image-generation' | 'output-structured' | 'output-unstructured' | 'plain' | 'chat' | 'lorebook' | 'extraSystemInstruction';
+export type PromptType =
+    | "generation"       // 캐릭터 생성
+    | "image-generation" // 이미지 응답 생성
+    | "plain"            // 일반 텍스트 기반 시스템/어시스턴트 메시지
+    | "plain-structured" // 구조화된 JSON 출력 요구
+    | "plain-unstructured" // 비구조화된 텍스트 출력 요구
+    | "plain-group"     // 그룹챗 컨텍스트
+    | "plain-open"      // 오픈챗 컨텍스트
+    | "extraSystemInstruction" // 추가 시스템 지시
+    | "lorebook"        // 로어북 섹션
+    | "chat";           // 채팅 기록
+
 
 export interface PromptItem {
     name: string; // 표시용 이름

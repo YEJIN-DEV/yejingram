@@ -11,6 +11,7 @@ import type { Persona } from "../entities/setting/types";
 import { replacePlaceholders } from "../utils/placeholder";
 import type { PlaceholderValues } from "../utils/placeholder";
 import type { Room } from "../entities/room/types";
+import type { PromptItem } from "../entities/setting/types";
 
 type GeminiContent = {
     role: string;
@@ -78,6 +79,19 @@ const structuredOutputSchema = {
     required: ["reactionDelay", "messages"]
 }
 
+function shouldIncludePromptItem(item: PromptItem, useStructuredOutput: boolean, room?: Room | null): boolean {
+    if (item.type === 'plain-structured' && !useStructuredOutput) {
+        return false;
+    } else if (item.type === 'plain-unstructured' && useStructuredOutput) {
+        return false;
+    } else if (item.type === 'plain-group' && room?.type !== 'Group') {
+        return false;
+    } else if (item.type === 'plain-open' && room?.type !== 'Open') {
+        return false;
+    }
+    return true;
+}
+
 function buildGroupDescription(
     character: Character,
     room: Room
@@ -96,7 +110,7 @@ function buildGroupDescription(
     return { participantDetails: getParticipantDetails(), participantCount: room.memberIds.length };
 }
 
-function buildSystemPrompt(persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room): string {
+function buildSystemPrompt(persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean): string {
     // Keep only prompts whose role is 'system', in main array sequence.
     const { main } = selectPrompts(store.getState());
     const lines: string[] = [];
@@ -111,7 +125,9 @@ function buildSystemPrompt(persona?: Persona | null, character?: Character, extr
     const roomMemories = room?.memories?.join('\n') || '';
     for (const item of main) {
         if (item && item.role === 'system' && typeof item.content === 'string' && item.content.trim().length > 0) {
-            lines.push(replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues }));
+            if (shouldIncludePromptItem(item, useStructuredOutput || false, room)) {
+                lines.push(replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues }));
+            }
         } else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
             lines.push(replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, roomMemories, ...groupValues }));
         }
@@ -119,7 +135,7 @@ function buildSystemPrompt(persona?: Persona | null, character?: Character, extr
     return lines.join('\n\n');
 }
 
-function buildGeminiContents(messages: Message[], isProactive: boolean, persona: Persona, character: Character, room: Room) {
+function buildGeminiContents(messages: Message[], isProactive: boolean, persona: Persona, character: Character, room: Room, useStructuredOutput?: boolean) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
@@ -176,13 +192,15 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
 
     for (const item of main) {
         if (item && item.role !== 'system' && item.content && item.content.trim().length > 0) {
-            const role = item.role == 'assistant' ? 'model' : 'user';
+            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+                const role = item.role == 'assistant' ? 'model' : 'user';
 
-            if (role) {
-                contents.push({
-                    role,
-                    parts: [{ text: replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues }) }]
-                });
+                if (role) {
+                    contents.push({
+                        role,
+                        parts: [{ text: replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues }) }]
+                    });
+                }
             }
         } else if (item && item.type === 'chat') {
             contents.push(...messageContents);
@@ -209,8 +227,8 @@ export function buildGeminiApiPayload(
     useImageResponse: boolean | undefined,
     extraSystemInstruction?: string
 ): GeminiApiPayload {
-    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room);
-    const contents = buildGeminiContents(messages, isProactive, persona, character, room);
+    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, useStructuredOutput);
+    const contents = buildGeminiContents(messages, isProactive, persona, character, room, useStructuredOutput);
 
     const generationConfig: any = {
         temperature: selectCurrentApiConfig(store.getState()).temperature || 1.25,
@@ -253,7 +271,7 @@ export function buildGeminiApiPayload(
     };
 }
 
-function buildClaudeContents(messages: Message[], isProactive: boolean, persona?: Persona, model?: string, character?: Character, extraSystemInstruction?: string, room?: Room) {
+function buildClaudeContents(messages: Message[], isProactive: boolean, persona?: Persona, model?: string, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
@@ -309,13 +327,15 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
 
     for (const item of main) {
         if (item && item.role !== 'system' && item.content && item.content.trim().length > 0) {
-            const role = item.role;
+            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+                const role = item.role;
 
-            if (role) {
-                messagesPart.push({
-                    role,
-                    content: [{ type: 'text', text: replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues }) }]
-                });
+                if (role) {
+                    messagesPart.push({
+                        role,
+                        content: [{ type: 'text', text: replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues }) }]
+                    });
+                }
             }
         } else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
             messagesPart.push({
@@ -350,8 +370,8 @@ export function buildClaudeApiPayload(
     isProactive: boolean,
     extraSystemInstruction?: string
 ): ClaudeApiPayload {
-    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room);
-    const contents = buildClaudeContents(messages, isProactive, persona, model, character, extraSystemInstruction, room);
+    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, false);
+    const contents = buildClaudeContents(messages, isProactive, persona, model, character, extraSystemInstruction, room, false);
 
     return {
         model: model,
@@ -368,7 +388,7 @@ export function buildClaudeApiPayload(
 }
 
 // OpenAI (Chat Completions) payload builders
-function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room) {
+function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
@@ -417,14 +437,23 @@ function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?
     });
 
     for (const item of main) {
-        if (item && item.role !== 'system' && item.content && item.content.trim().length > 0) {
-            const role = item.role;
-
-            if (role) {
+        if (item && item.role === 'system' && item.content && item.content.trim().length > 0) {
+            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
                 items.push({
-                    role,
+                    role: 'system',
                     content: replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues })
                 });
+            }
+        } else if (item && item.role !== 'system' && item.content && item.content.trim().length > 0) {
+            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+                const role = item.role;
+
+                if (role) {
+                    items.push({
+                        role,
+                        content: replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues })
+                    });
+                }
             }
         } else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
             items.push({
@@ -453,7 +482,7 @@ export function buildOpenAIApiPayload(
     useStructuredOutput: boolean,
     extraSystemInstruction?: string
 ): OpenAIApiPayload {
-    const history = buildOpenAIContents(messages, isProactive, persona, character, extraSystemInstruction, room);
+    const history = buildOpenAIContents(messages, isProactive, persona, character, extraSystemInstruction, room, useStructuredOutput);
 
     const payload: OpenAIApiPayload = {
         model,
