@@ -102,7 +102,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
     );
 
     if (isEVA) {
-        return <ErrorPage_EVA onResetOptions={onResetOptions} onReset={onReset} onBackup={onBackup} onRestore={onRestore} />;
+        return <ErrorPage_EVA error={error} onResetOptions={onResetOptions} onReset={onReset} onBackup={onBackup} onRestore={onRestore} bgmSrc='/Serat - Breaking Rules.opus' />;
     } else {
         return (
             <div className="h-dvh bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">

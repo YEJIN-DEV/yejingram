@@ -381,6 +381,9 @@ const ErrorPage_EVA: React.FC<ErrorPageProps> = ({
                             状態: <span className="text-red-500 animate-pulse">緊急</span>
                         </span>
                     </div>
+                    <div className="text-xs text-amber-400 mt-1 text-center">
+                        Music: 'Breaking Rules' by Serat, sourced from Free Music Archive, licensed under CC BY.
+                    </div>
                 </div>
             </div>
         </div>
