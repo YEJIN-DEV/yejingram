@@ -108,11 +108,12 @@ function buildSystemPrompt(persona?: Persona | null, character?: Character, extr
         groupValues.participantDetails = groupDesc.participantDetails;
         groupValues.participantCount = groupDesc.participantCount;
     }
+    const roomMemories = room?.memories?.join('\n') || '';
     for (const item of main) {
         if (item && item.role === 'system' && typeof item.content === 'string' && item.content.trim().length > 0) {
-            lines.push(replacePlaceholders(item.content, { userName, userDescription, character, ...groupValues }));
+            lines.push(replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues }));
         } else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
-            lines.push(replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, ...groupValues }));
+            lines.push(replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, roomMemories, ...groupValues }));
         }
     }
     return lines.join('\n\n');
@@ -132,6 +133,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
         groupValues.participantDetails = groupDesc.participantDetails;
         groupValues.participantCount = groupDesc.participantCount;
     }
+    const roomMemories = currentRoom?.memories?.join('\n') || '';
 
     const contents: GeminiContent[] = [];
 
@@ -179,7 +181,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
             if (role) {
                 contents.push({
                     role,
-                    parts: [{ text: replacePlaceholders(item.content, { userName, userDescription, character, ...groupValues }) }]
+                    parts: [{ text: replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues }) }]
                 });
             }
         } else if (item && item.type === 'chat') {
@@ -265,6 +267,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
         groupValues.participantDetails = groupDesc.participantDetails;
         groupValues.participantCount = groupDesc.participantCount;
     }
+    const roomMemories = currentRoom?.memories?.join('\n') || '';
 
     const messagesPart: ClaudeMessage[] = [];
 
@@ -311,13 +314,13 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
             if (role) {
                 messagesPart.push({
                     role,
-                    content: [{ type: 'text', text: replacePlaceholders(item.content, { userName, userDescription, character, ...groupValues }) }]
+                    content: [{ type: 'text', text: replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues }) }]
                 });
             }
         } else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
             messagesPart.push({
                 role: 'system',
-                content: [{ type: 'text', text: replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, ...groupValues }) }]
+                content: [{ type: 'text', text: replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, roomMemories, ...groupValues }) }]
             });
         } else if (item && item.type === 'chat') {
             // Insert messages when 'chat' type is encountered
@@ -379,6 +382,7 @@ function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?
         groupValues.participantDetails = groupDesc.participantDetails;
         groupValues.participantCount = groupDesc.participantCount;
     }
+    const roomMemories = currentRoom?.memories?.join('\n') || '';
 
     const items: OpenAIMessage[] = [];
 
@@ -419,13 +423,13 @@ function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?
             if (role) {
                 items.push({
                     role,
-                    content: replacePlaceholders(item.content, { userName, userDescription, character, ...groupValues })
+                    content: replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues })
                 });
             }
         } else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
             items.push({
                 role: 'system',
-                content: replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, ...groupValues })
+                content: replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, roomMemories, ...groupValues })
             });
         } else if (item && item.type === 'chat') {
             // Insert messages when 'chat' type is encountered
