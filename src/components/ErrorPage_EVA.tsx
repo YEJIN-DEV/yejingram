@@ -239,11 +239,6 @@ const ErrorPage_EVA: React.FC<ErrorPageProps> = ({
                     <div className="p-1 flex justify-between items-center gap-2">
                         <div className="text-red-500 text-2xl font-bold animate-pulse">● SYSTEM FAILURE</div>
                         <div className="flex items-center gap-3">
-                            <div className="text-xs text-amber-400 flex flex-col">
-                                <div>Music: 'Breaking Rules' by Serat</div>
-                                <div>sourced from Free Music Archive</div>
-                                <div>licensed under CC BY 4.0</div>
-                            </div>
                             {/* BGM 미니 플레이어 */}
                             <BgmPlayer src={bgmSrc} autoplay={bgmAutoplay} showControls={showBgmControls} />
                             <div className="text-right">
@@ -385,6 +380,9 @@ const ErrorPage_EVA: React.FC<ErrorPageProps> = ({
                         <span>
                             状態: <span className="text-red-500 animate-pulse">緊急</span>
                         </span>
+                    </div>
+                    <div className="text-xs text-amber-400 mt-1 text-center">
+                        Music: 'Breaking Rules' by Serat, sourced from Free Music Archive, licensed under CC BY.
                     </div>
                 </div>
             </div>
