@@ -1,4 +1,5 @@
 import { Users, Edit3, Trash2 } from 'lucide-react';
+import { Avatar } from '../../utils/Avatar';
 import type { Room } from '../../entities/room/types';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAllCharacters } from '../../entities/character/selectors';
@@ -18,6 +19,67 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
     const allCharacters = useSelector(selectAllCharacters);
     const messages = useSelector((state: any) => selectMessagesByRoomId(state, room.id));
     const participants = room.memberIds.map(id => allCharacters.find(c => c.id === id)).filter(Boolean);
+    const avatarParticipants = participants.slice(0, 4);
+    // Avatar group layout logic
+    const renderAvatars = () => {
+        const count = avatarParticipants.length;
+        if (count === 0) {
+            return (
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                    <Users className="w-6 h-6 text-white" />
+                </div>
+            );
+        }
+        if (count === 1) {
+            return (
+                <div className="w-12 h-12 flex items-center justify-center">
+                    {avatarParticipants[0] && <Avatar char={avatarParticipants[0]} size="md" />}
+                </div>
+            );
+        }
+        if (count === 2) {
+            return (
+                <div className="w-12 h-12 relative">
+                    <div className="absolute left-0 top-0 z-10">
+                        {avatarParticipants[0] && <Avatar char={avatarParticipants[0]} size="xs" />}
+                    </div>
+                    <div className="absolute right-0 bottom-0 z-20">
+                        {avatarParticipants[1] && <Avatar char={avatarParticipants[1]} size="xs" />}
+                    </div>
+                </div>
+            );
+        }
+        if (count === 3) {
+            return (
+                <div className="w-12 h-12 relative">
+                    <div className="absolute left-1/2 -translate-x-1/2 top-0 z-10">
+                        {avatarParticipants[0] && <Avatar char={avatarParticipants[0]} size="xs" />}
+                    </div>
+                    <div className="absolute left-0 bottom-0 z-20">
+                        {avatarParticipants[1] && <Avatar char={avatarParticipants[1]} size="xs" />}
+                    </div>
+                    <div className="absolute right-0 bottom-0 z-30">
+                        {avatarParticipants[2] && <Avatar char={avatarParticipants[2]} size="xs" />}
+                    </div>
+                </div>
+            );
+        }
+        // 4 or more
+        return (
+            <div className="w-12 h-12 grid grid-cols-2 grid-rows-2 gap-0.5">
+                {avatarParticipants.slice(0, 4).map((c) =>
+                    c ? (
+                        <div
+                            key={c.id}
+                            className="flex items-center justify-center rounded-full overflow-hidden"
+                        >
+                            <Avatar char={c} size="xs" />
+                        </div>
+                    ) : null
+                )}
+            </div>
+        );
+    };
 
     const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
 
@@ -70,9 +132,7 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
 
             <div className="flex items-center space-x-3">
                 <div className="relative">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                        <Users className="w-6 h-6 text-white" />
-                    </div>
+                    {renderAvatars()}
                 </div>
 
                 <div className="flex-1 min-w-0">
