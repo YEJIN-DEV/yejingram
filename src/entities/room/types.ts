@@ -1,7 +1,6 @@
 export interface ParticipantSettings {
     isActive: boolean;
     responseProbability: number;
-    characterRole: 'normal' | 'leader' | 'quiet' | 'active';
 }
 
 export interface GroupChatSettings {

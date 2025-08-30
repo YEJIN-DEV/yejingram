@@ -20,14 +20,16 @@ import { nanoid } from '@reduxjs/toolkit';
 import { useCharacterOnlineStatus } from '../../utils/simulateOnline';
 import { MemoryManager } from '../character/MemoryManager';
 import { charactersActions } from '../../entities/character/slice';
+import { settingsActions } from '../../entities/setting/slice';
 
 interface MainChatProps {
   room: Room | null;
   onToggleMobileSidebar: () => void;
   onToggleCharacterPanel: () => void;
+  onToggleGroupchatSettings: () => void;
 }
 
-function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel }: MainChatProps) {
+function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggleGroupchatSettings }: MainChatProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [typingCharacterId, setTypingCharacterId] = useState<number | null>(null);
@@ -281,6 +283,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel }: MainC
           onOpenAuthorNote={openAuthorNote}
           onOpenRoomMemory={() => setIsRoomMemoryOpen(true)}
           onOpenCharacterPanel={onToggleCharacterPanel}
+          onOpenGroupchatSettings={onToggleGroupchatSettings}
         />
 
         {/* Messages Container*/}
@@ -343,6 +346,7 @@ interface ChatHeaderProps {
   onOpenAuthorNote: () => void;
   onOpenRoomMemory: () => void;
   onOpenCharacterPanel: () => void;
+  onOpenGroupchatSettings: () => void;
 }
 
 function ChatHeader({
@@ -358,7 +362,8 @@ function ChatHeader({
   onSetNewRoomName,
   onOpenAuthorNote,
   onOpenRoomMemory,
-  onOpenCharacterPanel
+  onOpenCharacterPanel,
+  onOpenGroupchatSettings
 }: ChatHeaderProps) {
   const dispatch = useDispatch();
   const getHeaderAvatar = () => {
@@ -509,9 +514,14 @@ function ChatHeader({
         <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={onOpenRoomMemory}>
           <Brain className="w-5 h-5" />
         </button>
-        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="캐릭터 설정" onClick={() => {
-          dispatch(charactersActions.setEditingCharacterId(character.id));
-          onOpenCharacterPanel();
+        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title={room.type === 'Direct' ? "캐릭터 설정" : "방 설정"} onClick={() => {
+          if (room.type === 'Group') {
+            dispatch(settingsActions.setEditingRoomId(room.id));
+            onOpenGroupchatSettings();
+          } else {
+            dispatch(charactersActions.setEditingCharacterId(character.id));
+            onOpenCharacterPanel();
+          }
         }}>
           <MoreHorizontal className="w-5 h-5" />
         </button>

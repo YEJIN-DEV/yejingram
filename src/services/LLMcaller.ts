@@ -465,10 +465,7 @@ export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id
 
     const shuffledParticipants = [...activeParticipants].sort(() => 0.5 - Math.random());
 
-    const respondingCount = Math.min(
-        Math.floor(Math.random() * maxRespondingCharacters) + 1,
-        shuffledParticipants.length
-    );
+    const respondingCount = Math.min(maxRespondingCharacters, shuffledParticipants.length);
     const respondingCharacters = shuffledParticipants.slice(0, respondingCount);
 
     for (let i = 0; i < respondingCharacters.length; i++) {

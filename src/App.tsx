@@ -122,7 +122,7 @@ function App() {
                 </div>
               </div>
             ) : (
-              <MainChat room={room} onToggleMobileSidebar={toggleMobileSidebar} onToggleCharacterPanel={toggleCharacterPanel} />
+              <MainChat room={room} onToggleMobileSidebar={toggleMobileSidebar} onToggleCharacterPanel={toggleCharacterPanel} onToggleGroupchatSettings={() => setIsEditGroupChatModalOpen(true)} />
             )}
           </main>
         </div>
