@@ -15,24 +15,21 @@ export interface ApiConfig {
     topK?: number;
 }
 
-export interface MainPrompts {
-    system_rules: string;
-    role_and_objective: string;
-    memory_generation: string;
-    character_acting: string;
-    message_writing_structured: string;
-    message_writing_unstructured: string;
-    language: string;
-    additional_instructions: string;
-    sticker_usage: string;
-    group_chat_context: string;
-    open_chat_context: string;
+export type PromptRole = 'system' | 'assistant' | 'user';
+
+export type PromptType = 'memory' | 'style-structured' | 'style-unstructured' | 'sticker' | 'context-group' | 'context-open' | 'generation' | 'image-generation' | 'output-structured' | 'output-unstructured' | 'plain' | 'chat' | 'lorebook' | 'extraSystemInstruction';
+
+export interface PromptItem {
+    name: string; // 표시용 이름
+    type: PromptType; // 프롬프트 분류(예: rule, guideline, style, language, context, generation 등)
+    role?: PromptRole; // 적용 역할
+    content?: string; // 실제 프롬프트 내용
 }
 
 export interface Prompts {
-    main: MainPrompts;
-    profile_creation: string;
-    image_response_generation: string;
+    main: PromptItem[];
+    profile_creation: PromptItem;
+    image_response_generation: PromptItem;
 }
 
 export interface SettingsState {

@@ -2,16 +2,15 @@ import { store, type AppDispatch } from "../app/store";
 import { selectCharacterById, selectAllCharacters } from "../entities/character/selectors";
 import type { Message } from "../entities/message/types";
 import type { Room } from "../entities/room/types";
-import { selectAllSettings, selectCurrentApiConfig, selectUserName, selectUserDescription } from "../entities/setting/selectors";
+import { selectAllSettings, selectCurrentApiConfig, selectSelectedPersona } from "../entities/setting/selectors";
 import { messagesActions } from "../entities/message/slice";
 import { roomsActions } from "../entities/room/slice";
 import type { ChatResponse, MessagePart } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
 import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload } from "./promptBuilder";
-import type { ApiConfig, SettingsState } from "../entities/setting/types";
+import type { ApiConfig, Persona, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
-import { replacePlaceholders } from "../utils/placeholder";
 import { nanoid } from "@reduxjs/toolkit";
 import toast from 'react-hot-toast';
 
@@ -196,10 +195,12 @@ function handleError(error: unknown, roomId: string, charId: number, dispatch: A
 async function callApi(
     apiConfig: ApiConfig,
     settings: SettingsState,
+    room: Room,
+    persona: Persona,
     character: Character,
     messages: Message[],
     isProactive: boolean,
-    extraSystemInstruction?: string
+    extraSystemInstruction?: string,
 ): Promise<ChatResponse> {
     const { apiProvider } = settings;
     let payload: string | object = '';
@@ -207,31 +208,17 @@ async function callApi(
     switch (apiProvider) {
         case 'gemini':
         case 'vertexai':
-            payload = buildGeminiApiPayload(character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, extraSystemInstruction);
+            payload = buildGeminiApiPayload(room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, extraSystemInstruction);
             break;
         case 'claude':
         case 'grok':
-            payload = buildClaudeApiPayload(apiConfig.model, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
+            payload = buildClaudeApiPayload(apiConfig.model, room, persona, character, messages, isProactive, extraSystemInstruction);
             break;
         case 'openai':
         case 'customOpenAI':
-            payload = buildOpenAIApiPayload(apiConfig.model, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
+            payload = buildOpenAIApiPayload(apiConfig.model, room, persona, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
             break;
     }
-
-    const userName = selectUserName(store.getState());
-    const placeholders = {
-        user: userName,
-        char: character.name,
-    };
-
-    if (typeof payload === 'string') {
-        payload = replacePlaceholders(payload, placeholders);
-    } else if (payload && typeof payload === 'object') {
-        const replaced = replacePlaceholders(JSON.stringify(payload), placeholders);
-        payload = JSON.parse(replaced);
-    }
-
     let url: string;
     let headers: HeadersInit;
 
@@ -338,9 +325,9 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
 
 async function LLMSend(
     room: Room,
+    persona: Persona | null,
     char: Character,
     setTypingCharacterId: (id: number | null) => void,
-    allParticipants?: Character[],
 ) {
     const state = store.getState();
     const dispatch = store.dispatch;
@@ -348,34 +335,6 @@ async function LLMSend(
     const api = selectCurrentApiConfig(state);
     const settings = selectAllSettings(state);
     const messages = selectMessagesByRoomId(state, room.id);
-
-    let finalUserDescription = selectUserDescription(state);
-
-    if (room.type === 'Group' && allParticipants) {
-        const otherParticipants = allParticipants.filter(p => p.id !== char.id);
-        const participantDetails = otherParticipants.map(p => {
-            const basicInfo = p.prompt ? p.prompt.split('\n').slice(0, 3).join(' ').replace(/[#*]/g, '').trim() : '';
-            return `- ${p.name}: ${basicInfo || 'Character'}`;
-        }).join('\n');
-
-        const groupPrompt = settings.prompts.main.group_chat_context;
-        const groupContext = groupPrompt
-            .replace(/{participantCount}/g, (allParticipants.length + 1).toString())
-            .replace(/{participantDetails}/g, participantDetails)
-        finalUserDescription += '\n' + groupContext;
-    } else if (room.type === 'Open' && allParticipants) {
-        const otherParticipants = allParticipants.filter(p => p.id !== char.id);
-        const participantDetails = otherParticipants.map(p => {
-            const basicInfo = p.prompt ? p.prompt.split('\n').slice(0, 3).join(' ').replace(/[#*]/g, '').trim() : '';
-            return `- ${p.name}: ${basicInfo || 'Character'}`;
-        }).join('\n');
-
-        const openPrompt = settings.prompts.main.open_chat_context;
-        const openContext = openPrompt
-            .replace(/{participantDetails}/g, participantDetails)
-        finalUserDescription += '\n' + openContext;
-    }
-
 
     // --- Anti-echo detection helpers ---
     function normalize(text: string) {
@@ -408,6 +367,10 @@ async function LLMSend(
     }
 
     try {
+        if (!persona) {
+            return;
+        }
+
         // Build negative references from last few non-self messages
         const recentOthers = [...messages]
             .reverse()
@@ -424,6 +387,8 @@ async function LLMSend(
             const res = await callApi(
                 api,
                 settings,
+                room,
+                persona,
                 char,
                 messages,
                 false,
@@ -432,7 +397,7 @@ async function LLMSend(
 
             // Concatenate contents to evaluate similarity as a whole
             const combined = (res.messages || []).map(p => p.content || '').join('\n');
-            if (refTexts.length > 0 && isEchoLike(combined, refTexts)) {
+            if (room.type !== 'Direct' && refTexts.length > 0 && isEchoLike(combined, refTexts)) {
                 // Prepare stronger instruction and retry
                 const lastRef = refTexts[0];
                 extraInstruction = `Your previous draft was too similar to another participant's last message: "${lastRef.slice(0, 200)}". Do NOT repeat or paraphrase it. Produce a NEW, concise reply that adds value (ask a short follow-up or introduce a new detail). Avoid using the same phrases.`;
@@ -461,17 +426,20 @@ async function LLMSend(
 
 
 export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
-    const memberChars = room.memberIds.map(id => selectCharacterById(store.getState(), id));
+    const state = store.getState();
+    const persona = selectSelectedPersona(state);
+    const memberChars = room.memberIds.map(id => selectCharacterById(state, id));
 
     for (const char of memberChars) {
         if (char) {
-            await LLMSend(room, char, setTypingCharacterId);
+            await LLMSend(room, persona, char, setTypingCharacterId);
         }
     }
 }
 
 export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
     const state = store.getState();
+    const persona = selectSelectedPersona(state);
     const allCharacters = selectAllCharacters(state);
     const participants = room.memberIds.map(id => allCharacters.find(c => c.id === id)).filter((c): c is Character => !!c);
 
@@ -508,13 +476,14 @@ export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id
         if (i > 0) {
             await sleep(responseDelay + (Math.random() * 300 - 150));
         }
-        await LLMSend(room, character, setTypingCharacterId, participants);
+        await LLMSend(room, persona, character, setTypingCharacterId);
     }
 }
 
 export async function SendOpenChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
     const state = store.getState();
     const dispatch = store.dispatch;
+    const persona = selectSelectedPersona(state);
     const allCharacters = selectAllCharacters(state);
 
     const currentParticipantIds = room.currentParticipants || [];
@@ -567,6 +536,6 @@ export async function SendOpenChatMessage(room: Room, setTypingCharacterId: (id:
         if (i > 0) {
             await sleep(500 + Math.random() * 500);
         }
-        await LLMSend(room, character, setTypingCharacterId, participants);
+        await LLMSend(room, persona, character, setTypingCharacterId);
     }
 }

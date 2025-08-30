@@ -39,7 +39,7 @@ export interface GeminiApiPayload {
             };
         })[];
     }[];
-    systemInstruction: {
+    systemInstruction?: {
         parts: {
             text: string;
         }[];
@@ -73,7 +73,7 @@ export interface ClaudeApiPayload {
             };
         })[];
     }[];
-    system: {
+    system?: {
         type: string;
         text: string;
     }[];
