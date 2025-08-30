@@ -13,6 +13,7 @@ import { Avatar } from '../../utils/Avatar';
 import { messagesActions } from '../../entities/message/slice';
 import { nanoid } from '@reduxjs/toolkit';
 import type { Message } from '../../entities/message/types';
+import { inviteCharacter } from '../../utils/inviteCharacter';
 
 interface EditGroupChatModalProps {
     isOpen: boolean;
@@ -30,7 +31,6 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
     const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
     const [selectedInviteId, setSelectedInviteId] = useState<number | null>(null);
     const uninvitedCharacters = allCharacters.filter(c => !room?.memberIds.includes(c.id));
-    const getInitialParticipantSettings = () => ({ isActive: true, responseProbability: 0.9 });
 
     // State for leave modal
     const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
@@ -82,35 +82,7 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
     };
 
     const handleInviteConfirm = () => {
-        if (selectedInviteId && settings && room) {
-            // Add to memberIds and participantSettings
-            const updatedMemberIds = [...room.memberIds, selectedInviteId];
-            const updatedParticipantSettings = {
-                ...settings.participantSettings,
-                [selectedInviteId]: getInitialParticipantSettings(),
-            };
-            dispatch(roomsActions.upsertOne({
-                ...room,
-                memberIds: updatedMemberIds,
-                groupSettings: {
-                    ...settings,
-                    participantSettings: updatedParticipantSettings,
-                },
-            }));
-            // Add system message
-            const invitedUsersName = allCharacters.find(c => c.id === selectedInviteId)?.name || 'Unknown';
-            const invitationMessage = {
-                id: nanoid(),
-                roomId: room.id,
-                authorId: 0,
-                content: `${invitedUsersName}님이 초대되었습니다.`,
-                createdAt: new Date().toISOString(),
-                type: 'SYSTEM'
-            } as Message;
-            dispatch(messagesActions.upsertOne(invitationMessage));
-            setInviteDialogOpen(false);
-            setSelectedInviteId(null);
-        }
+        inviteCharacter(selectedInviteId, room, allCharacters.find(c => c.id === selectedInviteId)?.name || 'Unknown', dispatch);
     };
 
     const handleInviteCancel = () => {
@@ -154,6 +126,7 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
             content: `${leavingUserName}님이 ${reasonText}`,
             createdAt: new Date().toISOString(),
             type: 'SYSTEM',
+            leaveCharId: leavingCharId,
         } as Message;
         dispatch(messagesActions.upsertOne(leaveMessage));
         setLeaveDialogOpen(false);
