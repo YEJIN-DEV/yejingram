@@ -26,7 +26,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
 
     // Hidden button state
     const [, setClickCount] = useState(0);
-    const [longPressTimer, setLongPressTimer] = useState<number | null>(null);
+    const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
     const hiddenButtonRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
