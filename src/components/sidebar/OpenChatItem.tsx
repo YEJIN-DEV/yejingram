@@ -57,6 +57,11 @@ function OpenChatItem({ room, setRoomId, isSelected }: OpenChatItemProps) {
         setNewName(room.name);
     };
 
+    const handleRoomSelect = () => {
+        dispatch(roomsActions.resetUnread(room.id));
+        setRoomId(room.id);
+    };
+
     const formatTime = (timestamp: string) => {
         const date = new Date(timestamp);
         const now = new Date();
@@ -76,7 +81,7 @@ function OpenChatItem({ room, setRoomId, isSelected }: OpenChatItemProps) {
         <div
             className={`relative group cursor-pointer transition-all duration-200 px-4 py-3 select-none ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
                 }`}
-            onDoubleClick={() => !isEditing && setRoomId(room.id)}
+            onDoubleClick={() => !isEditing && handleRoomSelect()}
         >
             <div className="absolute top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
                 <button

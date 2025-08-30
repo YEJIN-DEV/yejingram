@@ -81,6 +81,11 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
         );
     };
 
+    const handleRoomSelect = () => {
+        dispatch(roomsActions.resetUnread(room.id));
+        setRoomId(room.id);
+    };
+
     const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
 
     let lastMessageContent = '채팅을 시작해보세요';
@@ -111,7 +116,7 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
         <div
             className={`relative group cursor-pointer transition-all duration-200 px-4 py-3 select-none ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
                 }`}
-            onDoubleClick={() => setRoomId(room.id)}
+            onDoubleClick={handleRoomSelect}
         >
             <div className="absolute top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
                 <button
