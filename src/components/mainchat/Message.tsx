@@ -11,6 +11,7 @@ import SenderName from './SenderName';
 import { Avatar } from '../../utils/Avatar';
 import { SendMessage } from '../../services/LLMcaller';
 import type { Room } from '../../entities/room/types';
+import { inviteCharacter } from '../../utils/inviteCharacter';
 
 // Helper function for date formatting
 const formatDateSeparator = (date: Date): string => {
@@ -270,8 +271,13 @@ const MessageList: React.FC<MessageListProps> = ({
               )}
               {msg.type === 'SYSTEM' && (
                 <div className="flex justify-center my-4">
-                  <div className="flex items-center text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full animate-fadeIn">
+                  <div className="flex flex-col items-center text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full animate-fadeIn">
                     {msg.content}
+                    {msg.leaveCharId && (
+                      <span className=" text-gray-400 underline items-center" onClick={() => inviteCharacter(msg.leaveCharId ?? null, room, allCharacters.find(c => c.id === msg.leaveCharId)?.name || 'Unknown', dispatch)}>
+                        채팅방으로 초대하기
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
