@@ -20,20 +20,16 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
 
     // 타입 라벨 한글 매핑
     const typeLabelMap: Record<PromptType, string> = {
-        'memory': '메모리(구조화)',
-        'style-structured': '스타일(구조화)',
-        'style-unstructured': '스타일(비구조화)',
-        'sticker': '스티커',
-        'context-group': '그룹 컨텍스트',
-        'context-open': '오픈 컨텍스트',
         'generation': '생성(프로필)',
         'image-generation': '이미지 생성',
-        'output-structured': '출력(구조화)',
-        'output-unstructured': '출력(비구조화)',
         'plain': '순수 프롬프트',
-        'chat': '채팅 기록',
-        'lorebook': '로어북',
+        'plain-structured': '구조화된 출력',
+        'plain-unstructured': '비구조화된 출력',
+        'plain-group': '그룹 컨텍스트',
+        'plain-open': '오픈 컨텍스트',
         'extraSystemInstruction': '추가 시스템 지시문',
+        'lorebook': '로어북',
+        'chat': '채팅 기록',
     };
     const getTypeLabel = (t: PromptType) => typeLabelMap[t] ?? t;
 
