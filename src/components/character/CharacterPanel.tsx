@@ -70,7 +70,11 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
 
     const handleSave = () => {
         if (char.name) {
-            dispatch(charactersActions.upsertOne(char));
+            const charToSave = {
+                ...char,
+                id: editingId ?? Date.now()
+            }
+            dispatch(charactersActions.upsertOne(charToSave));
             dispatch(charactersActions.resetEditingCharacterId());
             onClose();
         }
