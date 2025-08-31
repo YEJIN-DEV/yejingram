@@ -1,5 +1,6 @@
 import { createSlice, createEntityAdapter, type PayloadAction } from '@reduxjs/toolkit'
 import type { Room } from './types'
+import type { Lore } from '../lorebook/types'
 
 export const roomsAdapter = createEntityAdapter<Room, string>({
     selectId: (room: Room) => room.id,
@@ -38,11 +39,75 @@ const roomsSlice = createSlice({
                 room.memories.splice(index, 1);
             }
         },
-        updateRoomMemories: (state, action: PayloadAction<{ roomId: string; memories: string[] }>) => {
-            const { roomId, memories } = action.payload;
+        updateRoomLorebook: (state, action: PayloadAction<{ roomId: string; lorebook: Lore[] }>) => {
+            const { roomId, lorebook } = action.payload;
             const room = state.entities[roomId];
             if (room) {
-                room.memories = memories;
+                room.lorebook = lorebook;
+            }
+        },
+        addRoomLore: (state, action: PayloadAction<{ roomId: string; lore: Lore }>) => {
+            const { roomId, lore } = action.payload;
+            const room = state.entities[roomId];
+            if (room) {
+                const lores = room.lorebook ?? (room.lorebook = []);
+                const nextLore: Lore = {
+                    ...lore,
+                    order: lores.length,
+                    activationKeys: (lore.activationKeys && lore.activationKeys.length > 0) ? lore.activationKeys : [''],
+                    alwaysActive: !!lore.alwaysActive,
+                    multiKey: !!lore.multiKey,
+                };
+                lores.push(nextLore);
+            }
+        },
+        updateRoomLore: (state, action: PayloadAction<{ roomId: string; id: string; patch: Partial<Lore> }>) => {
+            const { roomId, id, patch } = action.payload;
+            const room = state.entities[roomId];
+            if (room && room.lorebook) {
+                const lore = room.lorebook.find(l => l.id === id);
+                if (lore) {
+                    Object.assign(lore, patch);
+                }
+            }
+        },
+        removeRoomLore: (state, action: PayloadAction<{ roomId: string; id: string }>) => {
+            const { roomId, id } = action.payload;
+            const room = state.entities[roomId];
+            if (room && room.lorebook) {
+                const filtered = room.lorebook.filter(l => l.id !== id);
+                room.lorebook = filtered.map((l, i) => ({ ...l, order: i }));
+            }
+        },
+        moveRoomLore: (state, action: PayloadAction<{ roomId: string; id: string; direction: -1 | 1 }>) => {
+            const { roomId, id, direction } = action.payload;
+            const room = state.entities[roomId];
+            if (room && room.lorebook && room.lorebook.length > 1) {
+                const sorted = [...room.lorebook].sort((a, b) => a.order - b.order);
+                const idx = sorted.findIndex(l => l.id === id);
+                const j = idx + direction;
+                if (idx >= 0 && j >= 0 && j < sorted.length) {
+                    [sorted[idx], sorted[j]] = [sorted[j], sorted[idx]];
+                    room.lorebook = sorted.map((l, i) => ({ ...l, order: i }));
+                }
+            }
+        },
+        setRoomLoreMultiKey: (state, action: PayloadAction<{ roomId: string; id: string; value: boolean }>) => {
+            const { roomId, id, value } = action.payload;
+            const room = state.entities[roomId];
+            if (room && room.lorebook) {
+                const lore = room.lorebook.find(l => l.id === id);
+                if (lore) {
+                    let keys = Array.isArray(lore.activationKeys) ? [...lore.activationKeys] : [''];
+                    if (value) {
+                        while (keys.length < 2) keys.push('');
+                        keys = keys.slice(0, 2);
+                    } else {
+                        keys = [keys[0] ?? ''];
+                    }
+                    lore.multiKey = value;
+                    lore.activationKeys = keys;
+                }
             }
         },
         incrementUnread: (state, action: { payload: string }) => {

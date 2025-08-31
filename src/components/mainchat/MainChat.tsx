@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, Globe, Users, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain } from 'lucide-react';
+import { Menu, Globe, Users, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
@@ -18,15 +18,17 @@ import { selectAllSettings } from '../../entities/setting/selectors';
 import { replacePlaceholders } from '../../utils/placeholder';
 import { nanoid } from '@reduxjs/toolkit';
 import { useCharacterOnlineStatus } from '../../utils/simulateOnline';
-import { MemoryManager } from '../character/MemoryManager';
-import { charactersActions } from '../../entities/character/slice';
+import { LorebookEditor } from '../character/LorebookEditor';
 import { settingsActions } from '../../entities/setting/slice';
+import { charactersActions } from '../../entities/character/slice';
+import { MemoryManager } from '../character/MemoryManager';
 
 interface MainChatProps {
   room: Room | null;
   onToggleMobileSidebar: () => void;
   onToggleCharacterPanel: () => void;
   onToggleGroupchatSettings: () => void;
+  onOpenLoreBook: () => void;
 }
 
 function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggleGroupchatSettings }: MainChatProps) {
@@ -42,6 +44,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
   const [isAuthorNoteOpen, setIsAuthorNoteOpen] = useState(false);
   const [tempAuthorNote, setTempAuthorNote] = useState('');
   const [isRoomMemoryOpen, setIsRoomMemoryOpen] = useState(false);
+  const [isLoreBookOpen, setIsLoreBookOpen] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -124,6 +127,16 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
       name: newRoomName.trim(),
     }));
     setIsEditingRoomName(false);
+  };
+
+  const handleOpenLoreBook = () => {
+    if (room?.type === 'Direct' && character) {
+      setIsLoreBookOpen(true);
+    } else if (room?.type === 'Group' && memberChars && memberChars.length > 0) {
+      setIsLoreBookOpen(true);
+    } else {
+      toast.error('로어북을 열 수 있는 캐릭터가 없습니다.');
+    }
   };
 
   const handleToggleStickerPanel = () => {
@@ -269,6 +282,15 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
           onClose={() => setIsRoomMemoryOpen(false)}
           roomId={room.id}
         />
+        <LoreBookModal
+          open={isLoreBookOpen}
+          onClose={() => setIsLoreBookOpen(false)}
+          characterId={room?.type === 'Direct' ? character!.id : undefined}
+          memberChars={room?.type === 'Group' ? memberChars : undefined}
+          roomLorebook={(room?.type === 'Group' || room?.type === 'Open') ? (room?.lorebook || []) : undefined}
+          roomType={room?.type}
+          roomId={room?.id}
+        />
         <ChatHeader
           room={room}
           character={character}
@@ -282,6 +304,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
           onSetNewRoomName={setNewRoomName}
           onOpenAuthorNote={openAuthorNote}
           onOpenRoomMemory={() => setIsRoomMemoryOpen(true)}
+          onOpenLoreBook={handleOpenLoreBook}
           onOpenCharacterPanel={onToggleCharacterPanel}
           onOpenGroupchatSettings={onToggleGroupchatSettings}
         />
@@ -345,6 +368,7 @@ interface ChatHeaderProps {
   onSetNewRoomName: (name: string) => void;
   onOpenAuthorNote: () => void;
   onOpenRoomMemory: () => void;
+  onOpenLoreBook: () => void;
   onOpenCharacterPanel: () => void;
   onOpenGroupchatSettings: () => void;
 }
@@ -362,6 +386,7 @@ function ChatHeader({
   onSetNewRoomName,
   onOpenAuthorNote,
   onOpenRoomMemory,
+  onOpenLoreBook,
   onOpenCharacterPanel,
   onOpenGroupchatSettings
 }: ChatHeaderProps) {
@@ -513,6 +538,9 @@ function ChatHeader({
         </button>
         <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={onOpenRoomMemory}>
           <Brain className="w-5 h-5" />
+        </button>
+        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="활성화된 로어북" onClick={onOpenLoreBook}>
+          <BookOpen className="w-5 h-5" />
         </button>
         <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title={room.type === 'Direct' ? "캐릭터 설정" : "방 설정"} onClick={() => {
           if (room.type === 'Group') {
@@ -762,6 +790,53 @@ function RoomMemoryModal({ open, onClose, roomId }: { open: boolean; onClose: ()
         </div>
         <p className="text-sm text-gray-500 mb-3">이 방에만 적용되는 기억을 관리합니다. 모델은 여기의 메모리를 우선적으로 참고합니다.</p>
         <MemoryManager roomId={roomId} />
+        <div className="mt-4 flex justify-end">
+          <button className="px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium" onClick={onClose}>닫기</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, roomType, roomId }: { open: boolean; onClose: () => void; characterId?: number; memberChars?: any[]; roomLorebook?: any[]; roomType?: string; roomId?: string; }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-4xl mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-gray-900 font-semibold">
+            <BookOpen className="w-5 h-5 text-blue-500" /> 로어북 편집기
+          </div>
+          <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors" onClick={onClose}>
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mb-3">캐릭터의 로어북을 편집합니다. 로어북은 채팅에서 특정 키워드가 등장할 때 자동으로 적용됩니다.</p>
+        {(roomType === 'Group' || roomType === 'Open') && roomLorebook && (
+          <details className="mb-6">
+            <summary className="flex items-center justify-between text-lg font-semibold text-gray-800 mb-2 cursor-pointer hover:text-gray-600 transition-colors">
+              <span>{roomType === 'Group' ? '그룹' : '오픈'} 채팅 로어북</span>
+              <ChevronDown className="w-5 h-5 text-gray-500" />
+            </summary>
+            <LorebookEditor roomId={roomId} roomLorebook={roomLorebook} />
+          </details>
+        )}
+        {memberChars && memberChars.length > 0 ? (
+          memberChars.map(char => (
+            <details key={char.id} className="mb-6">
+              <summary className="flex items-center justify-between text-lg font-semibold text-gray-800 mb-2 cursor-pointer hover:text-gray-600 transition-colors">
+                <span>{char.name}의 로어북</span>
+                <ChevronDown className="w-5 h-5 text-gray-500" />
+              </summary>
+              <LorebookEditor characterId={char.id} />
+            </details>
+          ))
+        ) : (
+          characterId && (
+            <LorebookEditor characterId={characterId} />
+          )
+        )}
         <div className="mt-4 flex justify-end">
           <button className="px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium" onClick={onClose}>닫기</button>
         </div>

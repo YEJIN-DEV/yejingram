@@ -123,10 +123,35 @@ function getActivatedLores(lorebook: Lore[], messages: Message[]): Lore[] {
     }).sort((a, b) => a.order - b.order); // order로 정렬
 }
 
+export function getActivatedLoresForGroup(room: Room | null | undefined, messages: Message[]): { lore: Lore; characterName: string; characterId: number }[] {
+    const allLores: { lore: Lore; characterName: string; characterId: number }[] = [];
+
+    // Add room lorebook if exists
+    if (room?.lorebook) {
+        const activatedRoomLores = getActivatedLores(room.lorebook, messages);
+        activatedRoomLores.forEach(lore => allLores.push({ lore, characterName: 'Room', characterId: -1 }));
+    }
+
+    // Add member character lorebooks
+    room?.memberIds.forEach(id => {
+        const char = selectCharacterById(store.getState(), id);
+        if (char && char.lorebook) {
+            const activated = getActivatedLores(char.lorebook, messages);
+            activated.forEach(lore => allLores.push({ lore, characterName: char.name, characterId: id }));
+        }
+    });
+    return allLores.sort((a, b) => a.lore.order - b.lore.order);
+}
+
 function getPromptItemContent(item: PromptItem, character: Character | undefined, room: Room | null | undefined, messages: Message[], persona?: Persona | null): string | null {
     if (item.type === 'lorebook') {
-        const activatedLores = getActivatedLores(character?.lorebook || [], messages);
-        return activatedLores.map(lore => lore.prompt).join('\n\n') || null;
+        if (room && room.type !== 'Direct' && room.memberIds) {
+            const activatedLores = getActivatedLoresForGroup(room, messages);
+            return activatedLores.map(item => `[${item.characterName}'s Lore: ${item.lore.name}]\n${item.lore.prompt}`).join('\n\n') || null;
+        } else {
+            const activatedLores = getActivatedLores(character?.lorebook || [], messages);
+            return activatedLores.map(lore => lore.prompt).join('\n\n') || null;
+        }
     } else if (item.type === 'authornote') {
         return room?.authorNote || null;
     } else if (item.type === 'memory') {

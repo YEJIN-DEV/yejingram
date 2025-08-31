@@ -3,18 +3,21 @@ import { useMemo, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
+import { roomsActions } from '../../entities/room/slice';
 import type { RootState } from '../../app/store';
 import type { Lore } from '../../entities/lorebook/types';
 import { nanoid } from '@reduxjs/toolkit';
 import type { Character } from '../../entities/character/types';
 
 export interface LorebookEditorProps {
-    characterId: number;
+    characterId?: number;
+    roomId?: string;
     draft?: Character;
     onDraftChange?: (character: Character) => void;
+    roomLorebook?: Lore[];
 }
 
-const emptyLore = (nextOrder: number): Lore => ({
+const emptyLore = (nextOrder: number, characterId?: number, roomId?: string): Lore => ({
     id: nanoid(),
     name: '',
     activationKeys: [''],
@@ -22,34 +25,47 @@ const emptyLore = (nextOrder: number): Lore => ({
     prompt: '',
     alwaysActive: false,
     multiKey: false,
+    characterId,
+    roomId
 });
 
-export function LorebookEditor({ characterId, draft, onDraftChange }: LorebookEditorProps) {
+export function LorebookEditor({ characterId, roomId, draft, onDraftChange, roomLorebook }: LorebookEditorProps) {
     const dispatch = useDispatch();
-    const characterFromStore = useSelector((state: RootState) => selectCharacterById(state, characterId));
+    const characterFromStore = useSelector((state: RootState) => characterId ? selectCharacterById(state, characterId) : undefined);
     const character = draft && draft.id === characterId ? draft : characterFromStore;
-    if (!character) return null;
-    const lores = character.lorebook || [];
+    if (!character && !roomLorebook) return null;
+    const lores = useMemo(() => {
+        const baseLores = roomLorebook || character?.lorebook || [];
+        return baseLores.map(l => ({ ...l, characterId: l.characterId ?? characterId, roomId: l.roomId ?? roomId }));
+    }, [roomLorebook, character?.lorebook, characterId]);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const sorted = useMemo(() => [...lores].sort((a, b) => a.order - b.order), [lores]);
-
     const renumber = (items: Lore[]) => items.map((l, i) => ({ ...l, order: i }));
 
     const onChange = (newLores: Lore[]) => {
+        const processedLores = roomId ? newLores.map(l => ({ ...l, characterId: -1 })) : newLores;
         if (draft && onDraftChange) {
-            onDraftChange({ ...draft, lorebook: newLores });
+            onDraftChange({ ...draft, lorebook: processedLores });
+        } else if (roomId) {
+            dispatch(roomsActions.updateRoomLorebook({ roomId, lorebook: processedLores }));
         } else {
             // keep for compatibility if we ever need bulk replace
-            dispatch(charactersActions.updateLorebook({ characterId, lorebook: newLores }));
+            if (characterId !== undefined) {
+                dispatch(charactersActions.updateLorebook({ characterId, lorebook: processedLores }));
+            }
         }
     };
 
     const addLore = () => {
-        const next = emptyLore(sorted.length);
+        const next = emptyLore(sorted.length, characterId, roomId);
         if (draft && onDraftChange) {
             onChange(renumber([...sorted, next]));
+        } else if (roomId) {
+            dispatch(roomsActions.addRoomLore({ roomId, lore: next }));
         } else {
-            dispatch(charactersActions.addLore({ characterId, lore: next }));
+            if (characterId !== undefined) {
+                dispatch(charactersActions.addLore({ characterId, lore: next }));
+            }
         }
         setExpandedId(next.id);
     };
@@ -58,8 +74,12 @@ export function LorebookEditor({ characterId, draft, onDraftChange }: LorebookEd
         if (draft && onDraftChange) {
             const next = sorted.map(l => l.id === id ? { ...l, ...patch } : l);
             onChange(next);
+        } else if (roomId) {
+            dispatch(roomsActions.updateRoomLore({ roomId, id, patch }));
         } else {
-            dispatch(charactersActions.updateLore({ characterId, id, patch }));
+            if (characterId !== undefined) {
+                dispatch(charactersActions.updateLore({ characterId, id, patch }));
+            }
         }
     };
 
@@ -67,8 +87,12 @@ export function LorebookEditor({ characterId, draft, onDraftChange }: LorebookEd
         if (draft && onDraftChange) {
             const next = sorted.filter(l => l.id !== id);
             onChange(renumber(next));
+        } else if (roomId) {
+            dispatch(roomsActions.removeRoomLore({ roomId, id }));
         } else {
-            dispatch(charactersActions.removeLore({ characterId, id }));
+            if (characterId !== undefined) {
+                dispatch(charactersActions.removeLore({ characterId, id }));
+            }
         }
         if (expandedId === id) setExpandedId(null);
     };
@@ -81,8 +105,12 @@ export function LorebookEditor({ characterId, draft, onDraftChange }: LorebookEd
             const next = [...sorted];
             [next[idx], next[j]] = [next[j], next[idx]];
             onChange(renumber(next));
+        } else if (roomId) {
+            dispatch(roomsActions.moveRoomLore({ roomId, id, direction: dir }));
         } else {
-            dispatch(charactersActions.moveLore({ characterId, id, direction: dir }));
+            if (characterId !== undefined) {
+                dispatch(charactersActions.moveLore({ characterId, id, direction: dir }));
+            }
         }
     };
 
@@ -99,8 +127,12 @@ export function LorebookEditor({ characterId, draft, onDraftChange }: LorebookEd
                 keys = [keys[0] ?? ''];
             }
             updateLore(id, { multiKey: value, activationKeys: keys });
+        } else if (roomId) {
+            dispatch(roomsActions.setRoomLoreMultiKey({ roomId, id, value }));
         } else {
-            dispatch(charactersActions.setLoreMultiKey({ characterId, id, value }));
+            if (characterId !== undefined) {
+                dispatch(charactersActions.setLoreMultiKey({ characterId, id, value }));
+            }
         }
     };
 

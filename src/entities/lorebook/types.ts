@@ -6,4 +6,6 @@ export interface Lore {
     prompt: string;
     alwaysActive: boolean;
     multiKey: boolean; // when true, require all activationKeys to match
+    characterId?: number;
+    roomId?: string;
 }

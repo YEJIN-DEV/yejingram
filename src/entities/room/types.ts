@@ -1,3 +1,5 @@
+import type { Lore } from '../lorebook/types';
+
 export interface ParticipantSettings {
     isActive: boolean;
     responseProbability: number;
@@ -22,4 +24,5 @@ export interface Room {
     currentParticipants?: number[]
     authorNote?: string
     memories?: string[]
+    lorebook?: Lore[]
 }
