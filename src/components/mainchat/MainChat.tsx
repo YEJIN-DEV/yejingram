@@ -47,6 +47,10 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
 
   const dispatch = useDispatch<AppDispatch>();
 
+  // Pending LLM request management: store last pending room/message and debounce timer
+  const pendingRequestRef = useRef<{ room: Room; } | null>(null);
+  const debounceTimerRef = useRef<number | null>(null);
+
   const characterId = room?.type === 'Direct' && Array.isArray(room?.memberIds) && room.memberIds.length > 0
     ? room.memberIds[0]
     : null;
@@ -185,6 +189,37 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     }
   };
 
+  // Add message immediately to UI and schedule LLM request after 1s of no further typing
+  const sendPendingRequest = () => {
+    // clear timer
+    if (debounceTimerRef.current) {
+      window.clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    const pending = pendingRequestRef.current;
+    if (!pending) return;
+
+    // Start LLM request
+    setIsWaitingForResponse(true);
+
+    const targetRoom = pending.room;
+    pendingRequestRef.current = null;
+
+    let responsePromise;
+    if (targetRoom.type === 'Group') {
+      responsePromise = SendGroupChatMessage(targetRoom, setTypingCharacterId);
+    } else if (targetRoom.type === 'Open') {
+      responsePromise = SendOpenChatMessage(targetRoom, setTypingCharacterId);
+    } else {
+      responsePromise = SendMessage(targetRoom, setTypingCharacterId);
+    }
+
+    responsePromise.then(() => {
+      setIsWaitingForResponse(false);
+    });
+  };
+
   const handleSendMessage = (text: string) => {
     if (!room) return;
     if (!text.trim() && !stickerToSend && !imageToSend) return;
@@ -194,8 +229,6 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
       toast.error('선택된 페르소나가 없습니다. 설정 > 페르소나에서 선택 또는 추가해주세요.');
       return;
     }
-
-    setIsWaitingForResponse(true);
 
     const messageType = stickerToSend ? 'STICKER' : imageToSend ? 'IMAGE' : 'TEXT';
 
@@ -214,33 +247,49 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
       image: imageToSend ? { dataUrl: imageToSend.dataUrl } : undefined,
     };
 
+    // Immediately show user's message
     dispatch(messagesActions.upsertOne(userMessage));
 
-
+    // clear UI selection
     setStickerToSend(null);
     setImageToSend(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
 
-    if (!memberChars) {
-      setIsWaitingForResponse(false);
-      return;
+    // Schedule (or reschedule) LLM request for this room after 1s of no typing
+    pendingRequestRef.current = { room };
+    if (debounceTimerRef.current) {
+      window.clearTimeout(debounceTimerRef.current);
     }
-
-    let responsePromise;
-    if (room.type === 'Group') {
-      responsePromise = SendGroupChatMessage(room, setTypingCharacterId);
-    } else if (room.type === 'Open') {
-      responsePromise = SendOpenChatMessage(room, setTypingCharacterId);
-    } else {
-      responsePromise = SendMessage(room, setTypingCharacterId);
-    }
-
-    responsePromise.then(() => {
-      setIsWaitingForResponse(false);
-    });
+    // set a 1s debounce before sending LLM request
+    debounceTimerRef.current = window.setTimeout(() => {
+      sendPendingRequest();
+    }, 1000) as unknown as number;
   };
+
+  // Called when user types or interacts with input to postpone/send LLM request
+  const handleUserActivity = () => {
+    // If there's a pending timer, reset it (postpone LLM call)
+    if (debounceTimerRef.current) {
+      window.clearTimeout(debounceTimerRef.current);
+    }
+    // Start a fresh 1s timer to send pending request
+    debounceTimerRef.current = window.setTimeout(() => {
+      sendPendingRequest();
+    }, 1000) as unknown as number;
+  };
+
+  // Clean up debounce timer and pending request on room change or unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        window.clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      pendingRequestRef.current = null;
+    };
+  }, [room?.id]);
 
   if (!room) {
     return (
@@ -337,6 +386,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
             onSendMessage={handleSendMessage}
             onPaste={handlePaste}
             onFocus={handleInputFocus}
+            onUserActivity={handleUserActivity}
             renderUserStickerPanel={() =>
               showStickerPanel && character && (
                 <StickerPanel
@@ -571,6 +621,7 @@ interface InputAreaProps {
   onStickerClear?: () => void;
   onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
   onFocus?: () => void;
+  onUserActivity?: () => void;
 
   // (선택) 커스텀 스티커 패널 렌더링
   renderUserStickerPanel?: () => React.ReactNode;
@@ -587,6 +638,7 @@ function InputArea({
   onStickerClear,
   onPaste,
   onFocus,
+  onUserActivity,
   renderUserStickerPanel,
 }: InputAreaProps) {
   const [text, setText] = useState("");
@@ -696,6 +748,7 @@ function InputArea({
               value={text}
               onChange={(e) => {
                 setText(e.target.value);
+                onUserActivity?.();
                 // Auto-resize textarea
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px';
@@ -705,6 +758,7 @@ function InputArea({
                   e.preventDefault();
                   handleSend();
                 }
+                onUserActivity?.();
               }}
               onPaste={onPaste}
               onFocus={onFocus}
