@@ -16,7 +16,15 @@ export function replacePlaceholders(input: string, values: PlaceholderValues): s
     if (!input) return input;
     let output = input;
 
-    const timeContextValue = new Date().toLocaleString() ?? 'No specific time context provided.';
+    const timeContextValue = new Date().toLocaleString([], {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric'
+    }) ?? 'No specific time context provided.';
     output = output.replace(/\{timeContext\}/g, timeContextValue);
 
     const userValue = values.userName ?? 'user';
