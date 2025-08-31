@@ -28,7 +28,6 @@ interface MainChatProps {
   onToggleMobileSidebar: () => void;
   onToggleCharacterPanel: () => void;
   onToggleGroupchatSettings: () => void;
-  onOpenLoreBook: () => void;
 }
 
 function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggleGroupchatSettings }: MainChatProps) {
