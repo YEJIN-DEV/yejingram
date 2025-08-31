@@ -26,7 +26,11 @@ export type PromptType =
     | "plain-group"     // 그룹챗 컨텍스트
     | "plain-open"      // 오픈챗 컨텍스트
     | "extraSystemInstruction" // 추가 시스템 지시
+    | "userDescription" // 사용자 설명
+    | "characterPrompt" // 캐릭터 설명
     | "lorebook"        // 로어북 섹션
+    | "authornote"      // 작가의 노트
+    | "memory"          // 메모리   
     | "chat";           // 채팅 기록
 
 

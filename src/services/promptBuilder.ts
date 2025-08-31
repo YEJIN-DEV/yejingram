@@ -12,6 +12,7 @@ import { replacePlaceholders } from "../utils/placeholder";
 import type { PlaceholderValues } from "../utils/placeholder";
 import type { Room } from "../entities/room/types";
 import type { PromptItem } from "../entities/setting/types";
+import type { Lore } from "../entities/lorebook/types";
 
 type GeminiContent = {
     role: string;
@@ -88,8 +89,73 @@ function shouldIncludePromptItem(item: PromptItem, useStructuredOutput: boolean,
         return false;
     } else if (item.type === 'plain-open' && room?.type !== 'Open') {
         return false;
+    } else if (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt') {
+        // 새로운 타입들은 항상 포함 (또는 특정 조건 추가 가능)
+        return true;
     }
     return true;
+}
+
+function getCommonPromptData(persona: Persona | null | undefined, character: Character | undefined, room: Room | null | undefined) {
+    const userName = persona?.name || 'User';
+    const userDescription = persona?.description || 'No specific information provided about the user.';
+    let groupValues: Partial<PlaceholderValues> = {};
+    if (room && room.type === 'Group' && character) {
+        const groupDesc = buildGroupDescription(character, room);
+        groupValues.participantDetails = groupDesc.participantDetails;
+        groupValues.participantCount = groupDesc.participantCount;
+    }
+    const roomMemories = room?.memories?.join('\n') || '';
+    return { userName, userDescription, groupValues, roomMemories };
+}
+
+function getActivatedLores(lorebook: Lore[], messages: Message[]): Lore[] {
+    if (!lorebook || lorebook.length === 0) return [];
+    const messageText = messages.map(msg => msg.content || '').join(' ').toLowerCase();
+    return lorebook.filter(lore => {
+        if (lore.alwaysActive) return true;
+        const keys = lore.activationKeys.map(key => key.toLowerCase());
+        if (lore.multiKey) {
+            return keys.every(key => messageText.includes(key));
+        } else {
+            return keys.some(key => messageText.includes(key));
+        }
+    }).sort((a, b) => a.order - b.order); // order로 정렬
+}
+
+function getPromptItemContent(item: PromptItem, character: Character | undefined, room: Room | null | undefined, messages: Message[], persona?: Persona | null): string | null {
+    if (item.type === 'lorebook') {
+        const activatedLores = getActivatedLores(character?.lorebook || [], messages);
+        return activatedLores.map(lore => lore.prompt).join('\n\n') || null;
+    } else if (item.type === 'authornote') {
+        return room?.authorNote || null;
+    } else if (item.type === 'memory') {
+        return room?.memories?.join('\n') || null;
+    } else if (item.type === 'userDescription') {
+        return persona?.description || null;
+    } else if (item.type === 'characterPrompt') {
+        return character?.prompt || null;
+    } else if (item.content) {
+        return item.content;
+    }
+    return null;
+}
+
+function buildMessageContents<T>(
+    messages: Message[],
+    persona: Persona | null | undefined,
+    room: Room | null | undefined,
+    transform: (msg: Message, speaker: string, header: string, role: string) => T
+): T[] {
+    const useSpeakerTag = room?.type !== 'Direct';
+    return messages.map(msg => {
+        const role = msg.authorId === 0 ? "user" : "assistant";
+        const speaker = msg.authorId === 0
+            ? (persona?.name || 'User')
+            : (selectCharacterById(store.getState(), msg.authorId)?.name || `Char#${msg.authorId}`);
+        const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
+        return transform(msg, speaker, header, role);
+    });
 }
 
 function buildGroupDescription(
@@ -110,19 +176,11 @@ function buildGroupDescription(
     return { participantDetails: getParticipantDetails(), participantCount: room.memberIds.length + 1 }; // Include the current user
 }
 
-function buildSystemPrompt(persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean): string {
+function buildSystemPrompt(persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, messages?: Message[], useStructuredOutput?: boolean): string {
     // Keep only prompts whose role is 'system', in main array sequence.
     const { main } = selectPrompts(store.getState());
     const lines: string[] = [];
-    const userName = persona?.name || 'Not specified.You can ask.';
-    const userDescription = persona?.description || 'No specific information provided about the user.';
-    let groupValues: Partial<PlaceholderValues> = {};
-    if (room && room.type === 'Group' && character) {
-        const groupDesc = buildGroupDescription(character, room);
-        groupValues.participantDetails = groupDesc.participantDetails;
-        groupValues.participantCount = groupDesc.participantCount;
-    }
-    const roomMemories = room?.memories?.join('\n') || '';
+    const { userName, userDescription, groupValues, roomMemories } = getCommonPromptData(persona, character, room);
     for (const item of main) {
         if (item && item.role === 'system' && typeof item.content === 'string' && item.content.trim().length > 0) {
             if (shouldIncludePromptItem(item, useStructuredOutput || false, room)) {
@@ -130,6 +188,11 @@ function buildSystemPrompt(persona?: Persona | null, character?: Character, extr
             }
         } else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
             lines.push(replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, roomMemories, ...groupValues }));
+        } else if (item && (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt')) {
+            const content = getPromptItemContent(item, character, room, messages || [], persona);
+            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, room)) {
+                lines.push(replacePlaceholders(content, { userName, userDescription, character, roomMemories, ...groupValues }));
+            }
         }
     }
     return lines.join('\n\n');
@@ -139,38 +202,15 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
-    const useSpeakerTag = currentRoom?.type !== 'Direct';
     const { main } = selectPrompts(state);
-    const userName = persona?.name || 'User';
-    const userDescription = persona?.description || 'No specific information provided about the user.';
-    let groupValues: Partial<PlaceholderValues> = {};
-    if (currentRoom && currentRoom.type === 'Group' && character) {
-        const groupDesc = buildGroupDescription(character, currentRoom);
-        groupValues.participantDetails = groupDesc.participantDetails;
-        groupValues.participantCount = groupDesc.participantCount;
-    }
-    const roomMemories = currentRoom?.memories?.join('\n') || '';
+    const { userName, userDescription, groupValues, roomMemories } = getCommonPromptData(persona, character, currentRoom);
 
     const contents: GeminiContent[] = [];
 
     // Add messages
-    const messageContents = messages.map(msg => {
-        const role = msg.authorId === 0 ? "user" : "model";
-        const speaker = msg.authorId === 0
-            ? (persona?.name || 'User')
-            : (selectCharacterById(state, msg.authorId)?.name || `Char#${msg.authorId}`);
-
-        const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
-        const baseText = msg.content ? `${header}${msg.content}` : (useSpeakerTag ? header : '');
-
-        const parts: ({ text: string; } |
-        { inline_data: { mime_type: string; data: string; }; })[] = [{ text: msg.content }];
-
-        // Replace first text part with speaker-tagged text
-        if (parts.length > 0 && 'text' in parts[0]) {
-            (parts[0] as any).text = baseText;
-        }
-
+    const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
+        const baseText = msg.content ? `${header}${msg.content}` : (header ? header : '');
+        const parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; })[] = [{ text: baseText }];
         if (msg.image) {
             const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
             const base64Data = msg.image.dataUrl.split(',')[1];
@@ -183,18 +223,16 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
                 });
             }
         }
-
         if (msg.sticker) {
-            parts.push({ text: `${useSpeakerTag ? header : ''}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
+            parts.push({ text: `${header}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
         }
-        return { role, parts };
+        return { role: role === 'assistant' ? 'model' : 'user', parts };
     });
 
     for (const item of main) {
         if (item && item.role !== 'system' && item.content && item.content.trim().length > 0) {
             if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
                 const role = item.role == 'assistant' ? 'model' : 'user';
-
                 if (role) {
                     contents.push({
                         role,
@@ -204,6 +242,16 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
             }
         } else if (item && item.type === 'chat') {
             contents.push(...messageContents);
+        } else if (item && (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt')) {
+            const content = getPromptItemContent(item, character, currentRoom, messages, persona);
+            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+                const role = item.role || 'user';
+                const geminiRole = role === 'assistant' ? 'model' : 'user';
+                contents.push({
+                    role: geminiRole,
+                    parts: [{ text: replacePlaceholders(content, { userName, userDescription, character, roomMemories, ...groupValues }) }]
+                });
+            }
         }
     }
 
@@ -227,7 +275,7 @@ export function buildGeminiApiPayload(
     useImageResponse: boolean | undefined,
     extraSystemInstruction?: string
 ): GeminiApiPayload {
-    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, useStructuredOutput);
+    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, messages, useStructuredOutput);
     const contents = buildGeminiContents(messages, isProactive, persona, character, room, useStructuredOutput);
 
     const generationConfig: any = {
@@ -275,31 +323,15 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
-    const useSpeakerTag = currentRoom?.type !== 'Direct';
     const { main } = selectPrompts(state);
-    const userName = persona?.name || 'User';
-    const userDescription = persona?.description || 'No specific information provided about the user.';
-    let groupValues: Partial<PlaceholderValues> = {};
-    if (currentRoom && currentRoom.type === 'Group' && character) {
-        const groupDesc = buildGroupDescription(character, currentRoom);
-        groupValues.participantDetails = groupDesc.participantDetails;
-        groupValues.participantCount = groupDesc.participantCount;
-    }
-    const roomMemories = currentRoom?.memories?.join('\n') || '';
+    const { userName, userDescription, groupValues, roomMemories } = getCommonPromptData(persona, character, currentRoom);
 
     const messagesPart: ClaudeMessage[] = [];
 
     // Add messages
-    const messageContents = messages.map(msg => {
-        const role = msg.authorId === 0 ? "user" : "assistant";
-        const speaker = msg.authorId === 0
-            ? (userName || 'User')
-            : (selectCharacterById(state, msg.authorId)?.name || `Char#${msg.authorId}`);
-        const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
+    const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         const content: ({ type: string; text: string; } |
-        { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[]
-            = [{ type: 'text', text: msg.content ? `${header}${msg.content}` : (useSpeakerTag ? header : '') }];
-
+        { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[] = [{ type: 'text', text: msg.content ? `${header}${msg.content}` : (header ? header : '') }];
         if (msg.image && model !== "grok-3") {
             const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
             if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
@@ -317,11 +349,9 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
                 });
             }
         }
-
         if (msg.sticker) {
-            content.push({ type: 'text', text: `${useSpeakerTag ? header : ''}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
+            content.push({ type: 'text', text: `${header}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
         }
-
         return { role, content };
     });
 
@@ -345,6 +375,15 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
         } else if (item && item.type === 'chat') {
             // Insert messages when 'chat' type is encountered
             messagesPart.push(...messageContents);
+        } else if (item && (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt')) {
+            const content = getPromptItemContent(item, character, currentRoom, messages, persona);
+            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+                const role = item.role || 'system';
+                messagesPart.push({
+                    role,
+                    content: [{ type: 'text', text: replacePlaceholders(content, { userName, userDescription, character, roomMemories, ...groupValues }) }]
+                });
+            }
         }
     }
 
@@ -370,7 +409,7 @@ export function buildClaudeApiPayload(
     isProactive: boolean,
     extraSystemInstruction?: string
 ): ClaudeApiPayload {
-    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, false);
+    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, messages, false);
     const contents = buildClaudeContents(messages, isProactive, persona, model, character, extraSystemInstruction, room, false);
 
     return {
@@ -392,30 +431,14 @@ function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
-    const useSpeakerTag = currentRoom?.type !== 'Direct';
     const { main } = selectPrompts(state);
-    const userName = persona?.name || 'User';
-    const userDescription = persona?.description || 'No specific information provided about the user.';
-    let groupValues: Partial<PlaceholderValues> = {};
-    if (currentRoom && currentRoom.type === 'Group' && character) {
-        const groupDesc = buildGroupDescription(character, currentRoom);
-        groupValues.participantDetails = groupDesc.participantDetails;
-        groupValues.participantCount = groupDesc.participantCount;
-    }
-    const roomMemories = currentRoom?.memories?.join('\n') || '';
+    const { userName, userDescription, groupValues, roomMemories } = getCommonPromptData(persona, character, currentRoom);
 
     const items: OpenAIMessage[] = [];
 
     // Add messages
-    const messageContents = messages.map(msg => {
-        const role = msg.authorId === 0 ? 'user' : 'assistant';
-
-        const speaker = msg.authorId === 0
-            ? (userName || 'User')
-            : (selectCharacterById(state, msg.authorId)?.name || `Char#${msg.authorId}`);
-        const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
-
-        let text = (msg.content ? `${header}${msg.content}` : (useSpeakerTag ? header : ''));
+    const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
+        let text = (msg.content ? `${header}${msg.content}` : (header ? header : ''));
         if (msg.sticker) {
             text = `[사용자가 "${msg.sticker}" 스티커를 보냄]` + (text ? ` ${text}` : '');
         }
@@ -463,6 +486,15 @@ function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?
         } else if (item && item.type === 'chat') {
             // Insert messages when 'chat' type is encountered
             items.push(...messageContents);
+        } else if (item && (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt')) {
+            const content = getPromptItemContent(item, character, currentRoom, messages, persona);
+            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+                const role = item.role || 'system';
+                items.push({
+                    role,
+                    content: replacePlaceholders(content, { userName, userDescription, character, roomMemories, ...groupValues })
+                });
+            }
         }
     }
 

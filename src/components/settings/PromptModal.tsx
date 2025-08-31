@@ -28,7 +28,11 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
         'plain-group': '그룹 컨텍스트',
         'plain-open': '오픈 컨텍스트',
         'extraSystemInstruction': '추가 시스템 지시문',
+        'userDescription': '사용자 설명',
+        'characterPrompt': '캐릭터 설명',
         'lorebook': '로어북',
+        'authornote': '작가의 노트',
+        'memory': '메모리',
         'chat': '채팅 기록',
     };
     const getTypeLabel = (t: PromptType) => typeLabelMap[t] ?? t;
@@ -332,7 +336,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                                 </div>
                                             )}
                                         </div>
-                                        {item.type !== 'chat' && item.type !== 'lorebook' && item.type !== 'extraSystemInstruction' && (
+                                        {item.type !== 'chat' && item.type !== 'lorebook' && item.type !== 'authornote' && item.type !== 'memory' && item.type !== 'extraSystemInstruction' && item.type !== 'userDescription' && item.type !== 'characterPrompt' && (
                                             <div>
                                                 <label className="text-xs font-medium text-gray-600 mb-1 block">프롬프트 내용</label>
                                                 <textarea
