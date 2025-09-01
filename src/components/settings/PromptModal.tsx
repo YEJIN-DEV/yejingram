@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { X, ChevronDown, RotateCcw, Download, Upload, ArrowUp, ArrowDown, GripVertical, AlertTriangle } from 'lucide-react';
+import { X, ChevronDown, RotateCcw, Download, Upload, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
 import { selectPrompts } from '../../entities/setting/selectors';
 import { settingsActions, initialState } from '../../entities/setting/slice';
 import type { Prompts, PromptItem, PromptRole, PromptType } from '../../entities/setting/types';
@@ -15,7 +15,6 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
     const prompts = useSelector(selectPrompts);
 
     const [localPrompts, setLocalPrompts] = useState<Prompts>(prompts);
-    const [dragIndex, setDragIndex] = useState<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     // 타입 라벨 한글 매핑
@@ -90,20 +89,6 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
     const resetOrder = () => {
         setLocalPrompts(prev => ({ ...prev, main: initialState.prompts.main }));
     };
-
-    const handleDragStart = (index: number) => setDragIndex(index);
-    const handleDragOver: React.DragEventHandler = (e) => { e.preventDefault(); };
-    const handleDrop = (targetIndex: number) => {
-        setLocalPrompts(prev => {
-            if (dragIndex === null || dragIndex === targetIndex) return prev;
-            const main = [...prev.main];
-            const [removed] = main.splice(dragIndex, 1);
-            main.splice(targetIndex, 0, removed);
-            return { ...prev, main };
-        });
-        setDragIndex(null);
-    };
-    const handleDragEnd = () => setDragIndex(null);
     const addNewPrompt = () => {
         const newPrompt: PromptItem = {
             name: '새 프롬프트',
@@ -246,7 +231,6 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                     <div className="flex items-center justify-between border-b border-blue-100 pb-2">
                         <h4 className="text-base font-semibold text-blue-600">메인 채팅 프롬프트</h4>
                         <div className="flex items-center gap-2">
-                            <button type="button" onClick={addNewPrompt} className="py-1 px-2 text-xs bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded">추가</button>
                             <button type="button" onClick={resetOrder} className="py-1 px-2 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded">초기화</button>
                         </div>
                     </div>
@@ -257,11 +241,6 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                             <details
                                 key={index}
                                 className="group bg-gray-50 rounded-lg border border-gray-200"
-                                draggable
-                                onDragStart={() => handleDragStart(index)}
-                                onDragOver={handleDragOver}
-                                onDrop={() => handleDrop(index)}
-                                onDragEnd={handleDragEnd}
                             >
                                 <summary className="flex items-center justify-between cursor-pointer list-none p-4">
                                     <div className="flex items-center">
@@ -269,9 +248,6 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                         <span className="text-base font-medium text-gray-900">{title}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
-                                        <span title="드래그로 순서 변경" className="inline-flex">
-                                            <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
-                                        </span>
                                         <button
                                             type="button"
                                             onClick={(e) => { e.preventDefault(); moveIndex(index, -1); }}
@@ -350,6 +326,10 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                             </details>
                         );
                     })}
+                    
+                    <div className="flex justify-center mt-4">
+                        <button type="button" onClick={addNewPrompt} className="py-2 px-4 text-sm bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-lg">+ 새 프롬프트 추가</button>
+                    </div>
 
                     <h4 className="text-base font-semibold text-blue-600 border-b border-blue-100 pb-2 mt-6">랜덤 선톡 캐릭터 생성 프롬프트</h4>
                     <details className="group bg-gray-50 rounded-lg border border-gray-200">
@@ -371,7 +351,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                             onChange={e => setLocalPrompts(prev => ({ ...prev, profile_creation: { ...prev.profile_creation, name: e.target.value } }))}
                                             className="w-full p-2 bg-white text-gray-900 rounded border border-gray-200 text-sm" placeholder="이름" />
                                     </div>
-                                    <div className="flex flex-col">
+                                    <div className="ㅇflex flex-col">
                                         <label className="text-xs font-medium text-gray-600 mb-1">타입 <span className="text-[11px] text-gray-400">(고정)</span></label>
                                         <select
                                             value={localPrompts.profile_creation.type}
