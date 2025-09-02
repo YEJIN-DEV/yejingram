@@ -101,7 +101,6 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
     if (messagePart.imageGenerationSetting) {
         const imageResponse = await callImageGeneration(messagePart.imageGenerationSetting, char);
         const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
-        console.log(84)
         if (inlineDataBody) {
             message = {
                 ...message,
