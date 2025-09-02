@@ -1,5 +1,5 @@
 // features/messages/slice.ts
-import { createSlice, createEntityAdapter, type Action, type PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, createEntityAdapter, type Action, type PayloadAction, nanoid } from '@reduxjs/toolkit'
 import type { Message } from './types'
 import type { ThunkAction } from 'redux-thunk';
 import type { RootState } from '../../app/store';
@@ -23,6 +23,12 @@ const messagesSlice = createSlice({
         removeMany: messagesAdapter.removeMany,
         importMessages: (state, action: PayloadAction<Message[]>) => {
             messagesAdapter.upsertMany(state, action.payload);
+        },
+        duplicateMessages: (state, action: { payload: { originalId: string, newId: string } }) => {
+            const messages = messagesAdapter.getSelectors().selectAll(state);
+            const messagesToDuplicate = messages.filter(msg => msg.roomId === action.payload.originalId);
+            const newMessages = messagesToDuplicate.map(msg => ({ ...msg, id: nanoid(), roomId: action.payload.newId }));
+            messagesAdapter.upsertMany(state, newMessages);
         }
     }
 })

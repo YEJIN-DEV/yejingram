@@ -2,6 +2,10 @@ export interface MessagePart {
     delay: number;      // 밀리초 단위 지연시간
     content: string;    // 메시지 내용
     sticker?: string;   // 스티커 (옵션)
+    imageGenerationSetting?: {
+        prompt: string;   // 프롬프트
+        isSelfie: boolean; // 셀카 여부
+    }; // 이미지 생성 설정 (옵션)
 }
 
 export interface ChatResponse {
@@ -19,6 +23,8 @@ export interface ChatResponse {
         };
         socialBattery: number; // 사회적 배터리 (0~1)
     };
+    // 모델이 구조화된 출력으로 제공하는 신규 메모리(선택)
+    newMemory?: string;
 }
 
 export interface GeminiApiPayload {
@@ -33,7 +39,7 @@ export interface GeminiApiPayload {
             };
         })[];
     }[];
-    systemInstruction: {
+    systemInstruction?: {
         parts: {
             text: string;
         }[];
@@ -49,4 +55,48 @@ export interface GeminiApiPayload {
         category: string;
         threshold: string;
     }[];
+}
+
+export interface ClaudeApiPayload {
+    model: string;
+    messages: {
+        role: string;
+        content: ({
+            type: string;
+            text: string;
+        } | {
+            type: 'image';
+            source: {
+                data: string;
+                media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+                type: 'base64';
+            };
+        })[];
+    }[];
+    system?: {
+        type: string;
+        text: string;
+    }[];
+    temperature: number;
+    top_k: number;
+    top_p: number;
+    max_tokens: number;
+}
+
+export interface OpenAIApiPayload {
+    model: string;
+    messages: Array<{
+        role: 'system' | 'user' | 'assistant' | string;
+        content:
+        | string
+        | Array<
+            | { type: 'text'; text: string }
+            | { type: 'image_url'; image_url: { url: string } }
+        >;
+    }>;
+    temperature?: number;
+    top_p?: number;
+    max_completion_tokens?: number;
+    // Supported by Chat Completions for JSON-mode on modern models
+    response_format?: { type: 'json_object' } | { type: 'text' };
 }

@@ -1,7 +1,8 @@
+import type { Lore } from '../lorebook/types';
+
 export interface ParticipantSettings {
     isActive: boolean;
     responseProbability: number;
-    characterRole: 'normal' | 'leader' | 'quiet' | 'active';
 }
 
 export interface GroupChatSettings {
@@ -21,4 +22,7 @@ export interface Room {
     unreadCount: number
     groupSettings?: GroupChatSettings
     currentParticipants?: number[]
+    authorNote?: string
+    memories?: string[]
+    lorebook?: Lore[]
 }

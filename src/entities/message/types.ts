@@ -15,4 +15,5 @@ export interface Message {
     createdAt: string;
     sticker?: Sticker;
     image?: ImageToSend;
+    leaveCharId?: number;
 }

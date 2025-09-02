@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState, useLayoutEffect } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
@@ -11,6 +11,7 @@ import SenderName from './SenderName';
 import { Avatar } from '../../utils/Avatar';
 import { SendMessage } from '../../services/LLMcaller';
 import type { Room } from '../../entities/room/types';
+import { inviteCharacter } from '../../utils/inviteCharacter';
 
 // Helper function for date formatting
 const formatDateSeparator = (date: Date): string => {
@@ -51,7 +52,6 @@ interface MessageListProps {
   isWaitingForResponse: boolean; // Assuming this is passed as a prop
   typingCharacterId: number | null;
   currentUserId: number; // Assuming current user ID is available to determine isMe
-  scrollRef: React.RefObject<HTMLDivElement | null>;
 
   setTypingCharacterId: React.Dispatch<React.SetStateAction<number | null>>;
   setIsWaitingForResponse: React.Dispatch<React.SetStateAction<boolean>>;
@@ -63,7 +63,6 @@ const MessageList: React.FC<MessageListProps> = ({
   isWaitingForResponse,
   typingCharacterId,
   currentUserId,
-  scrollRef,
 
   setTypingCharacterId,
   setIsWaitingForResponse
@@ -93,64 +92,10 @@ const MessageList: React.FC<MessageListProps> = ({
     // For now, just ensuring the ref is cleared or managed
   }, [messages]);
 
-  // Force scroll to bottom when room changes
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) {
-      // Use requestAnimationFrame to wait for the DOM to be updated
-      requestAnimationFrame(() => {
-        el.scrollTop = el.scrollHeight;
-      });
-    }
-  }, [room.id, scrollRef]);
-
-  const BOTTOM_THRESHOLD = 120; // ✅ 여유 넉넉히
-
-  // 새 메시지가 추가되면 (길이 변화) 바닥이면 내려가기
-  useLayoutEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    const isNearBottom =
-      el.scrollHeight - el.scrollTop - el.clientHeight <= BOTTOM_THRESHOLD;
-
-    // DOM 레이아웃 확정 후 스크롤 (깜빡임/계산오차 방지)
-    requestAnimationFrame(() => {
-      if (!el) return;
-      if (isNearBottom) {
-        const delta = el.scrollHeight - el.scrollTop - el.clientHeight;
-        el.scrollTo({
-          top: el.scrollHeight,
-          behavior: delta < 500 ? 'smooth' : 'auto', // 작은 이동은 부드럽게
-        });
-      }
-    });
-  }, [messages.length]); // ✅ 객체 전체 말고 길이만
-
-  // 컨테이너 높이가 '늦게' 변하는 경우(이미지 로드 등)에도 바닥 유지
-  useEffect(() => {
-    const scroller = scrollRef.current;
-    const inner = innerRef.current;
-    if (!scroller || !inner) return;
-
-    const BOTTOM_THRESHOLD = 120;
-    const isNearBottom = () =>
-      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight <= BOTTOM_THRESHOLD;
-
-    const ro = new ResizeObserver(() => {
-      if (isNearBottom()) {
-        scroller.scrollTop = scroller.scrollHeight;
-      }
-    });
-
-    ro.observe(inner);
-    return () => ro.disconnect();
-  }, []);
-
 
   return (
     <>
-      <div ref={innerRef} data-list-inner className="space-y-4">
+      <div ref={innerRef} data-list-inner className="px-6 py-4">
         {messages.map((msg, i) => {
           const prevMsg = messages[i - 1];
           const isMe = msg.authorId === currentUserId; // Derive isMe
@@ -165,6 +110,25 @@ const MessageList: React.FC<MessageListProps> = ({
           })();
 
           const groupInfo = findMessageGroup(messages, i);
+          const isGroupStart = i === groupInfo.startIndex;
+          const isGroupEnd = i === groupInfo.endIndex;
+          const bubbleMarginClass = isGroupEnd ? 'mb-2 md:mb-3' : 'mb-1';
+
+          const cornerClass = (() => {
+            if (isGroupStart && isGroupEnd) {
+              return '';
+            }
+            if (isMe) {
+              // Me (right side) - use small radius instead of square
+              if (isGroupStart) return 'rounded-br-md'; // first -> right bottom slightly squared
+              if (!isGroupEnd) return 'rounded-tr-md rounded-br-md'; // middle -> right top & bottom slightly squared
+              return 'rounded-tr-md'; // last -> right top slightly squared
+            }
+            // Not me (left side)
+            if (isGroupStart) return 'rounded-bl-md'; // first -> left bottom slightly squared
+            if (!isGroupEnd) return 'rounded-tl-md rounded-bl-md'; // middle -> left top & bottom slightly squared
+            return 'rounded-tl-md'; // last -> left top slightly squared
+          })();
 
           const hasAnimated = animatedMessageIds.current.has(msg.id.toString());
           const needsAnimation = !hasAnimated;
@@ -175,32 +139,31 @@ const MessageList: React.FC<MessageListProps> = ({
           // Placeholder for message content rendering
           const renderMessageContent = () => {
             if (editingMessageId === msg.id) { // Use msg.id for editing
-              // Editing state
+              // Editing state - Instagram DM Style
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  {msg.type === 'IMAGE' ? ( // Use MessageType enum
+                  {msg.type === 'IMAGE' ? (
                     <>
-                      {/* Assuming msg.content holds the image URL for IMAGE type */}
-                      <img src={msg.content} className="max-w-xs max-h-80 rounded-lg object-cover mb-2 cursor-pointer" onClick={() => window.open(msg.content)} />
+                      <img src={msg.content} className="max-w-xs max-h-80 rounded-2xl object-cover mb-2 cursor-pointer" onClick={() => window.open(msg.content)} />
                       <textarea
                         data-id={msg.id.toString()}
-                        className="edit-message-textarea w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500/50 text-sm"
-                        rows={2}
-                        defaultValue={msg.content} // Assuming content is also text for image caption
+                        className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-32 md:min-h-40 transition-all duration-300 focus:scale-105"
+                        rows={4}
+                        defaultValue={msg.content}
                       ></textarea>
                     </>
                   ) : (
                     <textarea
                       data-id={msg.id.toString()}
-                      className="edit-message-textarea w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500/50 text-sm"
-                      rows={3}
-                      defaultValue={msg.content || ''} // Default to empty string if no content
+                      className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 focus:scale-105"
+                      rows={5}
+                      defaultValue={msg.content || ''}
                     ></textarea>
                   )}
                   <div className="flex items-center space-x-2 mt-2">
                     <button onClick={() => {
                       setEditingMessageId(null);
-                    }} data-id={msg.id.toString()} className="cancel-edit-btn text-xs text-gray-400 hover:text-white" >취소</button>
+                    }} data-id={msg.id.toString()} className="cancel-edit-btn text-sm text-gray-500 hover:text-gray-700 bg-gray-100 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105 hover:bg-gray-200" >취소</button>
                     <button onClick={() => {
                       const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
                       if (textarea) {
@@ -211,36 +174,36 @@ const MessageList: React.FC<MessageListProps> = ({
                         }));
                         setEditingMessageId(null);
                       }
-                    }} data-id={msg.id.toString()} className="save-edit-btn text-xs text-blue-400 hover:text-blue-300">저장</button>
+                    }} data-id={msg.id.toString()} className="save-edit-btn text-sm text-white bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105">저장</button>
                   </div>
                 </div>
               );
             }
 
-            // Normal message rendering
-            if (msg.type === 'STICKER' && msg.sticker) { // Use MessageType enum
+            // Instagram DM Style message rendering
+            if (msg.type === 'STICKER' && msg.sticker) {
               const stickerData = msg.sticker;
-
-              const isExpanded = expandedStickers.has(msg.id);
-              const sizeClass = isExpanded ? 'max-w-4xl' : 'max-w-xs';
-              const heightStyle = isExpanded ? { maxHeight: '720px' } : { maxHeight: '240px' };
-
+              const isExpanded = expandedStickers.has(msg.id.toString());
+              const sizeClass = isExpanded ? 'max-w-sm' : 'max-w-32';
+              const heightStyle = isExpanded ? { maxHeight: '400px' } : { maxHeight: '120px' };
 
               const imgSrc = stickerData.data;
               const stickerName = stickerData.name || '스티커';
               const stickerElement = (
-                <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
-                  <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain`} style={heightStyle} />
+                <div className="inline-block cursor-pointer transition-all duration-300 hover:scale-110 transform" onClick={() => toggleStickerSize(msg.id.toString())}>
+                  <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`} style={heightStyle} />
                 </div>
               );
-
 
               const hasTextMessage = msg.content && msg.content.trim();
 
               if (hasTextMessage) {
                 return (
-                  <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                    <div className={`px-4 py-2 rounded-2xl text-sm md:text-base leading-relaxed ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-100'} mb-2`}>
+                  <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
+                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 text-gray-900'
+                      } ${cornerClass}`}>
                       <div className="break-words">{msg.content}</div>
                     </div>
                     {stickerElement}
@@ -249,34 +212,39 @@ const MessageList: React.FC<MessageListProps> = ({
               } else {
                 return stickerElement;
               }
-            } else if (msg.type === 'IMAGE' && msg.image?.dataUrl) { // Use MessageType enum
-              // Assuming msg.content holds the image URL
-              const imageUrl = msg.image?.dataUrl; // Or fetch from character.media if imageId is used
-
-              const isExpanded = expandedStickers.has(msg.id);
-              const sizeClass = isExpanded ? 'max-w-4xl' : 'max-w-xs';
-              const heightStyle = isExpanded ? { maxHeight: '720px' } : { maxHeight: '320px' };
+            } else if (msg.type === 'IMAGE' && msg.image?.dataUrl) {
+              const imageUrl = msg.image?.dataUrl;
+              const isExpanded = expandedStickers.has(msg.id.toString());
+              const sizeClass = isExpanded ? 'max-w-sm' : 'max-w-60';
+              const heightStyle = isExpanded ? { maxHeight: '400px' } : { maxHeight: '200px' };
 
               const imageTag = (
-                <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
-                  <img src={imageUrl} className={`${sizeClass} rounded-lg object-cover`} style={heightStyle} />
+                <div className="inline-block cursor-pointer transition-all duration-300 hover:scale-105 transform" onClick={() => toggleStickerSize(msg.id.toString())}>
+                  <img src={imageUrl} className={`${sizeClass} rounded-2xl object-cover transition-all duration-500 hover:brightness-110`} style={heightStyle} />
                 </div>
               );
-              // Assuming content can also be a caption for an image
+
               const captionTag = msg.content && msg.content.trim() ? (
-                <div className={`mt-2 px-4 py-2 rounded-2xl text-sm md:text-base leading-relaxed inline-block ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-100'}`}>
+                <div className={`mt-1 px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-900'
+                  } ${cornerClass}`}>
                   <div className="break-words">{msg.content}</div>
                 </div>
               ) : null;
+
               return (
-                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
                   {imageTag}
                   {captionTag}
                 </div>
               );
-            } else if (msg.type === 'TEXT') { // TEXT type
+            } else if (msg.type === 'TEXT') {
               return (
-                <div className={`px-4 py-2 rounded-2xl text-sm md:text-base leading-relaxed ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-100'}`}>
+                <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-900'
+                  } ${cornerClass}`}>
                   <div className="break-words">{msg.content}</div>
                 </div>
               );
@@ -286,137 +254,141 @@ const MessageList: React.FC<MessageListProps> = ({
           const lastUserMessage = [...messages].reverse().find(m => m.authorId === currentUserId);
           const showUnread = isMe && lastUserMessage && msg.id === lastUserMessage.id && isWaitingForResponse && !typingCharacterId;
 
-          let avatarElement = null;
-
-          const showSenderInfo = !isMe && i === groupInfo.startIndex;
-
-          if (!isMe) {
-            const senderCharacter = allCharacters.find(c => c.id === msg.authorId);
-            if (senderCharacter) {
-              avatarElement = showSenderInfo ? <Avatar char={senderCharacter} size="sm" /> : null;
-            }
-          }
+          const showSenderName = !isMe && isGroupStart;
+          const showAvatar = !isMe && isGroupEnd;
+          const senderCharacter = !isMe ? allCharacters.find(c => c.id === msg.authorId) : null;
 
 
           return (
             <React.Fragment key={msg.id}>
               {showDateSeparator && (
-                <div className="flex justify-center my-4">
-                  <div className="flex items-center text-xs text-gray-300 bg-gray-800/80 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-md">
-                    <Calendar className="w-3 h-3.5 mr-2 text-gray-400" />
+                <div className="flex justify-center my-6">
+                  <div className="flex items-center text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-200 hover:scale-105">
+                    <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                     {formatDateSeparator(new Date(msg.createdAt))}
                   </div>
                 </div>
               )}
               {msg.type === 'SYSTEM' && (
                 <div className="flex justify-center my-4">
-                  <div className="flex items-center text-xs text-gray-300 bg-gray-800/80 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-md">
+                  <div className="flex flex-col items-center text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full animate-fadeIn">
                     {msg.content}
+                    {msg.leaveCharId && (
+                      <span className=" text-gray-400 underline items-center" onClick={() => inviteCharacter(msg.leaveCharId ?? null, room, allCharacters.find(c => c.id === msg.leaveCharId)?.name || 'Unknown', dispatch)}>
+                        채팅방으로 초대하기
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
-              {msg.type !== 'SYSTEM' && <div className={`group flex w-full items-start gap-3 ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'flex-row-reverse' : ''}`}>
-                {!isMe && <div className="shrink-0 w-10 h-10 mt-1">{avatarElement}</div>}
-                <div className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
-                  {showSenderInfo && <p className="text-sm text-gray-400 mb-1"><SenderName authorId={msg.authorId} /></p>}
-                  <div className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                    {showUnread && <span className="text-xs text-yellow-400 self-end mb-0.5">1</span>}
-                    <div className="message-content-wrapper flex-1">
-                      {renderMessageContent()}
-                    </div>
+              {msg.type !== 'SYSTEM' && (
+                <div className={`group flex w-full ${bubbleMarginClass} ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-3 md:gap-4 ${editingMessageId === msg.id ? 'flex-1 w-full max-w-none' : 'max-w-[75%]'}`}>
 
-                    <div className="group flex items-end gap-1">
-                      <div
-                        className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-2`}
-                      >
+                    {/* Avatar - for non-me messages at end of group (bottom aligned); placeholder otherwise for consistent indent */}
+                    {!isMe && editingMessageId !== msg.id && (
+                      showAvatar && senderCharacter ? (
+                        <div className="shrink-0 w-10 h-10">
+                          <Avatar char={senderCharacter} size="sm" />
+                        </div>
+                      ) : (
+                        <div className="shrink-0 w-10 h-10"></div>
+                      )
+                    )}
 
-                        <div
-                          className={`flex items-center ${isMe ? 'flex-row-reverse' : ''
-                            } group`}
-                        >
-                          {/* 버튼 컨테이너: 기본 가려짐 → hover 시 폭이 생기며 타임스탬프를 밀어냄 */}
-                          <div
-                            className={`
-          flex items-center gap-2
-          overflow-hidden
-          max-w-0 opacity-0
-          transition-all duration-200
-          group-hover:max-w-28 group-hover:opacity-100
-          ${isMe ? 'ml-2' : 'mr-2'}
-        `}
-                          >
-                            {(msg.type === 'TEXT' || (msg.type === 'IMAGE' && msg.content)) && (
-                              <button
-                                data-id={msg.id.toString()}
-                                onClick={() => { setEditingMessageId(msg.id) }}
-                                className="edit-msg-btn text-gray-500 hover:text-white"
-                                aria-label="메시지 편집"
-                                title="편집"
-                              >
-                                <Edit3 className="w-3 h-3 pointer-events-none" />
-                              </button>
-                            )}
+                    {/* Message Content */}
+                    <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}>
+                      {/* Sender name for group messages */}
+                      {showSenderName && !isMe && (
+                        <p className="text-sm text-gray-500 mb-1 px-1 animate-fadeIn">
+                          <SenderName authorId={msg.authorId} />
+                        </p>
+                      )}
 
-                            <button
-                              data-id={msg.id.toString()}
-                              onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
-                              className="delete-msg-btn text-gray-500 hover:text-white"
-                              aria-label="메시지 삭제"
-                              title="삭제"
-                            >
-                              <Trash2 className="w-3 h-3 pointer-events-none" />
-                            </button>
-
-                            {!isMe && (msg.type === 'TEXT' || msg.type === 'IMAGE') && i === messages.length - 1 && !isWaitingForResponse && (
-                              <button
-                                data-id={msg.id.toString()}
-                                onClick={() => {
-                                  console.log('Reroll message', msg.id)
-                                  dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
-                                  SendMessage(room, setTypingCharacterId)
-                                    .finally(() => {
-                                      setIsWaitingForResponse(false);
-                                    });
-                                }}
-                                className="reroll-msg-btn text-gray-500 hover:text-white"
-                                aria-label="다시 생성"
-                                title="다시 생성"
-                              >
-                                <RefreshCw className="w-3 h-3 pointer-events-none" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* 타임스탬프: 버튼이 펼쳐질 때 자연스럽게 옆으로 밀림 */}
-                          <p
-                            className="text-xs text-gray-500 shrink-0 self-end"
-                          >
-                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                      {/* Message bubble with hover controls */}
+                      <div className={`relative group/message ${isMe ? 'flex-row-reverse' : ''} flex items-end ${editingMessageId === msg.id ? 'w-full' : ''}`}>
+                        <div className={`message-content-wrapper ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}>
+                          {renderMessageContent()}
                         </div>
 
+                        {/* Message controls - Instagram DM style */}
+                        <div className={`absolute ${isMe ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex items-center space-x-1 opacity-0 group-hover/message:opacity-100 transition-all duration-300 transform ${isMe ? 'translate-x-2' : '-translate-x-2'} group-hover/message:translate-x-0`}>
+                          {(msg.type === 'TEXT' || (msg.type === 'IMAGE' && msg.content)) && (
+                            <button
+                              data-id={msg.id.toString()}
+                              onClick={() => { setEditingMessageId(msg.id) }}
+                              className="edit-msg-btn p-2 text-gray-400 hover:text-gray-600 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
+                              aria-label="메시지 편집"
+                              title="편집"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          <button
+                            data-id={msg.id.toString()}
+                            onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
+                            className="delete-msg-btn p-2 text-gray-400 hover:text-red-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
+                            aria-label="메시지 삭제"
+                            title="삭제"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+
+                          {!isMe && (msg.type === 'TEXT' || msg.type === 'IMAGE') && i === messages.length - 1 && !isWaitingForResponse && (
+                            <button
+                              data-id={msg.id.toString()}
+                              onClick={() => {
+                                console.log('Reroll message', msg.id)
+                                dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
+                                setIsWaitingForResponse(true);
+                                SendMessage(room, setTypingCharacterId)
+                                  .finally(() => {
+                                    setIsWaitingForResponse(false);
+                                  });
+                              }}
+                              className="reroll-msg-btn p-2 text-gray-400 hover:text-blue-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
+                              aria-label="다시 생성"
+                              title="다시 생성"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Timestamp and read status */}
+                      {(i === groupInfo.endIndex || (i < messages.length - 1 && messages[i + 1].authorId !== msg.authorId)) && (
+                        <div className={`flex items-center mt-1 md:mt-2 ${isMe ? 'flex-row-reverse' : ''} gap-2 animate-fadeIn`}>
+                          <p className="text-sm text-gray-400">
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          {showUnread && (
+                            <span className="text-sm text-blue-500 animate-pulse">전송됨</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>}
+              )}
             </React.Fragment>
           );
         })}
 
         {typingCharacterId && (
-          <div className="flex items-start gap-3 animate-slideUp">
-            <div className="shrink-0 w-10 h-10 mt-1">
+          <div className="flex items-end space-x-2 mt-2 md:mt-3 mb-4 animate-slideUp">
+            <div className="shrink-0 w-10 h-10">
               {(() => {
                 const typingChar = allCharacters.find(c => c.id === typingCharacterId);
                 return typingChar ? <Avatar char={typingChar} size="sm" /> : null;
               })()}
             </div>
-            <div className="px-4 py-3 rounded-2xl bg-gray-700">
-              <div className="flex items-center space-x-1">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></span>
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></span>
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></span>
+            <div className="px-4 py-4 rounded-2xl bg-gray-200 rounded-bl-md min-h-[3rem]">
+              <div className="flex items-center justify-center gap-2 h-full">
+                <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1.4s' }}></span>
+                <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1.4s' }}></span>
+                <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1.4s' }}></span>
               </div>
             </div>
           </div>

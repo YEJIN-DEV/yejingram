@@ -1,4 +1,8 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../app/store';
+import { selectCharacterById } from '../../entities/character/selectors';
+import type { Character } from '../../entities/character/types';
 
 interface SliderProps {
     id: string;
@@ -23,11 +27,16 @@ function Slider({ id, description, left, right, value, onChange }: SliderProps) 
 }
 
 interface AttributeSlidersProps {
-    char: any; // Partial<Character>
-    handleInputChange: (field: any, value: any) => void;
+    characterId: number;
+    draft?: Character;
+    onDraftChange?: (character: Character) => void;
 }
 
-export function AttributeSliders({ char, handleInputChange }: AttributeSlidersProps) {
+export function AttributeSliders({ characterId, draft, onDraftChange }: AttributeSlidersProps) {
+    const storeCharacter = useSelector((state: RootState) => selectCharacterById(state, characterId));
+    const source = draft && draft.id === characterId ? draft : storeCharacter;
+    if (!source) return null;
+
     const sliders = [
         { id: 'responseTime', description: '응답 속도', left: '느림', right: '빠름' },
         { id: 'thinkingTime', description: '생각 시간', left: '짧음', right: '김' },
@@ -38,14 +47,19 @@ export function AttributeSliders({ char, handleInputChange }: AttributeSlidersPr
     return (
         <div className="content-inner pt-4 space-y-4">
             {sliders.map(slider => (
-                <Slider 
+                <Slider
                     key={slider.id}
                     id={`character-${slider.id}`}
                     description={slider.description}
                     left={slider.left}
                     right={slider.right}
-                    value={char[slider.id]}
-                    onChange={e => handleInputChange(slider.id, e.target.value)}
+                    value={String((source as any)[slider.id] ?? '')}
+                    onChange={e => {
+                        const num = parseInt(e.target.value, 10);
+                        if (draft && onDraftChange) {
+                            onDraftChange({ ...draft, [slider.id]: num } as Character);
+                        }
+                    }}
                 />
             ))}
         </div>

@@ -4,30 +4,47 @@ export interface ApiConfig {
     apiKey: string;
     baseUrl?: string;
     model: string;
+    imageModel?: string;
     customModels: string[];
     projectId?: string;
     location?: string;
     accessToken?: string;
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    topK?: number;
 }
 
-export interface MainPrompts {
-    system_rules: string;
-    role_and_objective: string;
-    memory_generation: string;
-    character_acting: string;
-    message_writing_structured: string;
-    message_writing_unstructured: string;
-    language: string;
-    additional_instructions: string;
-    sticker_usage: string;
-    group_chat_context: string;
-    open_chat_context: string;
+export type PromptRole = 'system' | 'assistant' | 'user';
+
+export type PromptType =
+    | "generation"       // 캐릭터 생성
+    | "image-generation" // 이미지 응답 생성
+    | "plain"            // 일반 텍스트 기반 시스템/어시스턴트 메시지
+    | "plain-structured" // 구조화된 JSON 출력 요구
+    | "plain-unstructured" // 비구조화된 텍스트 출력 요구
+    | "plain-group"     // 그룹챗 컨텍스트
+    | "plain-open"      // 오픈챗 컨텍스트
+    | "extraSystemInstruction" // 추가 시스템 지시
+    | "userDescription" // 사용자 설명
+    | "characterPrompt" // 캐릭터 설명
+    | "lorebook"        // 로어북 섹션
+    | "authornote"      // 작가의 노트
+    | "memory"          // 메모리   
+    | "chat";           // 채팅 기록
+
+
+export interface PromptItem {
+    name: string; // 표시용 이름
+    type: PromptType; // 프롬프트 분류(예: rule, guideline, style, language, context, generation 등)
+    role?: PromptRole; // 적용 역할
+    content?: string; // 실제 프롬프트 내용
 }
 
 export interface Prompts {
-    main: MainPrompts;
-    profile_creation: string;
-    character_sheet_generation: string;
+    main: PromptItem[];
+    profile_creation: PromptItem;
+    image_response_generation: PromptItem;
 }
 
 export interface SettingsState {
@@ -49,4 +66,14 @@ export interface SettingsState {
     randomMessageFrequencyMax: number;
     prompts: Prompts;
     useStructuredOutput: boolean;
+    useImageResponse?: boolean | undefined;
+    speedup: number;
+    personas: Persona[];
+    selectedPersonaId: string | null;
+}
+
+export interface Persona {
+    id: string;
+    name: string;
+    description: string;
 }

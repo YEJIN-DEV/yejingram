@@ -1,3 +1,5 @@
+import type { Lore } from "../lorebook/types";
+
 export interface Sticker {
     id: string;
     name: string;
@@ -14,11 +16,22 @@ export interface Character {
     thinkingTime: number
     reactivity: number
     tone: number
-    memories: string[]
     proactiveEnabled: boolean
     messageCountSinceLastSummary: number
     media: string[]
     stickers: Sticker[]
+    lorebook?: Lore[]
+}
+
+export interface PersonaChatAppCharacterCard {
+    name: string;
+    prompt: string;
+    responseTime: string;   // 숫자처럼 보이지만 JSON에서는 string이므로 string으로 정의
+    thinkingTime: string;
+    reactivity: string;
+    tone: string;
+    source: "PersonaChatAppCharacterCard"; // 리터럴 타입으로 고정
+    proactiveEnabled: boolean;
 }
 
 export const defaultCharacters = [
@@ -31,10 +44,26 @@ export const defaultCharacters = [
         thinkingTime: 10,
         reactivity: 1,
         tone: 10,
-        memories: [],
         proactiveEnabled: true,
         messageCountSinceLastSummary: 0,
         media: [], // Add media storage for images
-        stickers: [] // Add sticker storage for character stickers
+        stickers: [], // Add sticker storage for character stickers
+        lorebook: [],
     }
 ]
+
+export const newCharacterDefault: Character = {
+    id: -1,
+    name: '',
+    prompt: '',
+    avatar: null,
+    responseTime: 5,
+    thinkingTime: 5,
+    reactivity: 5,
+    tone: 5,
+    proactiveEnabled: true,
+    messageCountSinceLastSummary: 0,
+    media: [],
+    stickers: [],
+    lorebook: [],
+};

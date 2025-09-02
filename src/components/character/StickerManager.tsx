@@ -1,16 +1,40 @@
 import React, { useState, useRef } from 'react';
 import { Plus, CheckSquare, CheckCircle, Trash2, Edit3 } from 'lucide-react';
-import type { Sticker } from '../../entities/character/types';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCharacterById } from '../../entities/character/selectors';
+import { charactersActions } from '../../entities/character/slice';
+import type { RootState } from '../../app/store';
+import type { Sticker, Character } from '../../entities/character/types';
+import { nanoid } from '@reduxjs/toolkit';
 
 interface StickerManagerProps {
-    stickers: Sticker[];
-    onStickersChange: (stickers: Sticker[]) => void;
+    characterId: number;
+    draft?: Character;
+    onDraftChange?: (character: Character) => void;
 }
 
-export function StickerManager({ stickers, onStickersChange }: StickerManagerProps) {
+export function StickerManager({ characterId, draft, onDraftChange }: StickerManagerProps) {
+    const dispatch = useDispatch();
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedStickers, setSelectedStickers] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const characterFromStore = useSelector((state: RootState) => selectCharacterById(state, characterId));
+    const character = draft && draft.id === characterId ? draft : characterFromStore;
+    if (!character) {
+        return (
+            <div className="content-inner pt-4 space-y-4 text-sm text-gray-400">
+                선택된 캐릭터가 없습니다.
+            </div>
+        );
+    }
+
+    const stickers = character.stickers || [];
+
+    const onStickersChange = (newStickers: Sticker[]) => {
+        if (draft && onDraftChange) {
+            onDraftChange({ ...draft, stickers: newStickers });
+        }
+    };
 
     const handleAddStickerClick = () => {
         fileInputRef.current?.click();
@@ -25,12 +49,16 @@ export function StickerManager({ stickers, onStickersChange }: StickerManagerPro
             reader.onload = (e) => {
                 const data = e.target?.result as string;
                 const newSticker: Sticker = {
-                    id: Math.random().toString(36).slice(2),
+                    id: nanoid(),
                     name: file.name,
                     data,
                     type: file.type,
                 };
-                onStickersChange([...stickers, newSticker]);
+                if (draft && onDraftChange) {
+                    onStickersChange([...stickers, newSticker]);
+                } else {
+                    dispatch(charactersActions.addSticker({ characterId, sticker: newSticker }));
+                }
             };
             reader.readAsDataURL(file);
         }
@@ -39,8 +67,14 @@ export function StickerManager({ stickers, onStickersChange }: StickerManagerPro
     const handleDeleteSelected = () => {
         if (selectedStickers.length === 0) return;
         if (confirm(`선택한 스티커 ${selectedStickers.length}개를 삭제하시겠습니까?`)) {
-            const newStickers = stickers.filter(s => !selectedStickers.includes(s.id));
-            onStickersChange(newStickers);
+            if (draft && onDraftChange) {
+                const newStickers = stickers.filter(s => !selectedStickers.includes(s.id));
+                onStickersChange(newStickers);
+            } else {
+                for (const id of selectedStickers) {
+                    dispatch(charactersActions.deleteSticker({ characterId, stickerId: id }));
+                }
+            }
             setSelectedStickers([]);
             setSelectionMode(false);
         }
@@ -49,10 +83,14 @@ export function StickerManager({ stickers, onStickersChange }: StickerManagerPro
     const handleEditName = (stickerId: string, currentName: string) => {
         const newName = prompt('새 스티커 이름을 입력하세요:', currentName);
         if (newName && newName.trim() !== '') {
-            const newStickers = stickers.map(s =>
-                s.id === stickerId ? { ...s, name: newName.trim() } : s
-            );
-            onStickersChange(newStickers);
+            if (draft && onDraftChange) {
+                const newStickers = stickers.map(s =>
+                    s.id === stickerId ? { ...s, name: newName.trim() } : s
+                );
+                onStickersChange(newStickers);
+            } else {
+                dispatch(charactersActions.editStickerName({ characterId, stickerId, newName: newName.trim() }));
+            }
         }
     };
 
