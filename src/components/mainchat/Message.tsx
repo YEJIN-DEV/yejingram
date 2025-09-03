@@ -12,11 +12,42 @@ import { Avatar } from '../../utils/Avatar';
 import { SendMessage } from '../../services/LLMcaller';
 import type { Room } from '../../entities/room/types';
 import { inviteCharacter } from '../../utils/inviteCharacter';
+import { UrlPreview } from './chatcontents/UrlPreviewProps';
 
 // Helper function for date formatting
 const formatDateSeparator = (date: Date): string => {
   const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
   return date.toLocaleDateString(undefined, options);
+};
+
+// Helper function to extract URLs from text
+const extractUrls = (text: string): string[] => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.match(urlRegex) || [];
+};
+
+// Helper function to render text with links
+const renderTextWithLinks = (text: string, isMe: boolean) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`underline hover:opacity-80 ${isMe ? 'text-blue-200 hover:text-blue-100' : 'text-blue-600 hover:text-blue-800'
+            }`}
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
 };
 
 // Helper function to find message group
@@ -240,12 +271,17 @@ const MessageList: React.FC<MessageListProps> = ({
                 </div>
               );
             } else if (msg.type === 'TEXT') {
+              const urls = extractUrls(msg.content || '');
+              const hasUrls = urls.length > 0;
               return (
-                <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 text-gray-900'
-                  } ${cornerClass}`}>
-                  <div className="break-words">{msg.content}</div>
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-2`}>
+                  <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 text-gray-900'
+                    } ${cornerClass}`}>
+                    <div className="break-words">{renderTextWithLinks(msg.content || '', isMe)}</div>
+                  </div>
+                  {hasUrls && <UrlPreview url={urls[0]} />}
                 </div>
               );
             }
