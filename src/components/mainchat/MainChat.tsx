@@ -22,6 +22,7 @@ import { LorebookEditor } from '../character/LorebookEditor';
 import { settingsActions } from '../../entities/setting/slice';
 import { charactersActions } from '../../entities/character/slice';
 import { MemoryManager } from '../character/MemoryManager';
+import { useWebSocket } from '../../services/websocket/useWebSocket';
 
 interface MainChatProps {
   room: Room | null;
@@ -46,6 +47,10 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
   const [isLoreBookOpen, setIsLoreBookOpen] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
+
+  const { send } = useWebSocket('ws://localhost:8080', {
+    onChatRequest: async (m) => { if (m.payload) await handleSendMessage(m.payload.content); },
+  });
 
   // Pending LLM request management: store last pending room/message and debounce timer
   const pendingRequestRef = useRef<{ room: Room; } | null>(null);
@@ -74,6 +79,28 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
       }, 0);
     }
   }, [room, messages]);
+
+  useEffect(() => {
+    const sendMessages = async () => {
+      if ((room?.id && (!prevRoomIdRef.current || prevRoomIdRef.current !== room?.id))) {
+        await send({ type: 'ROOM_LEAVE' });
+        await send({ type: 'ROOM_JOIN' });
+        return;
+      }
+    };
+    sendMessages();
+  }, [room]);
+
+  const prevRoomIdRef = useRef("0");
+
+  useEffect(() => {
+    if ((room?.id && (!prevRoomIdRef.current || prevRoomIdRef.current !== room?.id))) {
+      prevRoomIdRef.current = room?.id;
+      return;
+    }
+    const last = messages[messages.length - 1];
+    send({ type: 'CHAT_RESPONSE', payload: { content: last.content } });
+  }, [messages, room]);
 
   const scrollToBottom = (container: HTMLDivElement | null) => {
     // rAF보다 직접 할당이 모바일에서 더 안정적일 때가 많습니다
