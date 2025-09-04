@@ -1,9 +1,11 @@
 import type { Sticker } from "../character/types";
 
-export type MessageType = "TEXT" | "IMAGE" | "STICKER" | "SYSTEM";
+export type MessageType = "TEXT" | "IMAGE" | "STICKER" | "SYSTEM" | "AUDIO" | "VIDEO" | "FILE";
 
-export type ImageToSend = {
+export type FileToSend = {
     dataUrl: string;
+    mimeType: string;
+    name?: string;
 };
 
 export interface Message {
@@ -14,6 +16,6 @@ export interface Message {
     type: MessageType;
     createdAt: string;
     sticker?: Sticker;
-    image?: ImageToSend;
+    file?: FileToSend;
     leaveCharId?: number;
 }

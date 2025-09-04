@@ -236,9 +236,9 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         const baseText = msg.content ? `${header}${msg.content}` : (header ? header : '');
         const parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; })[] = [{ text: baseText }];
-        if (msg.image) {
-            const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
-            const base64Data = msg.image.dataUrl.split(',')[1];
+        if (msg.file) {
+            const mimeType = msg.file.mimeType;
+            const base64Data = msg.file.dataUrl.split(',')[1];
             if (mimeType && base64Data) {
                 parts.push({
                     inline_data: {
@@ -357,21 +357,23 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         const content: ({ type: string; text: string; } |
         { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[] = [{ type: 'text', text: msg.content ? `${header}${msg.content}` : (header ? header : '') }];
-        if (msg.image && model !== "grok-3") {
-            const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
-            if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
-                throw new Error(`Unsupported image type: ${mimeType} `);
-            }
-            const base64Data = msg.image.dataUrl.split(',')[1];
-            if (mimeType && base64Data) {
-                content.push({
-                    type: 'image',
-                    source: {
-                        data: base64Data,
-                        media_type: mimeType,
-                        type: 'base64'
-                    }
-                });
+        if (msg.file && model !== "grok-3") {
+            const mimeType = msg.file.mimeType;
+            if (mimeType.startsWith('image')) {
+                if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
+                    throw new Error(`Unsupported image type: ${mimeType} `);
+                }
+                const base64Data = msg.file.dataUrl.split(',')[1];
+                if (mimeType && base64Data) {
+                    content.push({
+                        type: 'image',
+                        source: {
+                            data: base64Data,
+                            media_type: mimeType,
+                            type: 'base64'
+                        }
+                    });
+                }
             }
         }
         if (msg.sticker) {
@@ -472,8 +474,10 @@ function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?
         if (text) {
             parts.push({ type: 'text', text });
         }
-        if (msg.image?.dataUrl) {
-            parts.push({ type: 'image_url', image_url: { url: msg.image.dataUrl } });
+        if (msg.file?.dataUrl) {
+            if (msg.file.mimeType.startsWith('image')) {
+                parts.push({ type: 'image_url', image_url: { url: msg.file.dataUrl } });
+            }
         }
 
         // Use array content when we have image or want multimodal; otherwise plain string

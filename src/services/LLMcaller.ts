@@ -104,8 +104,10 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
         if (inlineDataBody) {
             message = {
                 ...message,
-                image: {
-                    dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`
+                file: {
+                    dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`,
+                    mimeType: inlineDataBody.mimeType,
+                    name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
                 }
             };
         } else {

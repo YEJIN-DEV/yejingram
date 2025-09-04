@@ -13,6 +13,7 @@ import { SendMessage } from '../../services/LLMcaller';
 import type { Room } from '../../entities/room/types';
 import { inviteCharacter } from '../../utils/inviteCharacter';
 import { UrlPreview } from './chatcontents/UrlPreviewProps';
+import { renderFile } from './FilePreview';
 
 // Helper function for date formatting
 const formatDateSeparator = (date: Date): string => {
@@ -173,24 +174,12 @@ const MessageList: React.FC<MessageListProps> = ({
               // Editing state - Instagram DM Style
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  {msg.type === 'IMAGE' ? (
-                    <>
-                      <img src={msg.content} className="max-w-xs max-h-80 rounded-2xl object-cover mb-2 cursor-pointer" onClick={() => window.open(msg.content)} />
-                      <textarea
-                        data-id={msg.id.toString()}
-                        className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-32 md:min-h-40 transition-all duration-300 focus:scale-105"
-                        rows={4}
-                        defaultValue={msg.content}
-                      ></textarea>
-                    </>
-                  ) : (
-                    <textarea
-                      data-id={msg.id.toString()}
-                      className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 focus:scale-105"
-                      rows={5}
-                      defaultValue={msg.content || ''}
-                    ></textarea>
-                  )}
+                  <textarea
+                    data-id={msg.id.toString()}
+                    className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 focus:scale-105"
+                    rows={5}
+                    defaultValue={msg.content || ''}
+                  ></textarea>
                   <div className="flex items-center space-x-2 mt-2">
                     <button onClick={() => {
                       setEditingMessageId(null);
@@ -243,31 +232,20 @@ const MessageList: React.FC<MessageListProps> = ({
               } else {
                 return stickerElement;
               }
-            } else if (msg.type === 'IMAGE' && msg.image?.dataUrl) {
-              const imageUrl = msg.image?.dataUrl;
-              const isExpanded = expandedStickers.has(msg.id.toString());
-              const sizeClass = isExpanded ? 'max-w-sm' : 'max-w-60';
-              const heightStyle = isExpanded ? { maxHeight: '400px' } : { maxHeight: '200px' };
-
-              const imageTag = (
-                <div className="inline-block cursor-pointer transition-all duration-300 hover:scale-105 transform" onClick={() => toggleStickerSize(msg.id.toString())}>
-                  <img src={imageUrl} className={`${sizeClass} rounded-2xl object-cover transition-all duration-500 hover:brightness-110`} style={heightStyle} />
-                </div>
-              );
-
-              const captionTag = msg.content && msg.content.trim() ? (
-                <div className={`mt-1 px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 text-gray-900'
-                  } ${cornerClass}`}>
-                  <div className="break-words">{msg.content}</div>
-                </div>
-              ) : null;
+            } else if ((msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.type === 'VIDEO' || msg.type === 'FILE') && msg.file?.dataUrl) {
+              const hasTextContent = msg.content && msg.content.trim();
 
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
-                  {imageTag}
-                  {captionTag}
+                  {renderFile(msg.file, false)}
+                  {hasTextContent && (
+                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 text-gray-900'
+                      } ${cornerClass}`}>
+                      <div className="break-words">{renderTextWithLinks(msg.content || '', isMe)}</div>
+                    </div>
+                  )}
                 </div>
               );
             } else if (msg.type === 'TEXT') {
@@ -349,7 +327,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
                         {/* Message controls - Instagram DM style */}
                         <div className={`absolute ${isMe ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex items-center space-x-1 opacity-0 group-hover/message:opacity-100 transition-all duration-300 transform ${isMe ? 'translate-x-2' : '-translate-x-2'} group-hover/message:translate-x-0`}>
-                          {(msg.type === 'TEXT' || (msg.type === 'IMAGE' && msg.content)) && (
+                          {msg.type === 'TEXT' && (
                             <button
                               data-id={msg.id.toString()}
                               onClick={() => { setEditingMessageId(msg.id) }}
@@ -371,7 +349,7 @@ const MessageList: React.FC<MessageListProps> = ({
                             <Trash2 className="w-4 h-4" />
                           </button>
 
-                          {!isMe && (msg.type === 'TEXT' || msg.type === 'IMAGE') && i === messages.length - 1 && !isWaitingForResponse && (
+                          {!isMe && msg.type === 'TEXT' && i === messages.length - 1 && !isWaitingForResponse && (
                             <button
                               data-id={msg.id.toString()}
                               onClick={() => {
