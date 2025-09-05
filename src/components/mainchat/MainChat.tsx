@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, Globe, Users, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
+import { Menu, Globe, Users, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
@@ -714,7 +714,7 @@ function InputArea({
             }}
             className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl hover:bg-gray-50 text-gray-700"
           >
-            <ImageIcon className="w-4 h-4" /> 사진
+            <Paperclip className="w-4 h-4" /> 파일
           </button>
         </div>
       )}
