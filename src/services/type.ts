@@ -37,6 +37,10 @@ export interface GeminiApiPayload {
                 mime_type: string;
                 data: string;
             };
+        } | {
+            file_data: {
+                file_uri: string;
+            };
         })[];
     }[];
     systemInstruction?: {

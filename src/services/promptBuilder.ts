@@ -16,7 +16,7 @@ import type { Lore } from "../entities/lorebook/types";
 
 type GeminiContent = {
     role: string;
-    parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; })[];
+    parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; } | { file_data: { file_uri: string; }; })[];
 };
 
 type ClaudeMessage = {
@@ -235,10 +235,11 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
     // Add messages
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         const baseText = msg.content ? `${header}${msg.content}` : (header ? header : '');
-        const parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; })[] = [{ text: baseText }];
+        const parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; } | { file_data: { file_uri: string; }; })[] = [{ text: baseText }];
         if (msg.file) {
             const mimeType = msg.file.mimeType;
-            const base64Data = msg.file.dataUrl.split(',')[1];
+            const dataUrl = msg.file.dataUrl;
+            const base64Data = dataUrl.split(',')[1];
             if (mimeType && base64Data) {
                 parts.push({
                     inline_data: {
@@ -247,6 +248,18 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
                     }
                 });
             }
+        }
+        // Check for YouTube links in content
+        const youtubeRegex = /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]+)/g;
+        const matches = msg.content?.match(youtubeRegex);
+        if (matches) {
+            matches.forEach(url => {
+                parts.push({
+                    file_data: {
+                        file_uri: url
+                    }
+                });
+            });
         }
         if (msg.sticker) {
             parts.push({ text: `${header}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
