@@ -387,7 +387,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
             }
         } else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
             messagesPart.push({
-                role: 'system',
+                role: 'assistant',
                 content: [{ type: 'text', text: replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, roomMemories, ...groupValues }) }]
             });
         } else if (item && item.type === 'chat') {
@@ -396,7 +396,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
         } else if (item && (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt')) {
             const content = getPromptItemContent(item, character, currentRoom, messages, persona);
             if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
-                const role = item.role || 'system';
+                const role = item.role === 'system' ? 'assistant' : item.role || 'assistant';
                 messagesPart.push({
                     role,
                     content: [{ type: 'text', text: replacePlaceholders(content, { userName, userDescription, character, roomMemories, ...groupValues }) }]
@@ -425,10 +425,11 @@ export function buildClaudeApiPayload(
     character: Character,
     messages: Message[],
     isProactive: boolean,
+    useStructuredOutput: boolean,
     extraSystemInstruction?: string
 ): ClaudeApiPayload {
-    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, messages, false);
-    const contents = buildClaudeContents(messages, isProactive, persona, model, character, extraSystemInstruction, room, false);
+    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, messages, useStructuredOutput);
+    const contents = buildClaudeContents(messages, isProactive, persona, model, character, extraSystemInstruction, room, useStructuredOutput);
 
     return {
         model: model,
@@ -439,7 +440,7 @@ export function buildClaudeApiPayload(
         }],
         temperature: selectCurrentApiConfig(store.getState()).temperature || 1,
         top_k: selectCurrentApiConfig(store.getState()).topK || 40,
-        top_p: selectCurrentApiConfig(store.getState()).topP || 0.95,
+        ...(model.startsWith("claude-opus-4-1") ? {} : { top_p: selectCurrentApiConfig(store.getState()).topP || 0.95 }),
         max_tokens: selectCurrentApiConfig(store.getState()).maxTokens || 8192,
     };
 }
@@ -548,36 +549,21 @@ export function buildOpenAIApiPayload(
 }
 
 export function buildGeminiImagePayload(prompt: string, isSelfie: boolean, char: Character) {
-    if (isSelfie && char.avatar) {
-        return {
-            contents: [{
-                parts: [
-                    { "text": prompt + `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` },
-                    { "inline_data": { "mime_type": char.avatar.split(',')[0].split(':')[1].split(';')[0], "data": char.avatar.split(',')[1] } }
-                ]
-            }],
-            safetySettings: [
-                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    return {
+        contents: [{
+            parts: [
+                { "text": `${prompt}${isSelfie && char.avatar ? `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` : ''}` },
+                ...(isSelfie && char.avatar ? [{ "inline_data": { "mime_type": char.avatar.split(',')[0].split(':')[1].split(';')[0], "data": char.avatar.split(',')[1] } }] : []),
             ]
-        };
-    } else {
-        return {
-            contents: [{
-                parts: [
-                    { "text": prompt }
-                ]
-            }],
-            safetySettings: [
-                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-            ]
-        };
-    }
+        }],
+        safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ]
+    };
+    
 }
 
 export function buildNovelAIImagePayload(prompt: string, model: string) {

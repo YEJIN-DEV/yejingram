@@ -70,7 +70,7 @@ export interface ClaudeApiPayload {
     }[];
     temperature: number;
     top_k: number;
-    top_p: number;
+    top_p?: number;
     max_tokens: number;
 }
 

@@ -217,7 +217,7 @@ async function callApi(
             break;
         case 'claude':
         case 'grok':
-            payload = buildClaudeApiPayload(apiConfig.model, room, persona, character, messages, isProactive, extraSystemInstruction);
+            payload = buildClaudeApiPayload(apiConfig.model, room, persona, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
             break;
         case 'openai':
         case 'customOpenAI':
