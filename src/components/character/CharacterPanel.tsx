@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState, useRef } from 'react';
-import { Image, Upload, Download, Sparkles, MessageSquarePlus, ChevronDown } from 'lucide-react';
+import { Image, Upload, Download, MessageSquarePlus, ChevronDown } from 'lucide-react';
 import { selectEditingCharacterId, selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
 import type { RootState } from '../../app/store';
@@ -250,25 +250,25 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                             </div>
                         )}
 
-                        <details className="group border-t border-gray-200 pt-4">
+                        <details className="group/additional border-t border-gray-200 pt-4">
                             <summary className="flex items-center justify-between cursor-pointer list-none">
                                 <span className="text-base font-medium text-gray-900">추가 설정</span>
-                                <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
+                                <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open/additional:rotate-180" />
                             </summary>
                             <div className="content-wrapper">
                                 <div className="content-inner pt-6 space-y-6">
-                                    <details className="group border-t border-gray-200 pt-2">
+                                    <details className="group/sticker border-t border-gray-200 pt-2">
                                         <summary className="flex items-center justify-between cursor-pointer list-none py-2">
                                             <h4 className="text-sm font-medium text-gray-700">스티커</h4>
-                                            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
+                                            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open/sticker:rotate-180" />
                                         </summary>
                                         <StickerManager characterId={char.id} draft={char} onDraftChange={setChar} />
                                     </details>
                                     {/* 메모리는 별도 탭으로 이동 */}
-                                    <details className="group border-t border-gray-200 pt-2">
+                                    <details className="group/attribute border-t border-gray-200 pt-2">
                                         <summary className="flex items-center justify-between cursor-pointer list-none py-2">
                                             <h4 className="text-sm font-medium text-gray-700">메시지 응답성</h4>
-                                            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
+                                            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open/attribute:rotate-180" />
                                         </summary>
                                         <AttributeSliders characterId={char.id} draft={char} onDraftChange={setChar} />
                                     </details>
