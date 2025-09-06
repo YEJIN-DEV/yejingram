@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, Users, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
+import { Menu, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
@@ -9,7 +9,7 @@ import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import MessageList from './Message';
 import { messagesActions } from '../../entities/message/slice';
 import { roomsActions } from '../../entities/room/slice';
-import { Avatar } from '../../utils/Avatar';
+import { Avatar, GroupChatAvatar } from '../../utils/Avatar';
 import { SendMessage, SendGroupChatMessage } from '../../services/LLMcaller';
 import type { Sticker } from '../../entities/character/types';
 import { StickerPanel } from './StickerPanel';
@@ -442,9 +442,9 @@ function ChatHeader({
   const getHeaderAvatar = () => {
     if (room.type === 'Group') {
       return (
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-          <Users className="w-6 h-6 text-white" />
-        </div>
+        <>
+          <GroupChatAvatar participants={room.memberIds.map(id => memberChars?.find(c => c?.id === id)).filter(Boolean)} />
+        </>
       );
     }
     if (room.type === 'Direct' && character) {
