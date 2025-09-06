@@ -546,3 +546,97 @@ export function buildOpenAIApiPayload(
     };
     return payload;
 }
+
+export function buildGeminiImagePayload(prompt: string, isSelfie: boolean, char: Character) {
+    if (isSelfie && char.avatar) {
+        return {
+            contents: [{
+                parts: [
+                    { "text": prompt + `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` },
+                    { "inline_data": { "mime_type": char.avatar.split(',')[0].split(':')[1].split(';')[0], "data": char.avatar.split(',')[1] } }
+                ]
+            }],
+            safetySettings: [
+                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+            ]
+        };
+    } else {
+        return {
+            contents: [{
+                parts: [
+                    { "text": prompt }
+                ]
+            }],
+            safetySettings: [
+                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+            ]
+        };
+    }
+}
+
+export function buildNovelAIImagePayload(prompt: string, model: string) {
+    function random(min: number, max: number) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    return {
+        "input": prompt,
+        "model": model,
+        "action": "generate",
+        "parameters": {
+            "params_version": 3,
+            "add_original_image": true,
+            "cfg_rescale": 0,
+            "controlnet_strength": 1,
+            "dynamic_thresholding": false,
+            "n_samples": 1,
+            "width": 512,
+            "height": 768,
+            "sampler": "k_dpmpp_sde",
+            "steps": 28,
+            "scale": 5,
+            "negative_prompt": "",
+            "noise_schedule": "native",
+            "normalize_reference_strength_multiple": true,
+            "ucPreset": 3,
+            "uncond_scale": 1,
+            "qualityToggle": false,
+            "legacy_v3_extend": false,
+            "legacy": false,
+            "autoSmea": false,
+            "use_coords": false,
+            "legacy_uc": false,
+            "v4_prompt":{
+                "caption":{
+                    "base_caption": prompt,
+                    "char_captions": []
+                },
+                "use_coords": false,
+                "use_order": true
+            },
+            "v4_negative_prompt":{
+                "caption":{
+                    "base_caption": "",
+                    "char_captions": []
+                },
+                "legacy_uc": false
+            },
+            "reference_image_multiple" : [],
+            "reference_strength_multiple" : [],
+            //add reference image
+            // "image": undefined, 
+            // "strength": undefined,
+            // "noise": undefined,
+            "seed": random(0, 2**32-1),
+            "extra_noise_seed": random(0, 2**32-1),
+            "prefer_brownian": true,
+            "deliberate_euler_ancestral_bug": false,
+            "skip_cfg_above_sigma": null
+        }
+    }
+}

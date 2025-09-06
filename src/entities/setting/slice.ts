@@ -1,16 +1,21 @@
 import { createEntityAdapter, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona } from './types';
+import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona, ImageApiConfig, ImageApiProvider } from './types';
 import { nanoid } from '@reduxjs/toolkit';
 
 export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
-    gemini: { apiKey: '', model: 'gemini-2.5-pro', imageModel: 'gemini-2.5-flash-image-preview', customModels: [], temperature: 1.25, topK: 40, topP: 0.95 },
+    gemini: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], temperature: 1.25, topK: 40, topP: 0.95 },
     vertexai: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], projectId: '', location: 'global', accessToken: '', temperature: 1.25, topK: 40, topP: 0.95 },
     claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [], temperature: 1, topK: 40, topP: 0.95, maxTokens: 8192 },
     openai: { apiKey: '', model: 'gpt-5', customModels: [], temperature: 1.25, topP: 0.95, maxTokens: 8192 },
     grok: { apiKey: '', model: 'grok-4-0709', customModels: [], temperature: 1.25, topP: 0.95, maxTokens: 8192 },
     openrouter: { apiKey: '', model: '', customModels: [] },
     customOpenAI: { apiKey: '', baseUrl: '', model: '', customModels: [] },
+};
+
+export const initialImageApiConfigs: Record<ImageApiProvider, ImageApiConfig> = {
+    gemini: { apiKey: '', model: 'gemini-2.5-flash-image-preview'},
+    novelai: { apiKey: '', model: 'nai-diffusion-2-1'},
 };
 
 export const initialState: SettingsState = {
@@ -51,7 +56,9 @@ export const initialState: SettingsState = {
         image_response_generation: { name: '이미지 응답 생성', type: 'image-generation', role: 'assistant', content: `- **imageGenerationSetting** refers to the setting of image generation. **prompt** refers to the prompt that will be used as input to generate an image with this content. Use the conversation that triggered the current image generation, as well as previous contexts, to create an appropriate prompt for image generation. The more details you can include in the prompt, the better (i.e., the current time, the name of the {{char}}, the name of <user>, the background(location, environment, weather, etc.), the mood, any objects mentioned during the conversation or their placement, any text that should appear in the image, or any detailed appearance (clothing, accessories, etc.) that the conversation calls for). The prompt MUST include the angle (POV) of the photo that was taken. Mostly it will be the 'photo taken by {{char}} self (which is, FPV through {{char}}'s handheld device)', but not limited to. The prompt MUST start with “Create a picture...". **isSelfie** refers to that the image will include {{char}}'s selfie, or reflected appearance. Return this ONLY when you need to generate this kind of picture. IMPORTANT: This cannot be used together with 'sticker'.` },
     },
     apiProvider: 'gemini',
+    imageApiProvider: 'gemini',
     apiConfigs: initialApiConfigs,
+    imageApiConfigs: initialImageApiConfigs,
     fontScale: 1.0,
     userName: '',
     userDescription: '',

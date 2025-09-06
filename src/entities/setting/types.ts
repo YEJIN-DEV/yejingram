@@ -1,10 +1,10 @@
 export type ApiProvider = 'gemini' | 'vertexai' | 'claude' | 'openai' | 'grok' | 'openrouter' | 'customOpenAI';
+export type ImageApiProvider = 'gemini' | 'novelai';
 
 export interface ApiConfig {
     apiKey: string;
     baseUrl?: string;
     model: string;
-    imageModel?: string;
     customModels: string[];
     projectId?: string;
     location?: string;
@@ -13,6 +13,11 @@ export interface ApiConfig {
     maxTokens?: number;
     topP?: number;
     topK?: number;
+}
+
+export interface ImageApiConfig {
+    apiKey: string;
+    model: string;
 }
 
 export type PromptRole = 'system' | 'assistant' | 'user';
@@ -53,7 +58,9 @@ export interface SettingsState {
     isEditGroupChatModalOpen: boolean;
     editingRoomId: string | null;
     apiProvider: ApiProvider;
+    imageApiProvider: ImageApiProvider;
     apiConfigs: Record<ApiProvider, ApiConfig>;
+    imageApiConfigs: Record<ImageApiProvider, ImageApiConfig>;
     fontScale: number;
     userName: string;
     userDescription: string;
