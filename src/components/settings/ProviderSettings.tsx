@@ -304,7 +304,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                     {
                         imageProvider === 'gemini' && (
                             <div className="mb-3">
-                                <p className="text-xs text-gray-500">참고: 이미지 생성이 검열될 수 있습니다.</p>
+                                <p className="text-xs text-gray-500">참고: Gemini는 이미지 생성이 검열될 수 있습니다.</p>
                             </div>
                         )
                     }

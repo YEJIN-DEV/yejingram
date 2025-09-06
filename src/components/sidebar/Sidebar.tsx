@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Bot, Plus, X } from 'lucide-react';
+import { Settings, Bot, Plus, X, User } from 'lucide-react';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
@@ -109,6 +109,15 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
                         openCreateGroupChatModal={openCreateGroupChatModal}
                         openEditGroupChatModal={openEditGroupChatModal}
                     />
+                    <div className="group flex items-center justify-between px-4 py-2 bg-gray-50">
+                        <div className="flex items-center space-x-2">
+                            <User className="w-4 h-4 text-gray-500" />
+                            <h3 className="text-sm font-semibold text-gray-700">연락처</h3>
+                            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+                                {filteredCharacters.length}
+                            </span>
+                        </div>
+                    </div>
                     {filteredCharacters.map((char) => (
                         <CharacterList
                             key={char.id}
