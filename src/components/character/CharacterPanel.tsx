@@ -234,9 +234,6 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <label className="text-sm font-medium text-gray-700">인물 정보</label>
-                                <button id="ai-generate-character-btn" className="py-1 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs flex items-center gap-1">
-                                    <Sparkles className="w-3 h-3" /> AI 생성
-                                </button>
                             </div>
                             <textarea id="character-prompt" placeholder="특징, 배경, 관계, 기억 등을 자유롭게 서술해주세요." value={char.prompt} onChange={e => handleInputChange('prompt', e.target.value)} className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm" rows={6}></textarea>
                         </div>

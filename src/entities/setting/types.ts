@@ -23,7 +23,6 @@ export interface ImageApiConfig {
 export type PromptRole = 'system' | 'assistant' | 'user';
 
 export type PromptType =
-    | "generation"       // 캐릭터 생성
     | "image-generation" // 이미지 응답 생성
     | "plain"            // 일반 텍스트 기반 시스템/어시스턴트 메시지
     | "plain-structured" // 구조화된 JSON 출력 요구
@@ -47,7 +46,6 @@ export interface PromptItem {
 
 export interface Prompts {
     main: PromptItem[];
-    profile_creation: PromptItem;
     image_response_generation: PromptItem;
 }
 

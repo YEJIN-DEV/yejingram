@@ -35,7 +35,7 @@ const providerModels: Record<string, string[]> = {
         'grok-4-0709',
         'grok-3'
     ],
-    openrouter: [],
+    // openrouter: [],
     customOpenAI: []
 };
 
