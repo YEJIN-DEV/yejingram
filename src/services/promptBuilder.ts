@@ -55,26 +55,6 @@ const structuredOutputSchema = {
                 required: ["delay"]
             }
         },
-        "characterState": {
-            type: "OBJECT",
-            properties: {
-                "mood": { "type": "NUMBER" },
-                "energy": { "type": "NUMBER" },
-                "socialBattery": { "type": "NUMBER" },
-                "personality": {
-                    type: "OBJECT",
-                    properties: {
-                        "extroversion": { "type": "NUMBER" },
-                        "openness": { "type": "NUMBER" },
-                        "conscientiousness": { "type": "NUMBER" },
-                        "agreeableness": { "type": "NUMBER" },
-                        "neuroticism": { "type": "NUMBER" }
-                    },
-                    required: ["extroversion", "openness", "conscientiousness", "agreeableness", "neuroticism"]
-                }
-            },
-            required: ["mood", "energy", "socialBattery", "personality"]
-        },
         "newMemory": { "type": "STRING" }
     },
     required: ["reactionDelay", "messages"]
@@ -86,8 +66,6 @@ function shouldIncludePromptItem(item: PromptItem, useStructuredOutput: boolean,
     } else if (item.type === 'plain-unstructured' && useStructuredOutput) {
         return false;
     } else if (item.type === 'plain-group' && room?.type !== 'Group') {
-        return false;
-    } else if (item.type === 'plain-open' && room?.type !== 'Open') {
         return false;
     } else if (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt') {
         // 새로운 타입들은 항상 포함 (또는 특정 조건 추가 가능)

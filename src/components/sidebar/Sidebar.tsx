@@ -6,7 +6,6 @@ import CharacterList from './CharacterList';
 import { charactersActions } from '../../entities/character/slice';
 import { selectAllRooms } from '../../entities/room/selectors';
 import GroupChatList from './GroupChatList';
-import OpenChatList from './OpenChatList';
 import type { Room } from '../../entities/room/types';
 
 interface SidebarProps {
@@ -15,19 +14,17 @@ interface SidebarProps {
     openSettingsModal: () => void;
     toggleCharacterPanel: () => void;
     openCreateGroupChatModal: () => void;
-    openCreateOpenChatModal: () => void;
     openEditGroupChatModal: () => void;
     onCloseMobile?: () => void;
 }
 
-function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, openCreateGroupChatModal, openCreateOpenChatModal, openEditGroupChatModal, onCloseMobile }: SidebarProps) {
+function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, openCreateGroupChatModal, openEditGroupChatModal, onCloseMobile }: SidebarProps) {
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const rooms = useSelector(selectAllRooms);
     const [searchQuery, setSearchQuery] = useState('');
 
     const groupChats = rooms.filter((r: Room) => r.type === 'Group');
-    const openChats = rooms.filter((r: Room) => r.type === 'Open');
 
     const filteredCharacters = characters.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -95,12 +92,6 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
                 <div className="px-4 py-2 border-b border-gray-100">
                     <div className="flex space-x-4">
                         <button
-                            onClick={openCreateOpenChatModal}
-                            className="flex items-center text-sm text-blue-500 hover:text-blue-600 font-medium"
-                        >
-                            오픈 채팅 만들기
-                        </button>
-                        <button
                             onClick={openCreateGroupChatModal}
                             className="flex items-center text-sm text-blue-500 hover:text-blue-600 font-medium"
                         >
@@ -111,12 +102,6 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
 
                 {/* Chat Items */}
                 <div className="space-y-0">
-                    <OpenChatList
-                        rooms={openChats}
-                        setRoomId={setRoomId}
-                        selectedRoomId={roomId}
-                        openCreateOpenChatModal={openCreateOpenChatModal}
-                    />
                     <GroupChatList
                         rooms={groupChats}
                         setRoomId={setRoomId}

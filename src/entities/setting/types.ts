@@ -24,7 +24,6 @@ export type PromptType =
     | "plain-structured" // 구조화된 JSON 출력 요구
     | "plain-unstructured" // 비구조화된 텍스트 출력 요구
     | "plain-group"     // 그룹챗 컨텍스트
-    | "plain-open"      // 오픈챗 컨텍스트
     | "extraSystemInstruction" // 추가 시스템 지시
     | "userDescription" // 사용자 설명
     | "characterPrompt" // 캐릭터 설명
@@ -51,7 +50,6 @@ export interface SettingsState {
     isModalOpen: boolean;
     isPromptModalOpen: boolean;
     isCreateGroupChatModalOpen: boolean;
-    isCreateOpenChatModalOpen: boolean;
     isEditGroupChatModalOpen: boolean;
     editingRoomId: string | null;
     apiProvider: ApiProvider;

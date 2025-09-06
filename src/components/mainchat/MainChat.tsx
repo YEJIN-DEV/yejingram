@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, Globe, Users, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
+import { Menu, Users, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
@@ -10,7 +10,7 @@ import MessageList from './Message';
 import { messagesActions } from '../../entities/message/slice';
 import { roomsActions } from '../../entities/room/slice';
 import { Avatar } from '../../utils/Avatar';
-import { SendMessage, SendGroupChatMessage, SendOpenChatMessage } from '../../services/LLMcaller';
+import { SendMessage, SendGroupChatMessage } from '../../services/LLMcaller';
 import type { Sticker } from '../../entities/character/types';
 import { StickerPanel } from './StickerPanel';
 import type { FileToSend } from '../../entities/message/types';
@@ -210,8 +210,6 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     let responsePromise;
     if (targetRoom.type === 'Group') {
       responsePromise = SendGroupChatMessage(targetRoom, setTypingCharacterId);
-    } else if (targetRoom.type === 'Open') {
-      responsePromise = SendOpenChatMessage(targetRoom, setTypingCharacterId);
     } else {
       responsePromise = SendMessage(targetRoom, setTypingCharacterId);
     }
@@ -336,7 +334,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
           onClose={() => setIsLoreBookOpen(false)}
           characterId={room?.type === 'Direct' ? character!.id : undefined}
           memberChars={room?.type === 'Group' ? memberChars : undefined}
-          roomLorebook={(room?.type === 'Group' || room?.type === 'Open') ? (room?.lorebook || []) : undefined}
+          roomLorebook={room?.type === 'Group' ? (room?.lorebook || []) : undefined}
           roomType={room?.type}
           roomId={room?.id}
         />
@@ -442,13 +440,6 @@ function ChatHeader({
 }: ChatHeaderProps) {
   const dispatch = useDispatch();
   const getHeaderAvatar = () => {
-    if (room.type === 'Open') {
-      return (
-        <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-          <Globe className="w-6 h-6 text-white" />
-        </div>
-      );
-    }
     if (room.type === 'Group') {
       return (
         <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
@@ -475,9 +466,6 @@ function ChatHeader({
   };
 
   const getHeaderSubtitle = () => {
-    if (room.type === 'Open') {
-      return `${room.currentParticipants?.length || 0}명 활성 · 오픈 채팅`;
-    }
     if (room.type === 'Group') {
       return memberChars && memberChars.length > 0
         ? memberChars.map(char => char?.name).filter(Boolean).join(', ')
@@ -865,10 +853,10 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
           </button>
         </div>
         <p className="text-sm text-gray-500 mb-3">캐릭터의 로어북을 편집합니다. 로어북은 채팅에서 특정 키워드가 등장할 때 자동으로 적용됩니다.</p>
-        {(roomType === 'Group' || roomType === 'Open') && roomLorebook && (
+        {(roomType === 'Group') && roomLorebook && (
           <details className="mb-6">
             <summary className="flex items-center justify-between text-lg font-semibold text-gray-800 mb-2 cursor-pointer hover:text-gray-600 transition-colors">
-              <span>{roomType === 'Group' ? '그룹' : '오픈'} 채팅 로어북</span>
+              <span>그룹 채팅 로어북</span>
               <ChevronDown className="w-5 h-5 text-gray-500" />
             </summary>
             <LorebookEditor roomId={roomId} roomLorebook={roomLorebook} />

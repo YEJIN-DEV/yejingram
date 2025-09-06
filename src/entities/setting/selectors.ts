@@ -18,11 +18,6 @@ export const selectIsCreateGroupChatModalOpen = createSelector(
     (settings) => settings.isCreateGroupChatModalOpen
 );
 
-export const selectIsCreateOpenChatModalOpen = createSelector(
-    [selectSettingsState],
-    (settings) => settings.isCreateOpenChatModalOpen
-);
-
 export const selectIsEditGroupChatModalOpen = createSelector(
     [selectSettingsState],
     (settings) => settings.isEditGroupChatModalOpen

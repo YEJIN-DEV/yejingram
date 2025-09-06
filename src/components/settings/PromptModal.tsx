@@ -25,7 +25,6 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
         'plain-structured': '구조화된 출력',
         'plain-unstructured': '비구조화된 출력',
         'plain-group': '그룹 컨텍스트',
-        'plain-open': '오픈 컨텍스트',
         'extraSystemInstruction': '추가 시스템 지시문',
         'userDescription': '사용자 설명',
         'characterPrompt': '캐릭터 설명',
@@ -326,7 +325,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                             </details>
                         );
                     })}
-                    
+
                     <div className="flex justify-center mt-4">
                         <button type="button" onClick={addNewPrompt} className="py-2 px-4 text-sm bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-lg">+ 새 프롬프트 추가</button>
                     </div>
