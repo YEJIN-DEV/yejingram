@@ -651,6 +651,10 @@ function InputArea({
   const handleSend = () => {
     onSendMessage(text.trim());
     setText("");
+    // 전송 후 입력 필드에 포커스를 유지하여 키보드가 내려가지 않도록 함
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   return (
