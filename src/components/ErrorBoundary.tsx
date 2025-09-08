@@ -3,8 +3,8 @@ import ErrorPage from './ErrorPage';
 import { store } from '../app/store';
 import { persistor, resetAll } from '../app/store';
 import { settingsActions } from '../entities/setting/slice';
-import { initialApiConfigs } from '../entities/setting/slice';
-import type { ApiProvider } from '../entities/setting/types';
+import { initialApiConfigs, initialImageApiConfigs } from '../entities/setting/slice';
+import type { ApiProvider, ImageApiProvider } from '../entities/setting/types';
 import { backupStateToFile, restoreStateFromFile } from '../utils/backup';
 
 interface Props {
@@ -57,6 +57,12 @@ class ErrorBoundary extends Component<Props, State> {
             providers.forEach(provider => {
                 store.dispatch(settingsActions.setApiConfig({ provider, config: initialApiConfigs[provider] }));
             });
+            const imageProviders: ImageApiProvider[] = ['gemini', 'novelai'];
+            imageProviders.forEach(provider => {
+                store.dispatch(settingsActions.setImageApiConfig({ provider, config: initialImageApiConfigs[provider] }));
+            });
+            store.dispatch(settingsActions.setApiProvider('gemini'));
+            store.dispatch(settingsActions.setImageApiProvider('gemini'));
         }
         if (resetOptions.resetPrompts) {
             store.dispatch(settingsActions.resetPrompts());

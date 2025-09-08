@@ -14,8 +14,8 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
 };
 
 export const initialImageApiConfigs: Record<ImageApiProvider, ImageApiConfig> = {
-    gemini: { apiKey: '', model: 'gemini-2.5-flash-image-preview'},
-    novelai: { apiKey: '', model: 'nai-diffusion-2-1'},
+    gemini: { apiKey: '', model: 'gemini-2.5-flash-image-preview' },
+    novelai: { apiKey: '', model: 'nai-diffusion-2-1' },
 };
 
 export const initialState: SettingsState = {
@@ -92,9 +92,28 @@ const settingsSlice = createSlice({
         setApiProvider: (state, action: PayloadAction<ApiProvider>) => {
             state.apiProvider = action.payload;
         },
+        setImageApiProvider: (state, action: PayloadAction<ImageApiProvider>) => {
+            state.imageApiProvider = action.payload;
+        },
         setApiConfig: (state, action: PayloadAction<{ provider: ApiProvider; config: Partial<ApiConfig> }>) => {
             const { provider, config } = action.payload;
             state.apiConfigs[provider] = { ...state.apiConfigs[provider], ...config };
+        },
+        setImageApiConfig: (state, action: PayloadAction<{ provider: ImageApiProvider; config: Partial<ImageApiConfig> }>) => {
+            const { provider, config } = action.payload;
+            if (!state.imageApiConfigs) {
+                state.imageApiConfigs = { ...initialImageApiConfigs };
+            }
+            if (!state.imageApiConfigs[provider]) {
+                state.imageApiConfigs[provider] = { ...initialImageApiConfigs[provider] };
+            }
+            state.imageApiConfigs[provider] = { ...state.imageApiConfigs[provider], ...config };
+        },
+        setUseStructuredOutput: (state, action: PayloadAction<boolean>) => {
+            state.useStructuredOutput = action.payload;
+        },
+        setUseImageResponse: (state, action: PayloadAction<boolean>) => {
+            state.useImageResponse = action.payload;
         },
         setPrompts: (state, action: PayloadAction<Prompts>) => {
             state.prompts = action.payload;
