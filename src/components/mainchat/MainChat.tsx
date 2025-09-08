@@ -51,6 +51,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
   // Pending LLM request management: store last pending room/message and debounce timer
   const pendingRequestRef = useRef<{ room: Room; } | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
+  const DEBOUNCE_DELAY = 1500; // ms
 
   const characterId = room?.type === 'Direct' && Array.isArray(room?.memberIds) && room.memberIds.length > 0
     ? room.memberIds[0]
@@ -264,7 +265,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     // set a 1s debounce before sending LLM request
     debounceTimerRef.current = window.setTimeout(() => {
       sendPendingRequest();
-    }, 1000) as unknown as number;
+    }, DEBOUNCE_DELAY) as unknown as number;
   };
 
   // Called when user types or interacts with input to postpone/send LLM request
@@ -276,7 +277,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     // Start a fresh 1s timer to send pending request
     debounceTimerRef.current = window.setTimeout(() => {
       sendPendingRequest();
-    }, 1000) as unknown as number;
+    }, DEBOUNCE_DELAY) as unknown as number;
   };
 
   // Clean up debounce timer and pending request on room change or unmount
