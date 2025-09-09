@@ -40,7 +40,7 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (window.confirm(`'${room.name}' 단톡방을 삭제하시겠습니까?`)) {
+        if (window.confirm(`'${room.name}' 그룹을 삭제하시겠습니까?`)) {
             dispatch(roomsActions.removeOne(room.id));
         }
     };

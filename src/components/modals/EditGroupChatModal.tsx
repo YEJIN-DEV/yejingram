@@ -148,7 +148,7 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                 <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
                     <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 rounded-t-2xl">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-semibold text-gray-900">단톡방 설정</h2>
+                            <h2 className="text-xl font-semibold text-gray-900">그룹 채팅 설정</h2>
                             <button onClick={handleClose} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
@@ -157,7 +157,7 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
 
                     <div className="p-6 space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">단톡방 이름</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">그룹 채팅 이름</label>
                             <input type="text" value={name} onChange={e => setName(e.target.value)}
                                 className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none" />
                         </div>
