@@ -4,9 +4,9 @@
 
 ## Acknowledgment 고지사항
 
-이 프로젝트는 [dkfk5326/ArisuTalk](https://github.com/dkfk5326/ArisuTalk)의 작업을 기반으로 하며 이를 기반으로 구축되었습니다. UI 디자인은 원본을 기반으로 재사용하였습니다. 기능은 원본을 기반으로 추가 및 수정되었습니다.
+이 프로젝트는 [dkfk5326/ArisuTalk](https://github.com/dkfk5326/ArisuTalk)의 아이디어에 영감받아 구축하였습니다. 각종 기능은 원본을 기반으로 추가 및 수정되었습니다.
 
-This project is based on and builds upon the work from [dkfk5326/ArisuTalk](https://github.com/dkfk5326/ArisuTalk). The UI design was reused based on the original. Features have been added and modified based on the original.
+This project was built inspired by the idea from [dkfk5326/ArisuTalk](https://github.com/dkfk5326/ArisuTalk). Features have been added and modified based on the original.
 
 ## Installation
 
@@ -28,8 +28,24 @@ This project is based on and builds upon the work from [dkfk5326/ArisuTalk](http
    npm run dev
    ```
 
+## Contribution
+
+버그 리포트, 기능 제안, Pull Request 등 모든 형태의 기여를 적극 환영합니다!
+
+브랜치 생성 후 작업하시고, 변경 사항을 커밋한 뒤 Pull Request를 생성해 주세요.
+
 ## License
 
-이 프로젝트는 [원본](https://github.com/dkfk5326/ArisuTalk)과 동일한 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 라이선스를 따릅니다. 비상업적 용도로만 사용 가능하며, 출처 표기를 요구합니다. 어떤 종류의 수익 창출 목적 사용도 금지됩니다.
+이 프로젝트는 GPL-3.0 라이선스에 따라 라이선스가 부여됩니다. 자세한 내용은 [LICENSE](./LICENSE) 파일을 참조하세요.
 
-This project follows the same [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) license as the [original](https://github.com/dkfk5326/ArisuTalk). Non-commercial use only, with attribution required. Use for monetization of any kind is prohibited.
+This project is licensed under the GPL-3.0 License. See the [LICENSE](./LICENSE) file for details.
+
+## Dependencies
+
+- [React](https://reactjs.org/)
+- [Redux Toolkit](https://redux-toolkit.js.org/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Lucide Icons](https://lucide.dev/)
+- [JSZip](https://stuk.github.io/jszip/)

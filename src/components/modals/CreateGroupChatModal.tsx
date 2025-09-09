@@ -43,7 +43,7 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
     };
 
     const handleCreateGroupChat = () => {
-        if (groupName.trim() && selectedParticipantIds.length >= 2) {
+        if (groupName.trim() && selectedParticipantIds.length >= 1) {
             const newRoom = {
                 id: nanoid(),
                 name: groupName.trim(),
@@ -69,7 +69,7 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
             <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-xl" style={{ maxHeight: '90vh' }}>
                 <div className="p-6 border-b border-gray-200">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900">단톡방 만들기</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">그룹 채팅 만들기</h3>
                         <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                             <X className="w-5 h-5 text-gray-500" />
                         </button>
@@ -77,17 +77,17 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 120px)' }}>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">단톡방 이름</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">그룹 채팅 이름</label>
                         <input
                             type="text"
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
-                            placeholder="단톡방 이름을 입력하세요"
+                            placeholder="그룹 채팅 이름을 입력하세요"
                             className="w-full px-3 py-2 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">참여할 캐릭터 선택 (최소 2명)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">캐릭터 초대</label>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
                             {characters.map((char: Character) => (
                                 <label key={char.id} className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors border border-gray-100">
@@ -117,7 +117,7 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                     }} className="flex-1 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors font-medium">
                         취소
                     </button>
-                    <button onClick={handleCreateGroupChat} className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors disabled:bg-gray-300 disabled:text-gray-500 font-medium" disabled={!groupName.trim() || selectedParticipantIds.length < 2}>
+                    <button onClick={handleCreateGroupChat} className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors disabled:bg-gray-300 disabled:text-gray-500 font-medium" disabled={!groupName.trim() || selectedParticipantIds.length < 1}>
                         만들기
                     </button>
                 </div>
