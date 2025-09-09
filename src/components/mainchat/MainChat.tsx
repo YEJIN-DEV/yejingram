@@ -848,7 +848,7 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-4xl mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl p-6">
+      <div className="w-full max-w-4xl mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl p-6 max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-gray-900 font-semibold">
             <BookOpen className="w-5 h-5 text-blue-500" /> 로어북 편집기
