@@ -14,6 +14,7 @@ import { selectEditingCharacterId } from './entities/character/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -163,6 +164,7 @@ function App() {
         }}
       />
       <SpeedInsights />
+      <Analytics />
     </>
   )
 }
