@@ -11,6 +11,7 @@ import { MessageCircle, Menu } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { selectEditingCharacterId } from './entities/character/selectors'
+import { selectIsDarkMode } from './entities/theme/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -28,6 +29,7 @@ function App() {
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
 
   const editingCharacterId = useSelector(selectEditingCharacterId);
+  const isDarkMode = useSelector(selectIsDarkMode);
 
   useEffect(() => {
     setActiveRoomId(roomId);
@@ -53,13 +55,13 @@ function App() {
 
   return (
     <>
-      <div id="app" className="relative flex h-dvh overflow-hidden bg-white">
+      <div id="app" className={`relative flex h-dvh overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
         {/* Instagram DM Style Layout */}
         <div className="flex w-full h-full">
           {/* Left Sidebar - Chat List (Instagram DM Style) */}
           <aside id="sidebar"
             className={`${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-              } md:translate-x-0 fixed md:relative inset-y-0 left-0 z-30 w-full md:w-96 lg:w-[400px] bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out`}>
+              } md:translate-x-0 fixed md:relative inset-y-0 left-0 z-30 w-full md:w-96 lg:w-[400px] ${isDarkMode ? 'bg-gray-800 border-r border-gray-700' : 'bg-white border-r border-gray-200'} flex flex-col transition-transform duration-300 ease-in-out`}>
 
             <div id="sidebar-content" className="flex h-full flex-col">
               <Sidebar
@@ -77,7 +79,7 @@ function App() {
           {/* Settings Panel - Next to sidebar */}
           {isSettingsPanelOpen && (
             <>
-              <div className="fixed md:relative top-0 bottom-0 z-40 min-w-fit max-w-lg left-0 md:left-auto bg-white border-r border-gray-200">
+              <div className={`fixed md:relative top-0 bottom-0 z-40 min-w-fit max-w-lg left-0 md:left-auto ${isDarkMode ? 'bg-gray-800 border-r border-gray-700' : 'bg-white border-r border-gray-200'}`}>
                 <SettingsPanel
                   openPromptModal={() => setIsPromptModalOpen(true)}
                   onClose={() => setIsSettingsPanelOpen(false)}
@@ -100,23 +102,23 @@ function App() {
 
           {/* Main Chat Area */}
           <main id="main-chat"
-            className={`flex-1 flex flex-col bg-white ${isMobileSidebarOpen ? 'hidden md:flex' : 'flex'}`}>
+            className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-900' : 'bg-white'} ${isMobileSidebarOpen ? 'hidden md:flex' : 'flex'}`}>
             {!room ? (
-              <div className="flex-1 flex items-center justify-center bg-gray-50 relative">
+              <div className={`flex-1 flex items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} relative`}>
                 {/* Mobile: Sidebar toggle button (when no room selected) */}
                 <button
                   id="mobile-sidebar-toggle"
-                  className="absolute top-4 left-4 p-2 rounded-full hover:bg-gray-100 md:hidden"
+                  className={`absolute top-4 left-4 p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}
                   onClick={toggleMobileSidebar}
                 >
-                  <Menu className="h-5 w-5 text-gray-600" />
+                  <Menu className={`h-5 w-5 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
                 </button>
                 <div className="text-center">
-                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MessageCircle className="w-12 h-12 text-gray-400" />
+                  <div className={`w-24 h-24 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                    <MessageCircle className={`w-12 h-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">메시지를 보내세요</h2>
-                  <p className="text-gray-500">친구나 그룹과 개인 사진 및 메시지를 공유하세요.</p>
+                  <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'} mb-2`}>메시지를 보내세요</h2>
+                  <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>친구나 그룹과 개인 사진 및 메시지를 공유하세요.</p>
                 </div>
               </div>
             ) : (

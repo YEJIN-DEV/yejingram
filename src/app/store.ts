@@ -15,6 +15,7 @@ import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
 import settingsReducer from '../entities/setting/slice';
+import themeReducer from '../entities/theme/slice';
 
 localforage.config({
     name: 'yejingram',
@@ -25,7 +26,7 @@ const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
     version: 0,
-    whitelist: ['characters', 'rooms', 'messages', 'settings'],
+    whitelist: ['characters', 'rooms', 'messages', 'settings', 'theme'],
 };
 
 const appReducer = combineReducers({
@@ -33,6 +34,7 @@ const appReducer = combineReducers({
     rooms: roomReducer,
     settings: settingsReducer,
     messages: messageReducer,
+    theme: themeReducer,
 });
 
 export const RESET_ALL = 'app/resetAll' as const;
