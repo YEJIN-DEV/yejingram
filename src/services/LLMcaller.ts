@@ -2,23 +2,25 @@ import { store, type AppDispatch } from "../app/store";
 import { selectCharacterById, selectAllCharacters } from "../entities/character/selectors";
 import type { Message } from "../entities/message/types";
 import type { Room } from "../entities/room/types";
-import { selectAllSettings, selectCurrentApiConfig, selectSelectedPersona } from "../entities/setting/selectors";
+import { selectAllSettings, selectCurrentApiConfig, selectCurrentImageApiConfig, selectSelectedPersona } from "../entities/setting/selectors";
 import { messagesActions } from "../entities/message/slice";
 import { roomsActions } from "../entities/room/slice";
 import type { ChatResponse, MessagePart } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
-import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload } from "./promptBuilder";
+import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload, buildGeminiImagePayload, buildNovelAIImagePayload } from "./promptBuilder";
 import type { ApiConfig, Persona, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
 import { nanoid } from "@reduxjs/toolkit";
 import toast from 'react-hot-toast';
+import { unzipToDataUrls } from "../utils/zip2png";
 
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
 const CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1/messages";
 const OPENAI_API_BASE_URL = "https://api.openai.com/v1/chat/completions";
 const GROK_API_BASE_URL = "https://api.x.ai/v1/chat/completions";
+const NAI_DIFFUSION_API_BASE_URL = "https://image.novelai.net/ai/generate-image";
 
 // Remove leading speaker/meta tags like [From: XXX] or [Name: XXX] from model output
 function sanitizeOutputContent(text?: string): string | undefined {
@@ -104,8 +106,10 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
         if (inlineDataBody) {
             message = {
                 ...message,
-                image: {
-                    dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`
+                file: {
+                    dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`,
+                    mimeType: inlineDataBody.mimeType,
+                    name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
                 }
             };
         } else {
@@ -118,40 +122,18 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
 
 async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
     // 이미지 생성 API 호출
-    const apiConfig = selectCurrentApiConfig(store.getState());
-    const url = `${GEMINI_API_BASE_URL}${apiConfig.imageModel}:generateContent?key=${apiConfig.apiKey}`;
-    const headers = { 'Content-Type': 'application/json' };
-
-    let payload: { contents: { parts: { text?: string, inline_data?: { mime_type: string, data: string } }[] }[], safetySettings: { category: string, threshold: string }[] };
-    if (imageGenerationSetting.isSelfie && char.avatar) {
-        payload = {
-            contents: [{
-                parts: [
-                    { "text": imageGenerationSetting.prompt + `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` },
-                    { "inline_data": { "mime_type": char.avatar.split(',')[0].split(':')[1].split(';')[0], "data": char.avatar.split(',')[1] } }
-                ]
-            }],
-            safetySettings: [
-                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-            ]
-        };
-    } else {
-        payload = {
-            contents: [{
-                parts: [
-                    { "text": imageGenerationSetting.prompt }
-                ]
-            }],
-            safetySettings: [
-                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-            ]
-        };
+    const imageConfig = selectCurrentImageApiConfig(store.getState());
+    const imageApiProvider = imageConfig.model.startsWith('nai-') ? 'novelai' : 'gemini';
+    let url: string;
+    let headers: { 'Content-Type': string; 'Authorization'?: string } = { 'Content-Type': 'application/json' };
+    let payload: object = {};
+    if (imageApiProvider === 'novelai') {
+        url = NAI_DIFFUSION_API_BASE_URL;
+        headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
+        payload = buildNovelAIImagePayload(imageGenerationSetting.prompt, imageConfig.model);
+    } else { // gemini
+        url = `${GEMINI_API_BASE_URL}${imageConfig.model}:generateContent?key=${imageConfig.apiKey}`;
+        payload = buildGeminiImagePayload(imageGenerationSetting.prompt, imageGenerationSetting.isSelfie, char);
     }
 
     try {
@@ -161,15 +143,39 @@ async function callImageGeneration(imageGenerationSetting: { prompt: string; isS
             body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        if (imageApiProvider === 'gemini') {
+            const data = await response.json();
 
-        if (!response.ok) {
-            console.error("API Error:", data);
-            const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
-            throw new Error(errorMessage);
+            if (!response.ok) {
+                console.error("API Error:", data);
+                const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
+                throw new Error(errorMessage);
+            }
+
+            return data;
+        } else { // novelai
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("NovelAI API Error:", errorData);
+                const errorMessage = errorData?.message || `API 요청 실패: ${response.statusText}`;
+                throw new Error(errorMessage);
+            } else {
+                const imageData = await unzipToDataUrls(await response.arrayBuffer());
+                return {
+                    candidates: [{
+                        content: {
+                            parts: [{
+                                inlineData: {
+                                    mimeType: imageData.mimeType,
+                                    data: imageData.data
+                                }
+                            }]
+                        },
+                        finishReason: 'stop'
+                    }]
+                };
+            }
         }
-
-        return data;
 
     } catch (error: unknown) {
         console.error(`이미지 생성 API 호출 중 오류 발생:`, error);
@@ -211,7 +217,7 @@ async function callApi(
             break;
         case 'claude':
         case 'grok':
-            payload = buildClaudeApiPayload(apiConfig.model, room, persona, character, messages, isProactive, extraSystemInstruction);
+            payload = buildClaudeApiPayload(apiConfig.model, room, persona, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
             break;
         case 'openai':
         case 'customOpenAI':
@@ -471,66 +477,6 @@ export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id
         const character = respondingCharacters[i];
         if (i > 0) {
             await sleep(responseDelay + (Math.random() * 300 - 150));
-        }
-        await LLMSend(room, persona, character, setTypingCharacterId);
-    }
-}
-
-export async function SendOpenChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
-    const state = store.getState();
-    const dispatch = store.dispatch;
-    const persona = selectSelectedPersona(state);
-    const allCharacters = selectAllCharacters(state);
-
-    const currentParticipantIds = room.currentParticipants || [];
-    const remainingParticipantIds: number[] = [];
-    for (const participantId of currentParticipantIds) {
-        if (Math.random() > 0.1) {
-            remainingParticipantIds.push(participantId);
-        } else {
-            const character = allCharacters.find(c => c.id === participantId);
-            if (character) {
-                dispatch(messagesActions.upsertOne({
-                    id: nanoid(),
-                    roomId: room.id,
-                    authorId: 0,
-                    content: `${character.name}님이 나갔습니다.`,
-                    createdAt: new Date().toISOString(),
-                    type: 'SYSTEM',
-                }));
-            }
-        }
-    }
-
-    const newJoinerIds: number[] = [];
-    const nonParticipantChars = allCharacters.filter(c => !currentParticipantIds.includes(c.id));
-    for (const char of nonParticipantChars) {
-        if (Math.random() < 0.1) {
-            newJoinerIds.push(char.id);
-            dispatch(messagesActions.upsertOne({
-                id: nanoid(),
-                roomId: room.id,
-                authorId: 0,
-                content: `${char.name}님이 들어왔습니다.`,
-                createdAt: new Date().toISOString(),
-                type: 'SYSTEM',
-            }));
-        }
-    }
-
-    const finalParticipantIds = [...remainingParticipantIds, ...newJoinerIds];
-    dispatch(roomsActions.upsertOne({ ...room, currentParticipants: finalParticipantIds }));
-
-    const participants = finalParticipantIds.map(id => allCharacters.find(c => c.id === id)).filter((c): c is Character => !!c);
-
-    if (participants.length === 0) return;
-
-    const respondingCharacters = participants.filter(() => Math.random() < 0.5).slice(0, 2);
-
-    for (let i = 0; i < respondingCharacters.length; i++) {
-        const character = respondingCharacters[i];
-        if (i > 0) {
-            await sleep(500 + Math.random() * 500);
         }
         await LLMSend(room, persona, character, setTypingCharacterId);
     }

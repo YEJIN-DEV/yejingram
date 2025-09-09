@@ -6,6 +6,7 @@ import type { Room } from '../../entities/room/types';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import { messagesActions } from '../../entities/message/slice';
+import { getMessageDisplayText } from '../../utils/message';
 
 interface RoomListProps {
     room: Room;
@@ -82,9 +83,7 @@ function RoomList({
                         </div>
                     </div>
                     <p className="text-sm text-gray-500 truncate mt-1">
-                        {lastMessage?.type === 'IMAGE' ? '사진' :
-                            lastMessage?.type === 'STICKER' ? '스티커' :
-                                lastMessage?.content || '새로운 메시지를 보내보세요'}
+                        {getMessageDisplayText(lastMessage)}
                     </p>
                 </div>
             </div>

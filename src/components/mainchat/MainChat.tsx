@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, Globe, Users, MoreHorizontal, MessageCircle, Smile, X, Plus, ImageIcon, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
+import { Menu, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
@@ -9,11 +9,11 @@ import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import MessageList from './Message';
 import { messagesActions } from '../../entities/message/slice';
 import { roomsActions } from '../../entities/room/slice';
-import { Avatar } from '../../utils/Avatar';
-import { SendMessage, SendGroupChatMessage, SendOpenChatMessage } from '../../services/LLMcaller';
+import { Avatar, GroupChatAvatar } from '../../utils/Avatar';
+import { SendMessage, SendGroupChatMessage } from '../../services/LLMcaller';
 import type { Sticker } from '../../entities/character/types';
 import { StickerPanel } from './StickerPanel';
-import type { ImageToSend } from '../../entities/message/types';
+import type { FileToSend } from '../../entities/message/types';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import { replacePlaceholders } from '../../utils/placeholder';
 import { nanoid } from '@reduxjs/toolkit';
@@ -22,6 +22,7 @@ import { LorebookEditor } from '../character/LorebookEditor';
 import { settingsActions } from '../../entities/setting/slice';
 import { charactersActions } from '../../entities/character/slice';
 import { MemoryManager } from '../character/MemoryManager';
+import { renderFile } from './FilePreview';
 
 interface MainChatProps {
   room: Room | null;
@@ -38,7 +39,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
   const [stickerToSend, setStickerToSend] = useState<Sticker | null>(null);
   const [isEditingRoomName, setIsEditingRoomName] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
-  const [imageToSend, setImageToSend] = useState<ImageToSend | null>(null);
+  const [fileToSend, setFileToSend] = useState<FileToSend | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAuthorNoteOpen, setIsAuthorNoteOpen] = useState(false);
   const [tempAuthorNote, setTempAuthorNote] = useState('');
@@ -50,6 +51,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
   // Pending LLM request management: store last pending room/message and debounce timer
   const pendingRequestRef = useRef<{ room: Room; } | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
+  const DEBOUNCE_DELAY = 1500; // ms
 
   const characterId = room?.type === 'Direct' && Array.isArray(room?.memberIds) && room.memberIds.length > 0
     ? room.memberIds[0]
@@ -155,12 +157,12 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     setStickerToSend(null);
   };
 
-  const handleOpenImageUpload = () => {
+  const handleOpenFileUpload = () => {
     fileInputRef.current?.click();
   };
 
-  const handleCancelImagePreview = () => {
-    setImageToSend(null);
+  const handleCancelFilePreview = () => {
+    setFileToSend(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -171,19 +173,19 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImageToSend({ dataUrl: reader.result as string });
+        setFileToSend({ dataUrl: reader.result as string, mimeType: file.type, name: file.name });
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const file = Array.from(event.clipboardData.items).find(item => item.type.startsWith('image/'))?.getAsFile();
+    const file = Array.from(event.clipboardData.items).find(item => item.kind === 'file')?.getAsFile();
     if (file) {
       event.preventDefault();
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImageToSend({ dataUrl: reader.result as string });
+        setFileToSend({ dataUrl: reader.result as string, mimeType: file.type, name: file.name });
       };
       reader.readAsDataURL(file);
     }
@@ -209,8 +211,6 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     let responsePromise;
     if (targetRoom.type === 'Group') {
       responsePromise = SendGroupChatMessage(targetRoom, setTypingCharacterId);
-    } else if (targetRoom.type === 'Open') {
-      responsePromise = SendOpenChatMessage(targetRoom, setTypingCharacterId);
     } else {
       responsePromise = SendMessage(targetRoom, setTypingCharacterId);
     }
@@ -222,7 +222,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
 
   const handleSendMessage = (text: string) => {
     if (!room) return;
-    if (!text.trim() && !stickerToSend && !imageToSend) return;
+    if (!text.trim() && !stickerToSend && !fileToSend) return;
 
     // Warn when no persona is explicitly selected
     if (settings?.selectedPersonaId == null) {
@@ -230,7 +230,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
       return;
     }
 
-    const messageType = stickerToSend ? 'STICKER' : imageToSend ? 'IMAGE' : 'TEXT';
+    const messageType = stickerToSend ? 'STICKER' : fileToSend ? (fileToSend.mimeType.startsWith('image') ? 'IMAGE' : (fileToSend.mimeType.startsWith('audio') ? 'AUDIO' : (fileToSend.mimeType.startsWith('video') ? 'VIDEO' : 'FILE'))) : 'TEXT';
 
     const currentCharName = room.type === 'Direct' ? (character?.name || undefined) : undefined;
     const currentUserName = settings.userName?.trim();
@@ -242,9 +242,9 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
       authorId: 0, // Assuming current user ID is '0'
       content: processedText,
       createdAt: new Date().toISOString(),
-      type: messageType as 'TEXT' | 'STICKER' | 'IMAGE',
+      type: messageType as 'TEXT' | 'STICKER' | 'IMAGE' | 'AUDIO' | 'VIDEO' | 'FILE',
       sticker: stickerToSend || undefined,
-      image: imageToSend ? { dataUrl: imageToSend.dataUrl } : undefined,
+      file: fileToSend ? { dataUrl: fileToSend.dataUrl, mimeType: fileToSend.mimeType, name: fileToSend.name } : undefined,
     };
 
     // Immediately show user's message
@@ -252,7 +252,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
 
     // clear UI selection
     setStickerToSend(null);
-    setImageToSend(null);
+    setFileToSend(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -265,7 +265,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     // set a 1s debounce before sending LLM request
     debounceTimerRef.current = window.setTimeout(() => {
       sendPendingRequest();
-    }, 1000) as unknown as number;
+    }, DEBOUNCE_DELAY) as unknown as number;
   };
 
   // Called when user types or interacts with input to postpone/send LLM request
@@ -277,7 +277,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     // Start a fresh 1s timer to send pending request
     debounceTimerRef.current = window.setTimeout(() => {
       sendPendingRequest();
-    }, 1000) as unknown as number;
+    }, DEBOUNCE_DELAY) as unknown as number;
   };
 
   // Clean up debounce timer and pending request on room change or unmount
@@ -335,7 +335,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
           onClose={() => setIsLoreBookOpen(false)}
           characterId={room?.type === 'Direct' ? character!.id : undefined}
           memberChars={room?.type === 'Group' ? memberChars : undefined}
-          roomLorebook={(room?.type === 'Group' || room?.type === 'Open') ? (room?.lorebook || []) : undefined}
+          roomLorebook={room?.type === 'Group' ? (room?.lorebook || []) : undefined}
           roomType={room?.type}
           roomId={room?.id}
         />
@@ -373,14 +373,14 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
 
         {/* Input Area*/}
         <div className="px-6 py-4 bg-white border-t border-gray-200">
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="*/*" className="hidden" />
           <InputArea
             room={room}
             isWaitingForResponse={isWaitingForResponse}
             stickerToSend={stickerToSend}
-            imageToSend={imageToSend}
-            onOpenImageUpload={handleOpenImageUpload}
-            onCancelImagePreview={handleCancelImagePreview}
+            fileToSend={fileToSend}
+            onOpenFileUpload={handleOpenFileUpload}
+            onCancelFilePreview={handleCancelFilePreview}
             onToggleUserStickerPanel={handleToggleStickerPanel}
             onStickerClear={handleCancelSticker}
             onSendMessage={handleSendMessage}
@@ -441,18 +441,11 @@ function ChatHeader({
 }: ChatHeaderProps) {
   const dispatch = useDispatch();
   const getHeaderAvatar = () => {
-    if (room.type === 'Open') {
-      return (
-        <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-          <Globe className="w-6 h-6 text-white" />
-        </div>
-      );
-    }
     if (room.type === 'Group') {
       return (
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-          <Users className="w-6 h-6 text-white" />
-        </div>
+        <>
+          <GroupChatAvatar participants={room.memberIds.map(id => memberChars?.find(c => c?.id === id)).filter(Boolean)} />
+        </>
       );
     }
     if (room.type === 'Direct' && character) {
@@ -474,9 +467,6 @@ function ChatHeader({
   };
 
   const getHeaderSubtitle = () => {
-    if (room.type === 'Open') {
-      return `${room.currentParticipants?.length || 0}명 활성 · 오픈 채팅`;
-    }
     if (room.type === 'Group') {
       return memberChars && memberChars.length > 0
         ? memberChars.map(char => char?.name).filter(Boolean).join(', ')
@@ -610,12 +600,12 @@ function ChatHeader({
 interface InputAreaProps {
   room: Room;
   isWaitingForResponse: boolean;
-  imageToSend?: ImageToSend | null;
+  fileToSend?: FileToSend | null;
   stickerToSend?: Sticker | null;
 
   // 이벤트 핸들러들
-  onOpenImageUpload?: () => void;
-  onCancelImagePreview?: () => void;
+  onOpenFileUpload?: () => void;
+  onCancelFilePreview?: () => void;
   onToggleUserStickerPanel?: () => void;
   onSendMessage: (text: string) => void;
   onStickerClear?: () => void;
@@ -629,10 +619,10 @@ interface InputAreaProps {
 
 function InputArea({
   isWaitingForResponse,
-  imageToSend,
+  fileToSend,
   stickerToSend,
-  onOpenImageUpload,
-  onCancelImagePreview,
+  onOpenFileUpload,
+  onCancelFilePreview,
   onToggleUserStickerPanel,
   onSendMessage,
   onStickerClear,
@@ -643,7 +633,7 @@ function InputArea({
 }: InputAreaProps) {
   const [text, setText] = useState("");
   const [showInputOptions, setInputOptions] = useState(false);
-  const hasImage = !!imageToSend;
+  const hasFile = !!fileToSend;
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -653,30 +643,32 @@ function InputArea({
   }, [isWaitingForResponse]);
 
   const placeholder = useMemo(() => {
-    if (hasImage) return "캡션 추가...";
+    if (hasFile) return "캡션 추가...";
     if (stickerToSend) return "스티커와 함께 메시지...";
     return "메시지 보내기...";
-  }, [hasImage, stickerToSend]);
+  }, [hasFile, stickerToSend]);
 
   const handleSend = () => {
     onSendMessage(text.trim());
     setText("");
+    // 전송 후 입력 필드에 포커스를 유지하여 키보드가 내려가지 않도록 함
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   return (
     <div className="input-area-container relative">
-      {/* Image Preview*/}
-      {hasImage && imageToSend?.dataUrl && (
+      {/* File Preview*/}
+      {hasFile && fileToSend?.dataUrl && (
         <div className="mb-3 p-3 bg-gray-50 rounded-xl">
-          <div className="relative w-16 h-16">
-            <img
-              src={imageToSend.dataUrl}
-              className="w-full h-full object-cover rounded-xl"
-              alt="미리보기"
-            />
+          <div className="relative inline-block">
+            <div className="rounded-lg overflow-hidden">
+              {renderFile(fileToSend, true)}
+            </div>
             <button
               type="button"
-              onClick={onCancelImagePreview}
+              onClick={onCancelFilePreview}
               className="absolute -top-2 -right-2 p-1 bg-gray-800 rounded-full text-white hover:bg-red-500 transition-colors"
             >
               <X className="w-3 h-3" />
@@ -710,12 +702,12 @@ function InputArea({
           <button
             type="button"
             onClick={() => {
-              onOpenImageUpload?.();
+              onOpenFileUpload?.();
               setInputOptions((prev) => !prev);
             }}
             className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl hover:bg-gray-50 text-gray-700"
           >
-            <ImageIcon className="w-4 h-4" /> 사진
+            <Paperclip className="w-4 h-4" /> 파일
           </button>
         </div>
       )}
@@ -723,7 +715,7 @@ function InputArea({
       {/* Main Input Container*/}
       <div className="flex items-center space-x-3">
         {/* Plus Button */}
-        {!hasImage && (
+        {!hasFile && (
           <button
             id="open-input-options-btn"
             type="button"
@@ -856,7 +848,7 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-4xl mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl p-6">
+      <div className="w-full max-w-4xl mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl p-6 max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-gray-900 font-semibold">
             <BookOpen className="w-5 h-5 text-blue-500" /> 로어북 편집기
@@ -866,10 +858,10 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
           </button>
         </div>
         <p className="text-sm text-gray-500 mb-3">캐릭터의 로어북을 편집합니다. 로어북은 채팅에서 특정 키워드가 등장할 때 자동으로 적용됩니다.</p>
-        {(roomType === 'Group' || roomType === 'Open') && roomLorebook && (
+        {(roomType === 'Group') && roomLorebook && (
           <details className="mb-6">
             <summary className="flex items-center justify-between text-lg font-semibold text-gray-800 mb-2 cursor-pointer hover:text-gray-600 transition-colors">
-              <span>{roomType === 'Group' ? '그룹' : '오픈'} 채팅 로어북</span>
+              <span>그룹 채팅 로어북</span>
               <ChevronDown className="w-5 h-5 text-gray-500" />
             </summary>
             <LorebookEditor roomId={roomId} roomLorebook={roomLorebook} />

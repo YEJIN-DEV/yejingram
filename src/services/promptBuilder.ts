@@ -16,7 +16,7 @@ import type { Lore } from "../entities/lorebook/types";
 
 type GeminiContent = {
     role: string;
-    parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; })[];
+    parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; } | { file_data: { file_uri: string; }; })[];
 };
 
 type ClaudeMessage = {
@@ -55,26 +55,6 @@ const structuredOutputSchema = {
                 required: ["delay"]
             }
         },
-        "characterState": {
-            type: "OBJECT",
-            properties: {
-                "mood": { "type": "NUMBER" },
-                "energy": { "type": "NUMBER" },
-                "socialBattery": { "type": "NUMBER" },
-                "personality": {
-                    type: "OBJECT",
-                    properties: {
-                        "extroversion": { "type": "NUMBER" },
-                        "openness": { "type": "NUMBER" },
-                        "conscientiousness": { "type": "NUMBER" },
-                        "agreeableness": { "type": "NUMBER" },
-                        "neuroticism": { "type": "NUMBER" }
-                    },
-                    required: ["extroversion", "openness", "conscientiousness", "agreeableness", "neuroticism"]
-                }
-            },
-            required: ["mood", "energy", "socialBattery", "personality"]
-        },
         "newMemory": { "type": "STRING" }
     },
     required: ["reactionDelay", "messages"]
@@ -86,8 +66,6 @@ function shouldIncludePromptItem(item: PromptItem, useStructuredOutput: boolean,
     } else if (item.type === 'plain-unstructured' && useStructuredOutput) {
         return false;
     } else if (item.type === 'plain-group' && room?.type !== 'Group') {
-        return false;
-    } else if (item.type === 'plain-open' && room?.type !== 'Open') {
         return false;
     } else if (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt') {
         // 새로운 타입들은 항상 포함 (또는 특정 조건 추가 가능)
@@ -235,10 +213,11 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
     // Add messages
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         const baseText = msg.content ? `${header}${msg.content}` : (header ? header : '');
-        const parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; })[] = [{ text: baseText }];
-        if (msg.image) {
-            const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
-            const base64Data = msg.image.dataUrl.split(',')[1];
+        const parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; } | { file_data: { file_uri: string; }; })[] = [{ text: baseText }];
+        if (msg.file) {
+            const mimeType = msg.file.mimeType;
+            const dataUrl = msg.file.dataUrl;
+            const base64Data = dataUrl.split(',')[1];
             if (mimeType && base64Data) {
                 parts.push({
                     inline_data: {
@@ -247,6 +226,18 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
                     }
                 });
             }
+        }
+        // Check for YouTube links in content
+        const youtubeRegex = /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]+)/g;
+        const matches = msg.content?.match(youtubeRegex);
+        if (matches) {
+            matches.forEach(url => {
+                parts.push({
+                    file_data: {
+                        file_uri: url
+                    }
+                });
+            });
         }
         if (msg.sticker) {
             parts.push({ text: `${header}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
@@ -357,21 +348,23 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         const content: ({ type: string; text: string; } |
         { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[] = [{ type: 'text', text: msg.content ? `${header}${msg.content}` : (header ? header : '') }];
-        if (msg.image && model !== "grok-3") {
-            const mimeType = msg.image.dataUrl.match(/data:(.*);base64,/)?.[1];
-            if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
-                throw new Error(`Unsupported image type: ${mimeType} `);
-            }
-            const base64Data = msg.image.dataUrl.split(',')[1];
-            if (mimeType && base64Data) {
-                content.push({
-                    type: 'image',
-                    source: {
-                        data: base64Data,
-                        media_type: mimeType,
-                        type: 'base64'
-                    }
-                });
+        if (msg.file && model !== "grok-3") {
+            const mimeType = msg.file.mimeType;
+            if (mimeType.startsWith('image')) {
+                if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
+                    throw new Error(`Unsupported image type: ${mimeType} `);
+                }
+                const base64Data = msg.file.dataUrl.split(',')[1];
+                if (mimeType && base64Data) {
+                    content.push({
+                        type: 'image',
+                        source: {
+                            data: base64Data,
+                            media_type: mimeType,
+                            type: 'base64'
+                        }
+                    });
+                }
             }
         }
         if (msg.sticker) {
@@ -394,7 +387,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
             }
         } else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
             messagesPart.push({
-                role: 'system',
+                role: 'assistant',
                 content: [{ type: 'text', text: replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, roomMemories, ...groupValues }) }]
             });
         } else if (item && item.type === 'chat') {
@@ -403,7 +396,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
         } else if (item && (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt')) {
             const content = getPromptItemContent(item, character, currentRoom, messages, persona);
             if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
-                const role = item.role || 'system';
+                const role = item.role === 'system' ? 'assistant' : item.role || 'assistant';
                 messagesPart.push({
                     role,
                     content: [{ type: 'text', text: replacePlaceholders(content, { userName, userDescription, character, roomMemories, ...groupValues }) }]
@@ -432,10 +425,11 @@ export function buildClaudeApiPayload(
     character: Character,
     messages: Message[],
     isProactive: boolean,
+    useStructuredOutput: boolean,
     extraSystemInstruction?: string
 ): ClaudeApiPayload {
-    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, messages, false);
-    const contents = buildClaudeContents(messages, isProactive, persona, model, character, extraSystemInstruction, room, false);
+    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, messages, useStructuredOutput);
+    const contents = buildClaudeContents(messages, isProactive, persona, model, character, extraSystemInstruction, room, useStructuredOutput);
 
     return {
         model: model,
@@ -446,7 +440,7 @@ export function buildClaudeApiPayload(
         }],
         temperature: selectCurrentApiConfig(store.getState()).temperature || 1,
         top_k: selectCurrentApiConfig(store.getState()).topK || 40,
-        top_p: selectCurrentApiConfig(store.getState()).topP || 0.95,
+        ...(model.startsWith("claude-opus-4-1") ? {} : { top_p: selectCurrentApiConfig(store.getState()).topP || 0.95 }),
         max_tokens: selectCurrentApiConfig(store.getState()).maxTokens || 8192,
     };
 }
@@ -472,8 +466,10 @@ function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?
         if (text) {
             parts.push({ type: 'text', text });
         }
-        if (msg.image?.dataUrl) {
-            parts.push({ type: 'image_url', image_url: { url: msg.image.dataUrl } });
+        if (msg.file?.dataUrl) {
+            if (msg.file.mimeType.startsWith('image')) {
+                parts.push({ type: 'image_url', image_url: { url: msg.file.dataUrl } });
+            }
         }
 
         // Use array content when we have image or want multimodal; otherwise plain string
@@ -550,4 +546,83 @@ export function buildOpenAIApiPayload(
         response_format: useStructuredOutput ? { type: 'json_object' } : { type: 'text' },
     };
     return payload;
+}
+
+export function buildGeminiImagePayload(prompt: string, isSelfie: boolean, char: Character) {
+    return {
+        contents: [{
+            parts: [
+                { "text": `${prompt}${isSelfie && char.avatar ? `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` : ''}` },
+                ...(isSelfie && char.avatar ? [{ "inline_data": { "mime_type": char.avatar.split(',')[0].split(':')[1].split(';')[0], "data": char.avatar.split(',')[1] } }] : []),
+            ]
+        }],
+        safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ]
+    };
+    
+}
+
+export function buildNovelAIImagePayload(prompt: string, model: string) {
+    function random(min: number, max: number) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    return {
+        "input": prompt,
+        "model": model,
+        "action": "generate",
+        "parameters": {
+            "params_version": 3,
+            "add_original_image": true,
+            "cfg_rescale": 0,
+            "controlnet_strength": 1,
+            "dynamic_thresholding": false,
+            "n_samples": 1,
+            "width": 512,
+            "height": 768,
+            "sampler": "k_dpmpp_sde",
+            "steps": 28,
+            "scale": 5,
+            "negative_prompt": "",
+            "noise_schedule": "native",
+            "normalize_reference_strength_multiple": true,
+            "ucPreset": 3,
+            "uncond_scale": 1,
+            "qualityToggle": false,
+            "legacy_v3_extend": false,
+            "legacy": false,
+            "autoSmea": false,
+            "use_coords": false,
+            "legacy_uc": false,
+            "v4_prompt":{
+                "caption":{
+                    "base_caption": prompt,
+                    "char_captions": []
+                },
+                "use_coords": false,
+                "use_order": true
+            },
+            "v4_negative_prompt":{
+                "caption":{
+                    "base_caption": "",
+                    "char_captions": []
+                },
+                "legacy_uc": false
+            },
+            "reference_image_multiple" : [],
+            "reference_strength_multiple" : [],
+            //add reference image
+            // "image": undefined, 
+            // "strength": undefined,
+            // "noise": undefined,
+            "seed": random(0, 2**32-1),
+            "extra_noise_seed": random(0, 2**32-1),
+            "prefer_brownian": true,
+            "deliberate_euler_ancestral_bug": false,
+            "skip_cfg_above_sigma": null
+        }
+    }
 }

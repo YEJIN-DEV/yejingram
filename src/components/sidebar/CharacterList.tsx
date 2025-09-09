@@ -11,6 +11,7 @@ import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import RoomList from './RoomList';
 import { Avatar } from '../../utils/Avatar';
 import { useCharacterOnlineStatus } from '../../utils/simulateOnline';
+import { getMessageDisplayText } from '../../utils/message';
 
 interface CharacterListProps {
     character: Character;
@@ -38,11 +39,6 @@ function CharacterList({
         if (last && (!lastMessage || last.createdAt > lastMessage.createdAt)) lastMessage = last;
         totalUnreadCount += room.unreadCount || 0;
     });
-
-    const lastMessageContent =
-        lastMessage?.type === 'IMAGE' ? '사진' :
-            lastMessage?.type === 'STICKER' ? '스티커' :
-                lastMessage?.content ?? '새로운 메시지를 보내보세요';
 
     const formatTime = (timestamp: string) => {
         const date = new Date(timestamp);
@@ -128,7 +124,7 @@ function CharacterList({
                                 </div>
                                 <div className="flex items-center justify-between mt-1">
                                     <p className="text-gray-500 text-sm truncate flex-1 mr-2">
-                                        {lastMessageContent}
+                                        {getMessageDisplayText(lastMessage)}
                                         {chatRooms.length > 1 && (
                                             <span className="text-gray-400"> · {chatRooms.length}개 채팅</span>
                                         )}

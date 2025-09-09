@@ -18,11 +18,6 @@ export const selectIsCreateGroupChatModalOpen = createSelector(
     (settings) => settings.isCreateGroupChatModalOpen
 );
 
-export const selectIsCreateOpenChatModalOpen = createSelector(
-    [selectSettingsState],
-    (settings) => settings.isCreateOpenChatModalOpen
-);
-
 export const selectIsEditGroupChatModalOpen = createSelector(
     [selectSettingsState],
     (settings) => settings.isEditGroupChatModalOpen
@@ -55,6 +50,21 @@ export const selectApiConfigs = createSelector(
 
 export const selectCurrentApiConfig = createSelector(
     [selectApiProvider, selectApiConfigs],
+    (provider, configs) => configs[provider]
+);
+
+export const selectImageApiProvider = createSelector(
+    [selectSettingsState],
+    (settings) => settings.imageApiProvider
+);
+
+export const selectImageApiConfigs = createSelector(
+    [selectSettingsState],
+    (settings) => settings.imageApiConfigs
+);
+
+export const selectCurrentImageApiConfig = createSelector(
+    [selectImageApiProvider, selectImageApiConfigs],
     (provider, configs) => configs[provider]
 );
 

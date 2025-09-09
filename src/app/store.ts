@@ -24,7 +24,7 @@ localforage.config({
 const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
-    version: 1,
+    version: 0,
     whitelist: ['characters', 'rooms', 'messages', 'settings'],
 };
 

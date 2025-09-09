@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState, useRef } from 'react';
-import { Image, Upload, Download, Sparkles, MessageSquarePlus, ChevronDown } from 'lucide-react';
+import { Image, Upload, Download, MessageSquarePlus, ChevronDown } from 'lucide-react';
 import { selectEditingCharacterId, selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
 import type { RootState } from '../../app/store';
@@ -234,9 +234,6 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <label className="text-sm font-medium text-gray-700">인물 정보</label>
-                                <button id="ai-generate-character-btn" className="py-1 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs flex items-center gap-1">
-                                    <Sparkles className="w-3 h-3" /> AI 생성
-                                </button>
                             </div>
                             <textarea id="character-prompt" placeholder="특징, 배경, 관계, 기억 등을 자유롭게 서술해주세요." value={char.prompt} onChange={e => handleInputChange('prompt', e.target.value)} className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm" rows={6}></textarea>
                         </div>
@@ -253,25 +250,25 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                             </div>
                         )}
 
-                        <details className="group border-t border-gray-200 pt-4">
+                        <details className="group/additional border-t border-gray-200 pt-4">
                             <summary className="flex items-center justify-between cursor-pointer list-none">
                                 <span className="text-base font-medium text-gray-900">추가 설정</span>
-                                <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
+                                <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open/additional:rotate-180" />
                             </summary>
                             <div className="content-wrapper">
                                 <div className="content-inner pt-6 space-y-6">
-                                    <details className="group border-t border-gray-200 pt-2">
+                                    <details className="group/sticker border-t border-gray-200 pt-2">
                                         <summary className="flex items-center justify-between cursor-pointer list-none py-2">
                                             <h4 className="text-sm font-medium text-gray-700">스티커</h4>
-                                            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
+                                            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open/sticker:rotate-180" />
                                         </summary>
                                         <StickerManager characterId={char.id} draft={char} onDraftChange={setChar} />
                                     </details>
                                     {/* 메모리는 별도 탭으로 이동 */}
-                                    <details className="group border-t border-gray-200 pt-2">
+                                    <details className="group/attribute border-t border-gray-200 pt-2">
                                         <summary className="flex items-center justify-between cursor-pointer list-none py-2">
                                             <h4 className="text-sm font-medium text-gray-700">메시지 응답성</h4>
-                                            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
+                                            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open/attribute:rotate-180" />
                                         </summary>
                                         <AttributeSliders characterId={char.id} draft={char} onDraftChange={setChar} />
                                     </details>

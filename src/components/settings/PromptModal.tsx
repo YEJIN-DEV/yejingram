@@ -19,13 +19,11 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
 
     // 타입 라벨 한글 매핑
     const typeLabelMap: Record<PromptType, string> = {
-        'generation': '생성(프로필)',
         'image-generation': '이미지 생성',
         'plain': '순수 프롬프트',
         'plain-structured': '구조화된 출력',
         'plain-unstructured': '비구조화된 출력',
         'plain-group': '그룹 컨텍스트',
-        'plain-open': '오픈 컨텍스트',
         'extraSystemInstruction': '추가 시스템 지시문',
         'userDescription': '사용자 설명',
         'characterPrompt': '캐릭터 설명',
@@ -46,9 +44,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
             const t = item?.type?.trim();
             if (t) set.add(t as PromptType);
         });
-        // 프로필/이미지 생성 프롬프트는 항상 포함
-        const pc = localPrompts.profile_creation?.type?.trim();
-        if (pc) set.add(pc as PromptType);
+        // 이미지 생성 프롬프트는 항상 포함
         const ig = localPrompts.image_response_generation?.type?.trim();
         if (ig) set.add(ig as PromptType);
         return set;
@@ -108,7 +104,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
     };
 
     const setPromptToDefault = (
-        key: number | "profile_creation" | "image_response_generation"
+        key: number | "image_response_generation"
     ) => {
         if (confirm('기본값으로 되돌리시겠습니까?')) {
             if (typeof key === 'number') {
@@ -164,7 +160,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
         // basic validation for new structure
         if (!p.main || !Array.isArray(p.main)) return null;
         if (!p.main.every(isPromptItem)) return null;
-        if (!isPromptItem(p.profile_creation) || !isPromptItem(p.image_response_generation)) return null;
+        if (!isPromptItem(p.image_response_generation)) return null;
         // Merge new fields with defaults if missing
         const withDefaults = {
             ...initialState.prompts,
@@ -326,63 +322,10 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                             </details>
                         );
                     })}
-                    
+
                     <div className="flex justify-center mt-4">
                         <button type="button" onClick={addNewPrompt} className="py-2 px-4 text-sm bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-lg">+ 새 프롬프트 추가</button>
                     </div>
-
-                    <h4 className="text-base font-semibold text-blue-600 border-b border-blue-100 pb-2 mt-6">랜덤 선톡 캐릭터 생성 프롬프트</h4>
-                    <details className="group bg-gray-50 rounded-lg border border-gray-200">
-                        <summary className="flex items-center justify-between cursor-pointer list-none p-4">
-                            <span className="text-base font-medium text-gray-900">{localPrompts.profile_creation.name || '# 캐릭터 생성 규칙 (Profile Creation Rules)'}</span>
-                            <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-300 group-open:rotate-180" />
-                        </summary>
-                        <div className="content-wrapper">
-                            <div className="content-inner p-4 border-t border-gray-200">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <button onClick={() => setPromptToDefault('profile_creation')} className="py-1 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs flex items-center gap-1 border border-gray-200">
-                                        <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                                    <div className="flex flex-col">
-                                        <label className="text-xs font-medium text-gray-600 mb-1">이름</label>
-                                        <input value={localPrompts.profile_creation.name}
-                                            onChange={e => setLocalPrompts(prev => ({ ...prev, profile_creation: { ...prev.profile_creation, name: e.target.value } }))}
-                                            className="w-full p-2 bg-white text-gray-900 rounded border border-gray-200 text-sm" placeholder="이름" />
-                                    </div>
-                                    <div className="ㅇflex flex-col">
-                                        <label className="text-xs font-medium text-gray-600 mb-1">타입 <span className="text-[11px] text-gray-400">(고정)</span></label>
-                                        <select
-                                            value={localPrompts.profile_creation.type}
-                                            disabled
-                                            aria-disabled
-                                            className="w-full p-2 bg-gray-100 text-gray-700 rounded border border-gray-200 text-sm cursor-not-allowed"
-                                        >
-                                            <option value={localPrompts.profile_creation.type}>{getTypeLabel(localPrompts.profile_creation.type)}</option>
-                                        </select>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <label className="text-xs font-medium text-gray-600 mb-1">역할</label>
-                                        <select value={localPrompts.profile_creation.role}
-                                            onChange={e => setLocalPrompts(prev => ({ ...prev, profile_creation: { ...prev.profile_creation, role: e.target.value as PromptRole } }))}
-                                            className="w-full p-2 bg-white text-gray-900 rounded border border-gray-200 text-sm">
-                                            <option value="system">system</option>
-                                            <option value="assistant">assistant</option>
-                                            <option value="user">user</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-gray-600 mb-1 block">프롬프트 내용</label>
-                                    <textarea
-                                        value={localPrompts.profile_creation.content}
-                                        onChange={e => setLocalPrompts(prev => ({ ...prev, profile_creation: { ...prev.profile_creation, content: e.target.value } }))}
-                                        className="w-full h-64 p-3 bg-gray-50 text-gray-900 rounded-lg text-sm font-mono border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500" />
-                                </div>
-                            </div>
-                        </div>
-                    </details>
 
                     <h4 className="text-base font-semibold text-green-600 border-b border-green-100 pb-2 mt-6">이미지 응답 생성 프롬프트</h4>
                     <details className="group bg-gray-50 rounded-lg border border-gray-200">

@@ -6,7 +6,6 @@ import SettingsPanel from './components/settings/SettingsPanel'
 import PromptModal from './components/settings/PromptModal'
 import CharacterPanel from './components/character/CharacterPanel'
 import CreateGroupChatModal from './components/modals/CreateGroupChatModal'
-import CreateOpenChatModal from './components/modals/CreateOpenChatModal'
 import EditGroupChatModal from './components/modals/EditGroupChatModal'
 import { MessageCircle, Menu } from 'lucide-react'
 import { useSelector } from 'react-redux'
@@ -25,7 +24,6 @@ function App() {
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const [isCharacterPanelOpen, setIsCharacterPanelOpen] = useState(false);
   const [isCreateGroupChatModalOpen, setIsCreateGroupChatModalOpen] = useState(false);
-  const [isCreateOpenChatModalOpen, setIsCreateOpenChatModalOpen] = useState(false);
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
 
   const editingCharacterId = useSelector(selectEditingCharacterId);
@@ -69,7 +67,6 @@ function App() {
                 openSettingsModal={() => setIsSettingsPanelOpen(true)}
                 toggleCharacterPanel={toggleCharacterPanel}
                 openCreateGroupChatModal={() => setIsCreateGroupChatModalOpen(true)}
-                openCreateOpenChatModal={() => setIsCreateOpenChatModalOpen(true)}
                 openEditGroupChatModal={() => setIsEditGroupChatModalOpen(true)}
                 onCloseMobile={() => setIsMobileSidebarOpen(false)}
               />
@@ -135,10 +132,6 @@ function App() {
         <CreateGroupChatModal
           isOpen={isCreateGroupChatModalOpen}
           onClose={() => setIsCreateGroupChatModalOpen(false)}
-        />
-        <CreateOpenChatModal
-          isOpen={isCreateOpenChatModalOpen}
-          onClose={() => setIsCreateOpenChatModalOpen(false)}
         />
         <EditGroupChatModal
           isOpen={isEditGroupChatModalOpen}
