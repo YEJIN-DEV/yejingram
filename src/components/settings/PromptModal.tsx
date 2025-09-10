@@ -148,8 +148,8 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
     type AnyRecord = Record<string, unknown>;
 
     const isPromptItem = (obj: any): obj is PromptItem => {
-        return obj && typeof obj.name === 'string' && typeof obj.type === 'string' && typeof obj.role === 'string' && typeof obj.content === 'string';
-    };
+        return obj && typeof obj.name === 'string' && typeof obj.type === 'string';
+    }
 
     const extractPrompts = (data: unknown): Prompts | null => {
         const obj = data as AnyRecord | null;
@@ -164,8 +164,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
         // Merge new fields with defaults if missing
         const withDefaults = {
             ...initialState.prompts,
-            ...p,
-            main: p.main,
+            ...p
         } as Prompts;
         return withDefaults;
     };
