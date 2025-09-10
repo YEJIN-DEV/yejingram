@@ -9,23 +9,49 @@ import {
     PERSIST,
     PURGE,
     REGISTER,
+    createMigrate,
 } from 'redux-persist';
 
 import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
-import settingsReducer from '../entities/setting/slice';
+import settingsReducer, { initialState as settingsInitialState } from '../entities/setting/slice';
+import { applyRules } from '../utils/migration';
 
 localforage.config({
     name: 'yejingram',
     storeName: 'persist',
 });
 
+const migrations = {
+    1: (state: any) => {
+        state = applyRules(state, {
+            add: [
+                {
+                    path: 'settings.prompts',
+                    keys: ['maxContextTokens', 'maxResponseTokens', 'temperature', 'topP', 'topK'],
+                    defaults: settingsInitialState.prompts
+                }
+            ],
+            delete: [
+                {
+                    path: 'settings.apiConfigs.*',
+                    keys: ['temperature', 'maxTokens', 'topP', 'topK']
+                }
+            ]
+        });
+
+        return state;
+    },
+};
+
+
 const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
-    version: 0,
+    version: 1,
     whitelist: ['characters', 'rooms', 'messages', 'settings'],
+    migrate: createMigrate(migrations, { debug: true }),
 };
 
 const appReducer = combineReducers({

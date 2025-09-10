@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { X, ChevronDown, RotateCcw, Download, Upload, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
+import { X, ChevronDown, RotateCcw, Download, Upload, ArrowUp, ArrowDown, AlertTriangle, Thermometer, Percent, ArrowUpToLine } from 'lucide-react';
 import { selectPrompts } from '../../entities/setting/selectors';
 import { settingsActions, initialState } from '../../entities/setting/slice';
 import type { Prompts, PromptItem, PromptRole, PromptType } from '../../entities/setting/types';
@@ -379,8 +379,91 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                             </div>
                         </div>
                     </details>
+                    <h4 className="text-base font-semibold text-purple-600 border-b border-purple-100 pb-2 mt-6">토큰 설정</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div className="flex flex-col">
+                            <label className="text-xs font-medium text-gray-600 mb-1">최대 컨텍스트 토큰</label>
+                            <input
+                                type="number"
+                                value={localPrompts.maxContextTokens}
+                                onChange={e => setLocalPrompts(prev => ({ ...prev, maxContextTokens: parseInt(e.target.value) || -1 }))}
+                                className="w-full p-2 bg-white text-gray-900 rounded border border-gray-200 text-sm"
+                                placeholder="최대 컨텍스트 토큰"
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-xs font-medium text-gray-600 mb-1">최대 응답 토큰</label>
+                            <input
+                                type="number"
+                                value={localPrompts.maxResponseTokens}
+                                onChange={e => setLocalPrompts(prev => ({ ...prev, maxResponseTokens: parseInt(e.target.value) || -1 }))}
+                                className="w-full p-2 bg-white text-gray-900 rounded border border-gray-200 text-sm"
+                                placeholder="최대 응답 토큰"
+                            />
+                        </div>
+                    </div>
 
-                    {/* information_template UI removed; conversation/output format are handled in the main list like others */}
+                    <h4 className="text-base font-semibold text-indigo-600 border-b border-indigo-100 pb-2 mt-6">생성 설정</h4>
+                    <div className="space-y-4 mt-4">
+                        <div className="flex flex-col">
+                            <label className="flex items-center justify-between text-xs font-medium text-gray-600 mb-2">
+                                <span className="flex items-center gap-1"><Thermometer className="w-4 h-4" /> 온도</span>
+                                <span className="text-indigo-500 font-semibold">{localPrompts.temperature?.toFixed(2) ?? 'N/A'}</span>
+                            </label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="2"
+                                step="0.01"
+                                value={localPrompts.temperature || -1}
+                                onChange={e => setLocalPrompts(prev => ({ ...prev, temperature: parseFloat(parseFloat(e.target.value).toFixed(2)) ?? -1 }))}
+
+                                className="w-full accent-indigo-500"
+                            />
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>0</span>
+                                <span>2</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="flex items-center justify-between text-xs font-medium text-gray-600 mb-2">
+                                <span className="flex items-center gap-1"><Percent className="w-4 h-4" /> Top-P</span>
+                                <span className="text-indigo-500 font-semibold">{localPrompts.topP?.toFixed(2) ?? 'N/A'}</span>
+                            </label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                value={localPrompts.topP || -1}
+                                onChange={e => setLocalPrompts(prev => ({ ...prev, topP: parseFloat(parseFloat(e.target.value).toFixed(2)) ?? -1 }))}
+                                className="w-full accent-indigo-500"
+                            />
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>0</span>
+                                <span>1</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="flex items-center justify-between text-xs font-medium text-gray-600 mb-2">
+                                <span className="flex items-center gap-1"><ArrowUpToLine className="w-4 h-4" /> Top-K</span>
+                                <span className="text-indigo-500 font-semibold">{localPrompts.topK ?? 'N/A'}</span>
+                            </label>
+                            <input
+                                type="range"
+                                min="1"
+                                max="100"
+                                step="1"
+                                value={localPrompts.topK || -1}
+                                onChange={e => setLocalPrompts(prev => ({ ...prev, topK: parseInt(e.target.value) ?? -1 }))}
+                                className="w-full accent-indigo-500"
+                            />
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>1</span>
+                                <span>100</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div className="p-6 mt-auto border-t border-gray-200 shrink-0 flex flex-wrap justify-end gap-3">
                     <input
