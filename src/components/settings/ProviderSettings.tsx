@@ -38,6 +38,7 @@ const providerModels: Record<string, string[]> = {
     // openrouter: [],
     customOpenAI: []
 };
+export type ProviderModel = typeof providerModels[keyof typeof providerModels][number];
 
 const imageModels: string[] = [
     'gemini-2.5-flash-image-preview',
