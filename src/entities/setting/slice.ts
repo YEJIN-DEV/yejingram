@@ -1,6 +1,6 @@
 import { createEntityAdapter, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona, ImageApiConfig, ImageApiProvider } from './types';
+import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona, ImageApiConfig, ImageApiProvider, ComfyUIConfig, ArtStyle } from './types';
 import { nanoid } from '@reduxjs/toolkit';
 
 export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
@@ -16,6 +16,7 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
 export const initialImageApiConfigs: Record<ImageApiProvider, ImageApiConfig> = {
     gemini: { apiKey: '', model: 'gemini-2.5-flash-image-preview' },
     novelai: { apiKey: '', model: 'nai-diffusion-2-1' },
+    comfyui: { apiKey: '', model: 'comfyui-workflow' },
 };
 
 export const initialState: SettingsState = {
@@ -58,6 +59,11 @@ export const initialState: SettingsState = {
     imageApiProvider: 'gemini',
     apiConfigs: initialApiConfigs,
     imageApiConfigs: initialImageApiConfigs,
+    comfyUIConfig: {
+        baseUrl: '',
+        workflow: '{"3": {"inputs": {"seed": 156680208700286, "steps": 20, "cfg": 8, "sampler_name": "euler", "scheduler": "normal", "denoise": 1, "model": ["4", 0], "positive": ["6", 0], "negative": ["7", 0], "latent_image": ["5", 0]}, "class_type": "KSampler"}, "4": {"inputs": {"ckpt_name": "v1-5-pruned-emaonly.ckpt"}, "class_type": "CheckpointLoaderSimple"}, "5": {"inputs": {"width": 512, "height": 512, "batch_size": 1}, "class_type": "EmptyLatentImage"}, "6": {"inputs": {"text": "beautiful scenery nature glass bottle landscape, purple galaxy bottle,", "clip": ["4", 1]}, "class_type": "CLIPTextEncode"}, "7": {"inputs": {"text": "text, watermark", "clip": ["4", 1]}, "class_type": "CLIPTextEncode"}, "8": {"inputs": {"samples": ["3", 0], "vae": ["4", 2]}, "class_type": "VAEDecode"}, "9": {"inputs": {"filename_prefix": "ComfyUI", "images": ["8", 0]}, "class_type": "SaveImage"}}',
+        timeout: 240
+    },
     fontScale: 1.0,
     userName: '',
     userDescription: '',
@@ -67,9 +73,12 @@ export const initialState: SettingsState = {
     randomMessageFrequencyMin: 10,
     randomMessageFrequencyMax: 60,
     useStructuredOutput: true,
+    autoImageGeneration: false, // 기본적으로 비활성화
     speedup: 2,
     personas: [],
     selectedPersonaId: null,
+    artStyles: [],
+    selectedArtStyleId: null,
 };
 
 export const settingsAdapter = createEntityAdapter<SettingsState, string>({
@@ -114,6 +123,9 @@ const settingsSlice = createSlice({
         },
         setUseImageResponse: (state, action: PayloadAction<boolean>) => {
             state.useImageResponse = action.payload;
+        },
+        setAutoImageGeneration: (state, action: PayloadAction<boolean>) => {
+            state.autoImageGeneration = action.payload;
         },
         setPrompts: (state, action: PayloadAction<Prompts>) => {
             state.prompts = action.payload;
@@ -180,6 +192,66 @@ const settingsSlice = createSlice({
             if (personaExists) {
                 state.selectedPersonaId = action.payload;
             }
+        },
+        addArtStyle: (state, action: PayloadAction<Omit<ArtStyle, 'id'>>) => {
+            // artStyles 배열이 없으면 초기화
+            if (!state.artStyles) {
+                state.artStyles = [];
+            }
+
+            const newArtStyle: ArtStyle = {
+                ...action.payload,
+                id: nanoid(),
+            };
+            state.artStyles.push(newArtStyle);
+            // 첫 번째 그림체라면 자동 선택
+            if (state.artStyles.length === 1) {
+                state.selectedArtStyleId = newArtStyle.id;
+            }
+        },
+        updateArtStyle: (state, action: PayloadAction<ArtStyle>) => {
+            if (!state.artStyles) {
+                state.artStyles = [];
+                return;
+            }
+
+            const index = state.artStyles.findIndex(a => a.id === action.payload.id);
+            if (index !== -1) {
+                state.artStyles[index] = action.payload;
+            }
+        },
+        deleteArtStyle: (state, action: PayloadAction<string>) => {
+            if (!state.artStyles) {
+                return;
+            }
+
+            const index = state.artStyles.findIndex(a => a.id === action.payload);
+            if (index !== -1) {
+                state.artStyles.splice(index, 1);
+                // 선택값 보정: 유일한 그림체가 되면 자동 선택, 아니면 선택 무효화만 처리
+                const remaining = state.artStyles;
+                const hasOnlyOne = remaining.length === 1;
+                const exists = state.selectedArtStyleId ? remaining.some(a => a.id === state.selectedArtStyleId) : false;
+                if (hasOnlyOne && (!state.selectedArtStyleId || !exists)) {
+                    state.selectedArtStyleId = remaining[0].id;
+                } else if (!exists) {
+                    // 선택된 것이 삭제로 인해 사라졌지만 여러 개 남아있는 경우 첫 번째로 대체
+                    state.selectedArtStyleId = remaining[0]?.id ?? null;
+                }
+            }
+        },
+        selectArtStyle: (state, action: PayloadAction<string>) => {
+            if (!state.artStyles) {
+                return;
+            }
+
+            const artStyleExists = state.artStyles.some(a => a.id === action.payload);
+            if (artStyleExists) {
+                state.selectedArtStyleId = action.payload;
+            }
+        },
+        setComfyUIConfig: (state, action: PayloadAction<Partial<ComfyUIConfig>>) => {
+            state.comfyUIConfig = { ...state.comfyUIConfig, ...action.payload };
         },
     }
 });

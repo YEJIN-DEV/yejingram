@@ -2,13 +2,13 @@ import { store, type AppDispatch } from "../app/store";
 import { selectCharacterById, selectAllCharacters } from "../entities/character/selectors";
 import type { Message } from "../entities/message/types";
 import type { Room } from "../entities/room/types";
-import { selectAllSettings, selectCurrentApiConfig, selectCurrentImageApiConfig, selectSelectedPersona } from "../entities/setting/selectors";
+import { selectAllSettings, selectCurrentApiConfig, selectCurrentImageApiConfig, selectSelectedPersona, selectSelectedArtStyle } from "../entities/setting/selectors";
 import { messagesActions } from "../entities/message/slice";
 import { roomsActions } from "../entities/room/slice";
 import type { ChatResponse, MessagePart } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
-import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload, buildGeminiImagePayload, buildNovelAIImagePayload } from "./promptBuilder";
+import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload, buildGeminiImagePayload, buildNovelAIImagePayload, buildComfyUIPayload, convertKoreanToImageTags } from "./promptBuilder";
 import type { ApiConfig, Persona, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
 import { nanoid } from "@reduxjs/toolkit";
@@ -81,6 +81,8 @@ async function handleApiResponse(
 }
 
 async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Promise<Message> {
+    const settings = store.getState().settings;
+    
     let message = {
         id: nanoid(),
         roomId: roomId,
@@ -100,37 +102,303 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
         }
     }
 
+    // 자동 이미지 생성 로직: 봇이 텍스트 메시지를 보낼 때 설정이 활성화되어 있고 ComfyUI가 설정되어 있으면
+    if (!messagePart.imageGenerationSetting &&
+        !messagePart.sticker &&
+        settings.autoImageGeneration &&
+        settings.imageApiProvider === 'comfyui' &&
+        settings.comfyUIConfig?.baseUrl &&
+        messagePart.content?.trim()) {
+
+        console.log('자동 이미지 생성 시작:', messagePart.content);
+
+        // 한글 대화 내용을 영어 Danbooru 스타일 태그로 변환
+        const convertedPrompt = await convertKoreanToImageTags(messagePart.content.substring(0, 200), char.name);
+        console.log('변환된 프롬프트:', convertedPrompt);
+
+        // 메시지 내용을 기반으로 이미지 생성 설정 생성
+        const autoImageSetting = {
+            prompt: convertedPrompt,
+            isSelfie: false
+        };
+
+        try {
+            const imageResponse = await callImageGeneration(autoImageSetting, char);
+
+            // ComfyUI의 경우 지연 처리
+            if (imageResponse.__comfyui_task_id) {
+                console.log('ComfyUI 자동 이미지 생성 작업 생성:', imageResponse.__comfyui_task_id);
+
+                // ComfyUI 대기 작업의 메시지 ID를 실제 메시지 ID로 업데이트
+                const task = pendingComfyUITasks.get(imageResponse.__comfyui_task_id);
+                if (task) {
+                    task.messageId = message.id;
+                    pendingComfyUITasks.set(imageResponse.__comfyui_task_id, task);
+                }
+            } else if (imageResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
+                // 즉시 이미지가 생성된 경우 (Gemini, NovelAI 등)
+                const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData;
+                message = {
+                    ...message,
+                    type: 'IMAGE',
+                    file: { 
+                        dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`, 
+                        mimeType: inlineDataBody.mimeType, 
+                        name: `auto_generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}` 
+                    },
+                };
+                console.log('즉시 이미지 생성 완료');
+            }
+        } catch (error) {
+            console.error('자동 이미지 생성 실패:', error);
+            // 이미지 생성에 실패해도 텍스트 메시지는 보냄
+        }
+    }
+
     if (messagePart.imageGenerationSetting) {
         const imageResponse = await callImageGeneration(messagePart.imageGenerationSetting, char);
-        const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
-        if (inlineDataBody) {
+        
+        // ComfyUI의 경우 지연 처리
+        if (imageResponse.__comfyui_task_id && imageResponse.__comfyui_message_id) {
+            // ComfyUI 대기 작업의 메시지 ID를 실제 메시지 ID로 업데이트
+            const task = pendingComfyUITasks.get(imageResponse.__comfyui_task_id);
+            if (task) {
+                task.messageId = message.id;
+                pendingComfyUITasks.set(imageResponse.__comfyui_task_id, task);
+            }
+            
+            // 텍스트 메시지로 설정
             message = {
                 ...message,
-                file: {
-                    dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`,
-                    mimeType: inlineDataBody.mimeType,
-                    name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
-                }
+                content: imageResponse.candidates[0].content.parts[0].text || `이미지 생성 중... "${messagePart.imageGenerationSetting.prompt}"`
             };
         } else {
-            throw new Error('이미지 생성에 실패했습니다:', imageResponse.candidates[0].finishReason ?? '');
+            // Gemini나 NovelAI의 경우 기존 방식
+            const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+            if (inlineDataBody) {
+                message = {
+                    ...message,
+                    file: {
+                        dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`,
+                        mimeType: inlineDataBody.mimeType,
+                        name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
+                    }
+                };
+            } else {
+                throw new Error('이미지 생성에 실패했습니다:', imageResponse.candidates[0].finishReason ?? '');
+            }
         }
     }
 
     return message;
 }
 
-async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
+// ComfyUI utility functions - 지연 결과 확인을 위한 저장소
+const pendingComfyUITasks = new Map<string, {
+    promptId: string;
+    baseUrl: string;
+    startTime: number;
+    prompt: string;
+    messageId: string;
+}>();
+
+
+async function checkComfyUIResult(promptId: string, baseUrl: string): Promise<string | null> {
+    try {
+        console.log(`큐 상태 확인 중... (promptId: ${promptId})`);
+        
+        // URL 정리 (끝에 슬래시 제거)
+        const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+        
+        // Check queue status first
+        const queueResponse = await fetch(`${cleanBaseUrl}/queue`);
+        if (!queueResponse.ok) {
+            throw new Error('큐 상태 확인 실패');
+        }
+        
+        const queueData = await queueResponse.json();
+        const isRunning = queueData.queue_running.some((item: any) => item[1] === promptId);
+        const isPending = queueData.queue_pending.some((item: any) => item[1] === promptId);
+        
+        console.log(`큐 상태: running=${isRunning}, pending=${isPending}`);
+        
+        if (isRunning || isPending) {
+            // Still processing
+            console.log('작업이 아직 처리 중입니다');
+            return null;
+        }
+        
+        console.log('작업 완료됨, 히스토리에서 결과 조회 중...');
+        
+        // Job completed, get the result
+        const historyResponse = await fetch(`${cleanBaseUrl}/history/${promptId}`);
+        if (!historyResponse.ok) {
+            throw new Error('히스토리 조회 실패');
+        }
+        
+        const historyData = await historyResponse.json();
+        const outputs = historyData[promptId]?.outputs;
+        
+        console.log('히스토리 데이터:', historyData[promptId] ? '존재함' : '없음');
+        console.log('출력 데이터:', outputs ? Object.keys(outputs) : '없음');
+        
+        if (outputs) {
+            // Find image output - look for nodes with "images" key
+            for (const nodeId in outputs) {
+                const output = outputs[nodeId];
+                console.log(`노드 ${nodeId} 확인:`, output.images ? `이미지 ${output.images.length}개` : '이미지 없음');
+                
+                if (output.images && output.images.length > 0) {
+                    const imagePath = output.images[0];
+                    console.log('이미지 경로:', imagePath);
+                    
+                    // Get the actual image data
+                    const imageUrl = `${cleanBaseUrl}/view?filename=${imagePath.filename}&subfolder=${imagePath.subfolder}&type=${imagePath.type}`;
+                    console.log('이미지 URL:', imageUrl);
+                    
+                    const imageResponse = await fetch(imageUrl);
+                    if (imageResponse.ok) {
+                        const imageBlob = await imageResponse.blob();
+                        console.log('이미지 다운로드 완료, base64 변환 중...');
+                        
+                        // FileReader를 사용하여 안전하게 base64로 변환
+                        return new Promise<string>((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                const dataUrl = reader.result as string;
+                                // data:image/png;base64, 부분을 제거하고 base64만 추출
+                                const base64 = dataUrl.split(',')[1];
+                                console.log('base64 변환 완료');
+                                resolve(base64);
+                            };
+                            reader.onerror = () => {
+                                console.error('이미지 읽기 실패');
+                                reject(new Error('이미지 읽기 실패'));
+                            };
+                            reader.readAsDataURL(imageBlob);
+                        });
+                    } else {
+                        console.error('이미지 다운로드 실패:', imageResponse.status);
+                    }
+                }
+            }
+        }
+        
+        console.log('이미지 출력을 찾을 수 없음');
+        throw new Error('이미지 출력을 찾을 수 없습니다');
+    } catch (error) {
+        console.error('ComfyUI 결과 확인 중 오류:', error);
+        throw error;
+    }
+}
+
+// ComfyUI 작업 존재 여부 확인 함수 (MainChat에서 사용)
+export function checkComfyUITaskExists(taskId: string): boolean {
+    return pendingComfyUITasks.has(taskId);
+}
+
+// ComfyUI 결과 가져오기 함수 (MainChat에서 사용)
+export async function getComfyUITaskResult(taskId: string): Promise<string | null> {
+    const task = pendingComfyUITasks.get(taskId);
+    if (!task) {
+        console.log(`ComfyUI 작업 ${taskId}를 찾을 수 없습니다`);
+        return null;
+    }
+    
+    console.log(`ComfyUI 작업 ${taskId} 상태 확인 중... (promptId: ${task.promptId})`);
+    
+    try {
+        const result = await checkComfyUIResult(task.promptId, task.baseUrl);
+        if (result) {
+            console.log(`ComfyUI 작업 ${taskId} 완료! 결과 수신`);
+            // 작업 완료시 Map에서 제거
+            pendingComfyUITasks.delete(taskId);
+            return result;
+        } else {
+            console.log(`ComfyUI 작업 ${taskId} 아직 처리 중...`);
+            return null;
+        }
+    } catch (error) {
+        console.error(`ComfyUI 작업 ${taskId} 오류:`, error);
+        // 오류 발생시 작업 제거
+        pendingComfyUITasks.delete(taskId);
+        throw error;
+    }
+}
+
+// 대기 중인 ComfyUI 작업들을 확인하고 업데이트하는 함수
+export async function checkPendingComfyUITasks() {
+    const dispatch = store.dispatch;
+    
+    for (const [taskId, task] of pendingComfyUITasks.entries()) {
+        try {
+            // 타임아웃 체크 (5분)
+            if (Date.now() - task.startTime > 300000) {
+                pendingComfyUITasks.delete(taskId);
+                // 타임아웃 메시지로 업데이트
+                dispatch(messagesActions.updateOne({
+                    id: task.messageId,
+                    changes: {
+                        content: `이미지 생성 시간 초과: "${task.prompt}"`
+                    }
+                }));
+                continue;
+            }
+
+            const result = await checkComfyUIResult(task.promptId, task.baseUrl);
+            
+            if (result) {
+                // 이미지 생성 완료
+                pendingComfyUITasks.delete(taskId);
+                dispatch(messagesActions.updateOne({
+                    id: task.messageId,
+                    changes: {
+                        file: {
+                            dataUrl: `data:image/png;base64,${result}`,
+                            mimeType: 'image/png',
+                            name: `generated_image.png`
+                        },
+                        content: `이미지 생성 완료: "${task.prompt}"`
+                    }
+                }));
+            }
+        } catch (error) {
+            // 오류 발생시 작업 제거 및 오류 메시지 업데이트
+            pendingComfyUITasks.delete(taskId);
+            dispatch(messagesActions.updateOne({
+                id: task.messageId,
+                changes: {
+                    content: `이미지 생성 실패: "${task.prompt}" - ${error instanceof Error ? error.message : '알 수 없는 오류'}`
+                }
+            }));
+        }
+    }
+}
+
+export async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
     // 이미지 생성 API 호출
     const imageConfig = selectCurrentImageApiConfig(store.getState());
-    const imageApiProvider = imageConfig.model.startsWith('nai-') ? 'novelai' : 'gemini';
+    const settings = selectAllSettings(store.getState());
+    const imageApiProvider = settings.imageApiProvider;
     let url: string;
     let headers: { 'Content-Type': string; 'Authorization'?: string } = { 'Content-Type': 'application/json' };
     let payload: object = {};
+    
     if (imageApiProvider === 'novelai') {
         url = NAI_DIFFUSION_API_BASE_URL;
         headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
         payload = buildNovelAIImagePayload(imageGenerationSetting.prompt, imageConfig.model);
+    } else if (imageApiProvider === 'comfyui') {
+        const baseUrl = settings.comfyUIConfig.baseUrl.endsWith('/') 
+            ? settings.comfyUIConfig.baseUrl.slice(0, -1) 
+            : settings.comfyUIConfig.baseUrl;
+        url = `${baseUrl}/prompt`;
+        
+        // 선택된 그림체 프롬프트 가져오기
+        const selectedArtStyle = selectSelectedArtStyle(store.getState());
+        const artStylePrompt = selectedArtStyle?.prompt || '';
+        
+        payload = buildComfyUIPayload(imageGenerationSetting.prompt, settings.comfyUIConfig.workflow, artStylePrompt);
     } else { // gemini
         url = `${GEMINI_API_BASE_URL}${imageConfig.model}:generateContent?key=${imageConfig.apiKey}`;
         payload = buildGeminiImagePayload(imageGenerationSetting.prompt, imageGenerationSetting.isSelfie, char);
@@ -153,6 +421,39 @@ async function callImageGeneration(imageGenerationSetting: { prompt: string; isS
             }
 
             return data;
+        } else if (imageApiProvider === 'comfyui') {
+            if (!response.ok) {
+                const errorData = await response.text();
+                console.error("ComfyUI API Error:", errorData);
+                throw new Error(`ComfyUI API 요청 실패: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            const promptId = result.prompt_id;
+            
+            // ComfyUI 작업을 대기 목록에 추가 (지연 처리)
+            const taskId = nanoid();
+            
+            pendingComfyUITasks.set(taskId, {
+                promptId: promptId,
+                baseUrl: settings.comfyUIConfig.baseUrl,
+                startTime: Date.now(),
+                prompt: imageGenerationSetting.prompt,
+                messageId: '' // 나중에 MainChat에서 실제 메시지 ID로 업데이트됨
+            });
+            
+            // 즉시 "생성 중..." 상태로 반환
+            return {
+                candidates: [{
+                    content: {
+                        parts: [{
+                            text: `이미지 생성 중... "${imageGenerationSetting.prompt}"`
+                        }]
+                    },
+                    finishReason: 'stop'
+                }],
+                __comfyui_task_id: taskId
+            };
         } else { // novelai
             if (!response.ok) {
                 const errorData = await response.json();
@@ -375,6 +676,9 @@ async function LLMSend(
         if (!persona) {
             return;
         }
+
+        // 대기 중인 ComfyUI 작업들 확인
+        await checkPendingComfyUITasks();
 
         // Build negative references from last few non-self messages
         const recentOthers = [...messages]

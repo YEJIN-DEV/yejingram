@@ -15,6 +15,7 @@ import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
 import settingsReducer from '../entities/setting/slice';
+import themeReducer from '../entities/theme/slice';
 
 localforage.config({
     name: 'yejingram',
@@ -24,8 +25,19 @@ localforage.config({
 const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
-    version: 0,
-    whitelist: ['characters', 'rooms', 'messages', 'settings'],
+    version: 1,
+    whitelist: ['characters', 'rooms', 'messages', 'settings', 'theme'],
+    migrate: (state: any) => {
+        // Migration from version 0 to version 1: Add ComfyUI config
+        if (state && state.settings && !state.settings.comfyUIConfig) {
+            state.settings.comfyUIConfig = {
+                baseUrl: '',
+                workflow: '{"3": {"inputs": {"seed": 378669112180739, "steps": 28, "cfg": 6, "sampler_name": "euler_ancestral", "scheduler": "normal", "denoise": 1, "model": ["4", 0], "positive": ["6", 0], "negative": ["7", 0], "latent_image": ["5", 0]}, "class_type": "KSampler", "_meta": {"title": "KSampler"}}}',
+                timeout: 240
+            };
+        }
+        return Promise.resolve(state);
+    },
 };
 
 const appReducer = combineReducers({
@@ -33,6 +45,7 @@ const appReducer = combineReducers({
     rooms: roomReducer,
     settings: settingsReducer,
     messages: messageReducer,
+    theme: themeReducer,
 });
 
 export const RESET_ALL = 'app/resetAll' as const;

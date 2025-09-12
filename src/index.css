@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* 다크 모드 설정 - Tailwind CSS v4 방식 */
+@theme {
+  --dark: class;
+}
+
 /* Instagram 스타일 Inter 폰트 설정 */
 * {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
