@@ -298,50 +298,64 @@ export async function buildGeminiApiPayload(
     },
     extraSystemInstruction?: string
 ): Promise<GeminiApiPayload> {
-    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, messages, useStructuredOutput);
-    const contents = buildGeminiContents(messages, isProactive, persona, character, room, useStructuredOutput);
+    const maxTokens = selectPrompts(store.getState()).maxContextTokens;
+    let trimmedMessages = [...messages];
 
-    const generationConfig: any = {
-        temperature: selectPrompts(store.getState()).temperature,
-        topP: selectPrompts(store.getState()).topP,
-    };
+    while (true) {
+        const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput);
+        const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput);
 
-    const topK = selectPrompts(store.getState()).topK;
+        const generationConfig: any = {
+            temperature: selectPrompts(store.getState()).temperature,
+            topP: selectPrompts(store.getState()).topP,
+        };
 
-    if (topK) {
-        generationConfig.topK = topK;
-    }
+        const topK = selectPrompts(store.getState()).topK;
 
-    if (useStructuredOutput) {
-        generationConfig.responseMimeType = "application/json";
-        generationConfig.responseSchema = structuredOutputSchema;
-        if (useImageResponse) {
-            generationConfig.responseSchema.properties.messages.items.properties.imageGenerationSetting = {
-                type: "OBJECT",
-                properties: {
-                    "prompt": { "type": "STRING" },
-                    "isSelfie": { "type": "BOOLEAN" }
-                },
-                required: ["prompt", "isSelfie"]
-            };
+        if (topK) {
+            generationConfig.topK = topK;
+        }
+
+        if (useStructuredOutput) {
+            generationConfig.responseMimeType = "application/json";
+            generationConfig.responseSchema = structuredOutputSchema;
+            if (useImageResponse) {
+                generationConfig.responseSchema.properties.messages.items.properties.imageGenerationSetting = {
+                    type: "OBJECT",
+                    properties: {
+                        "prompt": { "type": "STRING" },
+                        "isSelfie": { "type": "BOOLEAN" }
+                    },
+                    required: ["prompt", "isSelfie"]
+                };
+            }
+        }
+
+        const payload: GeminiApiPayload = {
+            contents: contents,
+            systemInstruction: {
+                parts: [{ text: systemPrompt }]
+            },
+            generationConfig: generationConfig,
+            safetySettings: [
+                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+            ]
+        };
+
+        const tokenCount = await CountTokens({ payload }, provider, model, auth);
+        console.debug("Total tokens after trimming:", tokenCount);
+
+        if (tokenCount <= maxTokens) {
+            return payload;
+        } else if (trimmedMessages.length <= 1) {
+            throw new Error("Cannot trim messages further to meet token limit.");
+        } else {
+            trimmedMessages.shift(); // Remove the oldest message
         }
     }
-
-    let payload: GeminiApiPayload = {
-        contents: contents,
-        systemInstruction: {
-            parts: [{ text: systemPrompt }]
-        },
-        generationConfig: generationConfig,
-        safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-        ]
-    };
-    console.debug("Total tokens", await CountTokens({ payload }, provider, model, auth));
-    return payload;
 }
 
 function buildClaudeContents(messages: Message[], isProactive: boolean, persona?: Persona, model?: string, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean) {
@@ -438,23 +452,37 @@ export async function buildClaudeApiPayload(
     apiKey: string,
     extraSystemInstruction?: string
 ): Promise<ClaudeApiPayload> {
-    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, messages, useStructuredOutput);
-    const contents = buildClaudeContents(messages, isProactive, persona, model, character, extraSystemInstruction, room, useStructuredOutput);
+    const maxTokens = selectPrompts(store.getState()).maxContextTokens;
+    let trimmedMessages = [...messages];
 
-    const payload: ClaudeApiPayload = {
-        model: model,
-        messages: contents,
-        system: [{
-            type: "text",
-            text: systemPrompt
-        }],
-        temperature: selectPrompts(store.getState()).temperature,
-        top_k: selectPrompts(store.getState()).topK,
-        ...(model.startsWith("claude-opus-4-1") ? {} : { top_p: selectPrompts(store.getState()).topP }),
-        max_tokens: selectPrompts(store.getState()).maxResponseTokens,
-    };
-    console.debug("Total tokens", await CountTokens({ payload }, 'claude', model, { apiKey }));
-    return payload;
+    while (true) {
+        const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput);
+        const contents = buildClaudeContents(trimmedMessages, isProactive, persona, model, character, extraSystemInstruction, room, useStructuredOutput);
+
+        const payload: ClaudeApiPayload = {
+            model: model,
+            messages: contents,
+            system: [{
+                type: "text",
+                text: systemPrompt
+            }],
+            temperature: selectPrompts(store.getState()).temperature,
+            top_k: selectPrompts(store.getState()).topK,
+            ...(model.startsWith("claude-opus-4-1") ? {} : { top_p: selectPrompts(store.getState()).topP }),
+            max_tokens: selectPrompts(store.getState()).maxResponseTokens,
+        };
+
+        const tokenCount = await CountTokens({ payload }, 'claude', model, { apiKey });
+        console.debug("Total tokens after trimming:", tokenCount);
+
+        if (tokenCount <= maxTokens) {
+            return payload;
+        } else if (trimmedMessages.length <= 1) {
+            throw new Error("Cannot trim messages further to meet token limit.");
+        } else {
+            trimmedMessages.shift(); // Remove the oldest message
+        }
+    }
 }
 
 // OpenAI (Chat Completions) payload builders
@@ -549,17 +577,32 @@ export async function buildOpenAIApiPayload(
     model: string,
     extraSystemInstruction?: string
 ): Promise<OpenAIApiPayload> {
-    const history = await buildOpenAIContents(messages, isProactive, model, persona, character, extraSystemInstruction, room, useStructuredOutput);
+    const maxTokens = selectPrompts(store.getState()).maxContextTokens;
+    let trimmedMessages = [...messages];
 
-    const payload: OpenAIApiPayload = {
-        model,
-        messages: history,
-        temperature: model == "gpt-5" ? 1 : selectPrompts(store.getState()).temperature,
-        top_p: model == "gpt-5" ? undefined : selectPrompts(store.getState()).topP,
-        max_completion_tokens: selectPrompts(store.getState()).maxResponseTokens,
-        response_format: useStructuredOutput ? { type: 'json_object' } : { type: 'text' },
-    };
-    return payload;
+    while (true) {
+        const history = await buildOpenAIContents(trimmedMessages, isProactive, model, persona, character, extraSystemInstruction, room, useStructuredOutput);
+
+        const payload: OpenAIApiPayload = {
+            model,
+            messages: history,
+            temperature: model == "gpt-5" ? 1 : selectPrompts(store.getState()).temperature,
+            top_p: model == "gpt-5" ? undefined : selectPrompts(store.getState()).topP,
+            max_completion_tokens: selectPrompts(store.getState()).maxResponseTokens,
+            response_format: useStructuredOutput ? { type: 'json_object' } : { type: 'text' },
+        };
+
+        const tokenCount = await CountTokens({ content: history }, 'openai', model);
+        console.debug("Total tokens after trimming:", tokenCount);
+
+        if (tokenCount <= maxTokens) {
+            return payload;
+        } else if (trimmedMessages.length <= 1) {
+            throw new Error("Cannot trim messages further to meet token limit.");
+        } else {
+            trimmedMessages.shift(); // Remove the oldest message
+        }
+    }
 }
 
 export function buildGeminiImagePayload(prompt: string, isSelfie: boolean, char: Character) {
