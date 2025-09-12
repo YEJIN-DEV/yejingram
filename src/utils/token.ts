@@ -120,8 +120,50 @@ export async function CountTokens(prompts: Prompts, provider: ApiProvider, model
             }
         case 'grok':
             {
-                //TODO: Implement Grok API token counting
-                return 0;
+                if (!auth?.apiKey) {
+                    return 0;
+                }
+                try {
+                    const url = "https://api.x.ai/v1/tokenize-text";
+                    const claudePayload = prompts.payload as ClaudeApiPayload;
+                    const serialized = [
+                        claudePayload.system ? `System: ${typeof claudePayload.system === 'string' ? claudePayload.system : claudePayload.system.filter(c => c.type === 'text').map(c => (c as { type: 'text', text: string }).text).join('').trim()}<|separator|>\n` : '',
+                        ...claudePayload.messages.map(({ role, content }) => {
+                            let rolePrefix = '';
+                            switch (role) {
+                                case 'user':
+                                    rolePrefix = 'Human: ';
+                                    break;
+                                case 'assistant':
+                                    rolePrefix = 'Assistant: ';
+                                    break;
+                            }
+                            const textContent = typeof content === 'string' ? content : content.filter(c => c.type === 'text').map(c => (c as { type: 'text', text: string }).text).join('');
+                            return `${rolePrefix}${textContent.trim()}<|separator|>\n`;
+                        }),
+                        "Assistant:",
+                    ].join('');
+                    const payload = {
+                        'model': model,
+                        'text': serialized
+                    };
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${auth.apiKey}`,
+                            'content-type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) {
+                        throw new Error(`API request failed: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    return data.token_ids.length || 0;
+                } catch (error) {
+                    console.error('Error counting Grok tokens:', error);
+                    return 0;
+                }
             }
         default:
             return 0;

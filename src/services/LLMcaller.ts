@@ -222,8 +222,10 @@ async function callApi(
             }, extraSystemInstruction);
             break;
         case 'claude':
+            payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
+            break;
         case 'grok':
-            payload = await buildClaudeApiPayload(room, persona, character, messages, isProactive, settings.useStructuredOutput, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
+            payload = await buildClaudeApiPayload('grok', room, persona, character, messages, isProactive, settings.useStructuredOutput, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
             break;
         case 'openai':
         case 'customOpenAI':

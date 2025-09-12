@@ -442,6 +442,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
 }
 
 export async function buildClaudeApiPayload(
+    provider: 'claude' | 'grok',
     room: Room,
     persona: Persona,
     character: Character,
@@ -472,7 +473,7 @@ export async function buildClaudeApiPayload(
             max_tokens: selectPrompts(store.getState()).maxResponseTokens,
         };
 
-        const tokenCount = await CountTokens({ payload }, 'claude', model, { apiKey });
+        const tokenCount = await CountTokens({ payload }, provider, model, { apiKey });
         console.debug("Total tokens after trimming:", tokenCount);
 
         if (tokenCount <= maxTokens) {
