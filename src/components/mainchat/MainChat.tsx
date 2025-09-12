@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
+import { Menu, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown, Image } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
@@ -11,10 +11,12 @@ import { messagesActions } from '../../entities/message/slice';
 import { roomsActions } from '../../entities/room/slice';
 import { Avatar, GroupChatAvatar } from '../../utils/Avatar';
 import { SendMessage, SendGroupChatMessage } from '../../services/LLMcaller';
+import { checkAndTriggerCharacterInteraction, interruptCharacterInteraction } from '../../services/characterInteractionService';
 import type { Sticker } from '../../entities/character/types';
 import { StickerPanel } from './StickerPanel';
 import type { FileToSend } from '../../entities/message/types';
 import { selectAllSettings } from '../../entities/setting/selectors';
+import { selectIsDarkMode } from '../../entities/theme/selectors';
 import { replacePlaceholders } from '../../utils/placeholder';
 import { nanoid } from '@reduxjs/toolkit';
 import { useCharacterOnlineStatus } from '../../utils/simulateOnline';
@@ -45,6 +47,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
   const [tempAuthorNote, setTempAuthorNote] = useState('');
   const [isRoomMemoryOpen, setIsRoomMemoryOpen] = useState(false);
   const [isLoreBookOpen, setIsLoreBookOpen] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -66,6 +69,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     room?.memberIds.map(id => selectCharacterById(state, id))
   );
   const settings = useSelector(selectAllSettings);
+  const isDarkMode = useSelector(selectIsDarkMode);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -157,6 +161,145 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     setStickerToSend(null);
   };
 
+  const handleGenerateImage = async () => {
+    if (!room || settings.imageApiProvider !== 'comfyui') {
+      toast.error('ComfyUI가 설정되지 않았습니다. 설정에서 이미지 생성 제공업체를 ComfyUI로 선택해주세요.');
+      return;
+    }
+
+    if (!settings.comfyUIConfig?.baseUrl) {
+      toast.error('ComfyUI URL이 설정되지 않았습니다. 설정 > ComfyUI에서 URL을 입력해주세요.');
+      return;
+    }
+
+    // ComfyUI 서버 연결 테스트
+    try {
+      const baseUrl = settings.comfyUIConfig.baseUrl.endsWith('/') 
+        ? settings.comfyUIConfig.baseUrl.slice(0, -1) 
+        : settings.comfyUIConfig.baseUrl;
+      const testResponse = await fetch(`${baseUrl}/system_stats`, { 
+        method: 'GET',
+        signal: AbortSignal.timeout(5000) // 5초 타임아웃
+      });
+      if (!testResponse.ok) {
+        throw new Error(`서버 응답 오류: ${testResponse.status}`);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          toast.error('ComfyUI 서버 연결 시간 초과. 서버가 실행 중인지 확인해주세요.');
+        } else if (error.message.includes('ERR_NAME_NOT_RESOLVED') || error.message.includes('Failed to fetch')) {
+          toast.error(`ComfyUI 서버에 연결할 수 없습니다.\n\nURL: ${settings.comfyUIConfig.baseUrl}\n\n• ComfyUI가 실행 중인지 확인해주세요\n• Cloudflare Tunnel이 활성화되어 있는지 확인해주세요\n• 로컬 테스트: http://localhost:8188`);
+        } else {
+          toast.error(`ComfyUI 서버 연결 실패: ${error.message}`);
+        }
+      } else {
+        toast.error('ComfyUI 서버 연결 실패');
+      }
+      return;
+    }
+
+    // 최근 채팅 메시지들을 기반으로 프롬프트 생성
+    const recentMessages = messages.slice(-5); // 최근 5개 메시지
+    const chatContext = recentMessages
+      .filter(msg => msg.type === 'TEXT' && msg.content.trim())
+      .map(msg => msg.content)
+      .join(' ');
+
+    if (!chatContext) {
+      toast.error('이미지를 생성할 충분한 대화 내용이 없습니다.');
+      return;
+    }
+
+    // 이미지 생성 시작 - 입력 비활성화
+    setIsGeneratingImage(true);
+    toast.success('이미지 생성을 시작했습니다...');
+
+    try {
+      // ComfyUI에 이미지 생성 요청
+      const { callImageGeneration, checkPendingComfyUITasks } = await import('../../services/LLMcaller');
+      const { convertKoreanToImageTags } = await import('../../services/promptBuilder');
+      
+      // 한글 대화 내용을 영어 태그로 변환
+      console.log('원본 한글 텍스트:', chatContext);
+      const prompt = await convertKoreanToImageTags(chatContext, character?.name);
+      
+      const dummyCharacter = character || {
+        id: -1,
+        name: 'System',
+        description: '',
+        stickers: []
+      };
+
+      const imageResult = await callImageGeneration(
+        { prompt, isSelfie: false },
+        dummyCharacter
+      );
+
+      // ComfyUI 지연 처리인 경우
+      if (imageResult && imageResult.__comfyui_task_id) {
+        const taskId = imageResult.__comfyui_task_id;
+        
+        // 주기적으로 상태 확인 및 결과가 나오면 파일로 설정
+        const checkInterval = setInterval(async () => {
+          try {
+            const { getComfyUITaskResult } = await import('../../services/LLMcaller');
+            
+            // 결과를 직접 확인하고 가져옴
+            const result = await getComfyUITaskResult(taskId);
+            if (result) {
+              clearInterval(checkInterval);
+              setFileToSend({
+                dataUrl: `data:image/png;base64,${result}`,
+                mimeType: 'image/png',
+                name: 'generated_image.png'
+              });
+              setIsGeneratingImage(false);
+              toast.success('이미지가 생성되었습니다! 캡션을 추가하고 전송하세요.');
+              console.log('이미지 생성 완료, 파일로 설정됨');
+            } else {
+              console.log('ComfyUI 작업 아직 진행 중...');
+            }
+          } catch (error) {
+            console.error('ComfyUI 상태 확인 중 오류:', error);
+            clearInterval(checkInterval);
+            setIsGeneratingImage(false);
+            toast.error(`이미지 생성 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+          }
+        }, 2000);
+
+        // 5분 후 타임아웃
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          if (isGeneratingImage) {
+            setIsGeneratingImage(false);
+            toast.error('이미지 생성 시간 초과');
+          }
+        }, 300000);
+      }
+      // 즉시 결과가 있는 경우
+      else if (imageResult && imageResult.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
+        const inlineData = imageResult.candidates[0].content.parts[0].inlineData;
+        
+        setFileToSend({
+          dataUrl: `data:${inlineData.mimeType};base64,${inlineData.data}`,
+          mimeType: inlineData.mimeType,
+          name: `generated_image.${inlineData.mimeType.split('/')[1] || 'png'}`
+        });
+        setIsGeneratingImage(false);
+        toast.success('이미지가 생성되었습니다! 캡션을 추가하고 전송하세요.');
+      } else {
+        setIsGeneratingImage(false);
+        toast.error('이미지 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+      setIsGeneratingImage(false);
+      toast.error(`이미지 생성 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+    }
+  };
+
+
   const handleOpenFileUpload = () => {
     fileInputRef.current?.click();
   };
@@ -192,7 +335,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
   };
 
   // Add message immediately to UI and schedule LLM request after 1s of no further typing
-  const sendPendingRequest = () => {
+  const sendPendingRequest = async () => {
     // clear timer
     if (debounceTimerRef.current) {
       window.clearTimeout(debounceTimerRef.current);
@@ -208,16 +351,29 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     const targetRoom = pending.room;
     pendingRequestRef.current = null;
 
-    let responsePromise;
-    if (targetRoom.type === 'Group') {
-      responsePromise = SendGroupChatMessage(targetRoom, setTypingCharacterId);
-    } else {
-      responsePromise = SendMessage(targetRoom, setTypingCharacterId);
-    }
+    try {
+      // Always provide initial response first
+      let responsePromise;
+      if (targetRoom.type === 'Group') {
+        responsePromise = SendGroupChatMessage(targetRoom, setTypingCharacterId);
+      } else {
+        responsePromise = SendMessage(targetRoom, setTypingCharacterId);
+      }
 
-    responsePromise.then(() => {
+      await responsePromise;
+
+      // For group chats with character interaction enabled, trigger character interaction after initial response
+      if (targetRoom.type === 'Group' && targetRoom.groupSettings?.characterInteractionEnabled) {
+        // Wait a bit before starting character interactions to feel more natural
+        setTimeout(() => {
+          checkAndTriggerCharacterInteraction(targetRoom, dispatch);
+        }, 1500 + Math.random() * 1000); // 1.5-2.5초 지연
+      }
+    } catch (error) {
+      console.error('Error in sendPendingRequest:', error);
+    } finally {
       setIsWaitingForResponse(false);
-    });
+    }
   };
 
   const handleSendMessage = (text: string) => {
@@ -228,6 +384,11 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
     if (settings?.selectedPersonaId == null) {
       toast.error('선택된 페르소나가 없습니다. 설정 > 페르소나에서 선택 또는 추가해주세요.');
       return;
+    }
+
+    // 사용자가 새 메시지를 보낼 때 진행 중인 상호톡을 중단
+    if (room.type === 'Group') {
+      interruptCharacterInteraction(room.id);
     }
 
     const messageType = stickerToSend ? 'STICKER' : fileToSend ? (fileToSend.mimeType.startsWith('image') ? 'IMAGE' : (fileToSend.mimeType.startsWith('audio') ? 'AUDIO' : (fileToSend.mimeType.startsWith('video') ? 'VIDEO' : 'FILE'))) : 'TEXT';
@@ -293,22 +454,22 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
 
   if (!room) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
+      <div className={`flex-1 flex items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
         <button
           id="mobile-sidebar-toggle"
-          className="absolute top-4 left-4 p-2 rounded-full hover:bg-gray-100 md:hidden"
+          className={`absolute top-4 left-4 p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}
           onClick={onToggleMobileSidebar}
         >
-          <Menu className="h-5 w-5 text-gray-600" />
+          <Menu className={`h-5 w-5 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
         </button>
         <div className="text-center">
           <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <MessageCircle className="w-12 h-12 text-white" />
           </div>
-          <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-3">
+          <h3 className={`text-xl md:text-2xl font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'} mb-3`}>
             메시지를 보내세요
           </h3>
-          <p className="text-sm md:text-base text-gray-500 leading-relaxed">
+          <p className={`text-sm md:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} leading-relaxed`}>
             친구나 그룹과 개인 사진 및 메시지를 공유하세요.
           </p>
         </div>
@@ -358,7 +519,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
         />
 
         {/* Messages Container*/}
-        <div id="messages-container" className="flex-1 overflow-y-auto bg-white" ref={messagesContainerRef}>
+        <div id="messages-container" className={`flex-1 overflow-y-auto ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`} ref={messagesContainerRef}>
           <MessageList
             messages={messages}
             room={room}
@@ -372,18 +533,20 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
         </div>
 
         {/* Input Area*/}
-        <div className="px-6 py-4 bg-white border-t border-gray-200">
+        <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-900 border-t border-gray-700' : 'bg-white border-t border-gray-200'}`}>
           <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="*/*" className="hidden" />
           <InputArea
             room={room}
             isWaitingForResponse={isWaitingForResponse}
             stickerToSend={stickerToSend}
             fileToSend={fileToSend}
+            isGeneratingImage={isGeneratingImage}
             onOpenFileUpload={handleOpenFileUpload}
             onCancelFilePreview={handleCancelFilePreview}
             onToggleUserStickerPanel={handleToggleStickerPanel}
             onStickerClear={handleCancelSticker}
             onSendMessage={handleSendMessage}
+            onGenerateImage={handleGenerateImage}
             onPaste={handlePaste}
             onFocus={handleInputFocus}
             onUserActivity={handleUserActivity}
@@ -440,6 +603,9 @@ function ChatHeader({
   onOpenGroupchatSettings
 }: ChatHeaderProps) {
   const dispatch = useDispatch();
+  const isDarkMode = useSelector(selectIsDarkMode);
+  const characterOnlineStatus = useCharacterOnlineStatus(character?.id || -1);
+  
   const getHeaderAvatar = () => {
     if (room.type === 'Group') {
       return (
@@ -452,7 +618,7 @@ function ChatHeader({
       return (
         <>
           <Avatar char={character} size="md" />
-          <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${useCharacterOnlineStatus(character.id) ? 'bg-green-500' : 'bg-gray-500'} border-2 border-white rounded-full`}></div>
+          <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${characterOnlineStatus ? 'bg-green-500' : 'bg-gray-500'} border-2 border-white rounded-full`}></div>
         </>
       );
     }
@@ -480,9 +646,9 @@ function ChatHeader({
 
   const getRoomNameEditSize = () => {
     if (room.type === 'Direct') {
-      return "bg-gray-100 text-gray-900 text-sm rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500";
+      return `${isDarkMode ? 'bg-gray-700 text-gray-100' : 'bg-gray-100 text-gray-900'} text-sm rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500`;
     }
-    return "bg-gray-100 text-gray-900 text-lg font-semibold rounded-lg px-3 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500";
+    return `${isDarkMode ? 'bg-gray-700 text-gray-100' : 'bg-gray-100 text-gray-900'} text-lg font-semibold rounded-lg px-3 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500`;
   };
 
   const getEditButtonSize = () => {
@@ -500,14 +666,14 @@ function ChatHeader({
   };
 
   return (
-    <header className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+    <header className={`px-6 py-4 ${isDarkMode ? 'bg-gray-900 border-b border-gray-700' : 'bg-white border-b border-gray-200'} flex items-center justify-between`}>
       <div className="flex items-center space-x-4">
         <button
           id="mobile-sidebar-toggle"
-          className="p-2 -ml-2 rounded-full hover:bg-gray-100 md:hidden"
+          className={`p-2 -ml-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}
           onClick={onToggleMobileSidebar}
         >
-          <Menu className="h-5 w-5 text-gray-600" />
+          <Menu className={`h-5 w-5 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
         </button>
         <div className="relative">
           {getHeaderAvatar()}
@@ -529,10 +695,10 @@ function ChatHeader({
                   if (e.key === 'Escape') onCancelEditRoomName();
                 }}
               />
-              <button onClick={onSaveRoomName} className="p-1 text-green-600 hover:text-green-700">
+              <button onClick={onSaveRoomName} className={`p-1 ${isDarkMode ? 'text-green-400 hover:text-green-300' : 'text-green-600 hover:text-green-700'}`}>
                 <Check className={getEditButtonSize()} />
               </button>
-              <button onClick={onCancelEditRoomName} className="p-1 text-red-600 hover:text-red-700">
+              <button onClick={onCancelEditRoomName} className={`p-1 ${isDarkMode ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-700'}`}>
                 <XCircle className={getEditButtonSize()} />
               </button>
             </div>
@@ -540,12 +706,12 @@ function ChatHeader({
             <>
               {room.type === 'Direct' ? (
                 <>
-                  <h2 className="font-bold text-gray-900 text-lg">{getHeaderTitle()}</h2>
+                  <h2 className={`font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} text-lg`}>{getHeaderTitle()}</h2>
                   <div className={`group flex items-center space-x-2 ${getEditPosition()}`}>
-                    <p className="text-sm text-gray-500">{getHeaderSubtitle()}</p>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{getHeaderSubtitle()}</p>
                     <button
                       onClick={onEditRoomName}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
+                      className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 ${isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                       <Edit2 className={getEditButtonSize()} />
                     </button>
@@ -554,15 +720,15 @@ function ChatHeader({
               ) : (
                 <>
                   <div className="group flex items-center space-x-2">
-                    <h2 className="font-bold text-gray-900 text-lg">{getHeaderTitle()}</h2>
+                    <h2 className={`font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} text-lg`}>{getHeaderTitle()}</h2>
                     <button
                       onClick={onEditRoomName}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
+                      className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 ${isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                       <Edit2 className={getEditButtonSize()} />
                     </button>
                   </div>
-                  <p className="text-sm text-gray-500 flex items-center mt-1">
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} flex items-center mt-1`}>
                     {getHeaderSubtitle()}
                   </p>
                 </>
@@ -572,16 +738,16 @@ function ChatHeader({
         </div>
       </div>
       <div className="flex items-center space-x-2">
-        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="작가의 노트" onClick={onOpenAuthorNote}>
+        <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`} title="작가의 노트" onClick={onOpenAuthorNote}>
           <StickyNote className="w-5 h-5" />
         </button>
-        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="방 메모리" onClick={onOpenRoomMemory}>
+        <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`} title="방 메모리" onClick={onOpenRoomMemory}>
           <Brain className="w-5 h-5" />
         </button>
-        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="활성화된 로어북" onClick={onOpenLoreBook}>
+        <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`} title="활성화된 로어북" onClick={onOpenLoreBook}>
           <BookOpen className="w-5 h-5" />
         </button>
-        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600" title={room.type === 'Direct' ? "캐릭터 설정" : "방 설정"} onClick={() => {
+        <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`} title={room.type === 'Direct' ? "캐릭터 설정" : "방 설정"} onClick={() => {
           if (room.type === 'Group') {
             dispatch(settingsActions.setEditingRoomId(room.id));
             onOpenGroupchatSettings();
@@ -602,6 +768,7 @@ interface InputAreaProps {
   isWaitingForResponse: boolean;
   fileToSend?: FileToSend | null;
   stickerToSend?: Sticker | null;
+  isGeneratingImage?: boolean;
 
   // 이벤트 핸들러들
   onOpenFileUpload?: () => void;
@@ -609,6 +776,7 @@ interface InputAreaProps {
   onToggleUserStickerPanel?: () => void;
   onSendMessage: (text: string) => void;
   onStickerClear?: () => void;
+  onGenerateImage?: () => void;
   onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
   onFocus?: () => void;
   onUserActivity?: () => void;
@@ -621,16 +789,19 @@ function InputArea({
   isWaitingForResponse,
   fileToSend,
   stickerToSend,
+  isGeneratingImage,
   onOpenFileUpload,
   onCancelFilePreview,
   onToggleUserStickerPanel,
   onSendMessage,
   onStickerClear,
+  onGenerateImage,
   onPaste,
   onFocus,
   onUserActivity,
   renderUserStickerPanel,
 }: InputAreaProps) {
+  const isDarkMode = useSelector(selectIsDarkMode);
   const [text, setText] = useState("");
   const [showInputOptions, setInputOptions] = useState(false);
   const hasFile = !!fileToSend;
@@ -661,7 +832,7 @@ function InputArea({
     <div className="input-area-container relative">
       {/* File Preview*/}
       {hasFile && fileToSend?.dataUrl && (
-        <div className="mb-3 p-3 bg-gray-50 rounded-xl">
+        <div className={`mb-3 p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl`}>
           <div className="relative inline-block">
             <div className="rounded-lg overflow-hidden">
               {renderFile(fileToSend, true)}
@@ -679,7 +850,7 @@ function InputArea({
 
       {/* Selected Sticker Display*/}
       {stickerToSend && (
-        <div className="mb-3 p-3 bg-gray-50 rounded-xl flex items-center gap-3 text-sm text-gray-600">
+        <div className={`mb-3 p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl flex items-center gap-3 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
           <img
             src={stickerToSend.data}
             alt={stickerToSend.name}
@@ -698,16 +869,35 @@ function InputArea({
 
       {/* Input Options Popover*/}
       {showInputOptions && (
-        <div className="absolute bottom-full left-4 mb-2 w-48 bg-white rounded-2xl shadow-lg border border-gray-200 p-2 animate-fadeIn">
+        <div className={`absolute bottom-full left-4 mb-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-2xl shadow-lg border p-2 animate-fadeIn`}>
           <button
             type="button"
             onClick={() => {
               onOpenFileUpload?.();
               setInputOptions((prev) => !prev);
             }}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl hover:bg-gray-50 text-gray-700"
+            className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl ${isDarkMode ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-50 text-gray-700'}`}
           >
             <Paperclip className="w-4 h-4" /> 파일
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onGenerateImage?.();
+              setInputOptions((prev) => !prev);
+            }}
+            disabled={isGeneratingImage}
+            className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl ${
+              isGeneratingImage 
+                ? isDarkMode 
+                  ? 'text-gray-500 cursor-not-allowed' 
+                  : 'text-gray-400 cursor-not-allowed'
+                : isDarkMode 
+                  ? 'hover:bg-gray-700 text-gray-200' 
+                  : 'hover:bg-gray-50 text-gray-700'
+            }`}
+          >
+            <Image className="w-4 h-4" /> {isGeneratingImage ? '이미지 생성 중...' : '이미지 생성'}
           </button>
         </div>
       )}
@@ -720,8 +910,8 @@ function InputArea({
             id="open-input-options-btn"
             type="button"
             onClick={() => setInputOptions((prev) => !prev)}
-            className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 flex-shrink-0"
-            disabled={isWaitingForResponse}
+            className={`p-2 ${isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'} rounded-full transition-all duration-200 flex-shrink-0`}
+            disabled={isWaitingForResponse || isGeneratingImage}
           >
             <Plus className="w-5 h-5" />
           </button>
@@ -729,14 +919,14 @@ function InputArea({
 
         {/* Input Field Container */}
         <div className="flex-1 relative">
-          <div className="flex items-end bg-gray-100 rounded-3xl px-4 py-2">
+          <div className={`flex items-end ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} rounded-3xl px-4 py-2`}>
             <textarea
               id="new-message-input"
               ref={inputRef}
-              placeholder={placeholder}
-              className="flex-1 bg-transparent text-gray-900 resize-none border-none outline-none text-sm placeholder-gray-500 max-h-20"
+              placeholder={isGeneratingImage ? "이미지 생성 중..." : placeholder}
+              className={`flex-1 bg-transparent ${isDarkMode ? 'text-gray-100 placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'} resize-none border-none outline-none text-sm max-h-20`}
               rows={1}
-              disabled={isWaitingForResponse}
+              disabled={isWaitingForResponse || isGeneratingImage}
               value={text}
               onChange={(e) => {
                 setText(e.target.value);
@@ -763,8 +953,8 @@ function InputArea({
                 id="sticker-btn"
                 type="button"
                 onClick={onToggleUserStickerPanel}
-                className="p-1 text-gray-500 hover:text-gray-700 transition-all duration-200"
-                disabled={isWaitingForResponse}
+                className={`p-1 ${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} transition-all duration-200`}
+                disabled={isWaitingForResponse || isGeneratingImage}
               >
                 <Smile className="w-5 h-5" />
               </button>
@@ -775,7 +965,7 @@ function InputArea({
                   type="button"
                   onClick={handleSend}
                   className="p-1 text-blue-500 hover:text-blue-600 transition-all duration-200 font-semibold text-sm"
-                  disabled={isWaitingForResponse}
+                  disabled={isWaitingForResponse || isGeneratingImage}
                   title="전송"
                 >
                   전송
@@ -793,26 +983,27 @@ function InputArea({
 }
 
 function AuthorNoteModal({ open, onClose, value, onChange, onSave }: { open: boolean; onClose: () => void; value: string; onChange: (v: string) => void; onSave: () => void; }) {
+  const isDarkMode = useSelector(selectIsDarkMode);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl p-6">
+      <div className={`w-full max-w-lg mx-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-2xl border shadow-xl p-6`}>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-gray-900 font-semibold">
+          <div className={`flex items-center gap-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} font-semibold`}>
             <StickyNote className="w-5 h-5 text-blue-500" /> 작가의 노트
           </div>
-          <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors" onClick={onClose}>
+          <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'} transition-colors`} onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
         <textarea
-          className="w-full h-48 p-4 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 resize-none"
+          className={`w-full h-48 p-4 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 resize-none`}
           placeholder="방 전체에 적용될 메타 지침을 적어주세요. (예: 톤, 금지사항, 세계관 규칙, 줄거리 방향 등)"
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
         <div className="mt-4 flex justify-end gap-3">
-          <button className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors font-medium" onClick={onClose}>취소</button>
+          <button className={`px-4 py-2 rounded-xl ${isDarkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} transition-colors font-medium`} onClick={onClose}>취소</button>
           <button className="px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium" onClick={onSave}>저장</button>
         </div>
       </div>
@@ -821,19 +1012,20 @@ function AuthorNoteModal({ open, onClose, value, onChange, onSave }: { open: boo
 }
 
 function RoomMemoryModal({ open, onClose, roomId }: { open: boolean; onClose: () => void; roomId: string; }) {
+  const isDarkMode = useSelector(selectIsDarkMode);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-2xl mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl p-6">
+      <div className={`w-full max-w-2xl mx-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-2xl border shadow-xl p-6`}>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-gray-900 font-semibold">
+          <div className={`flex items-center gap-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} font-semibold`}>
             <Brain className="w-5 h-5 text-blue-500" /> 방 메모리
           </div>
-          <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors" onClick={onClose}>
+          <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'} transition-colors`} onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-sm text-gray-500 mb-3">이 방에만 적용되는 기억을 관리합니다. 모델은 여기의 메모리를 우선적으로 참고합니다.</p>
+        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-3`}>이 방에만 적용되는 기억을 관리합니다. 모델은 여기의 메모리를 우선적으로 참고합니다.</p>
         <MemoryManager roomId={roomId} />
         <div className="mt-4 flex justify-end">
           <button className="px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium" onClick={onClose}>닫기</button>
@@ -844,25 +1036,26 @@ function RoomMemoryModal({ open, onClose, roomId }: { open: boolean; onClose: ()
 }
 
 function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, roomType, roomId }: { open: boolean; onClose: () => void; characterId?: number; memberChars?: any[]; roomLorebook?: any[]; roomType?: string; roomId?: string; }) {
+  const isDarkMode = useSelector(selectIsDarkMode);
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-4xl mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl p-6 max-h-[80vh] overflow-y-auto">
+      <div className={`w-full max-w-4xl mx-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-2xl border shadow-xl p-6 max-h-[80vh] overflow-y-auto`}>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-gray-900 font-semibold">
+          <div className={`flex items-center gap-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} font-semibold`}>
             <BookOpen className="w-5 h-5 text-blue-500" /> 로어북 편집기
           </div>
-          <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors" onClick={onClose}>
+          <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'} transition-colors`} onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-sm text-gray-500 mb-3">캐릭터의 로어북을 편집합니다. 로어북은 채팅에서 특정 키워드가 등장할 때 자동으로 적용됩니다.</p>
+        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-3`}>캐릭터의 로어북을 편집합니다. 로어북은 채팅에서 특정 키워드가 등장할 때 자동으로 적용됩니다.</p>
         {(roomType === 'Group') && roomLorebook && (
           <details className="mb-6">
-            <summary className="flex items-center justify-between text-lg font-semibold text-gray-800 mb-2 cursor-pointer hover:text-gray-600 transition-colors">
+            <summary className={`flex items-center justify-between text-lg font-semibold ${isDarkMode ? 'text-gray-200 hover:text-gray-100' : 'text-gray-800 hover:text-gray-600'} mb-2 cursor-pointer transition-colors`}>
               <span>그룹 채팅 로어북</span>
-              <ChevronDown className="w-5 h-5 text-gray-500" />
+              <ChevronDown className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
             </summary>
             <LorebookEditor roomId={roomId} roomLorebook={roomLorebook} />
           </details>
@@ -870,9 +1063,9 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
         {memberChars && memberChars.length > 0 ? (
           memberChars.map(char => (
             <details key={char.id} className="mb-6">
-              <summary className="flex items-center justify-between text-lg font-semibold text-gray-800 mb-2 cursor-pointer hover:text-gray-600 transition-colors">
+              <summary className={`flex items-center justify-between text-lg font-semibold ${isDarkMode ? 'text-gray-200 hover:text-gray-100' : 'text-gray-800 hover:text-gray-600'} mb-2 cursor-pointer transition-colors`}>
                 <span>{char.name}의 로어북</span>
-                <ChevronDown className="w-5 h-5 text-gray-500" />
+                <ChevronDown className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
               </summary>
               <LorebookEditor characterId={char.id} />
             </details>

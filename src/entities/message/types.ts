@@ -18,4 +18,5 @@ export interface Message {
     sticker?: Sticker;
     file?: FileToSend;
     leaveCharId?: number;
+    isFirstMessage?: boolean; // 선톡 메시지 여부를 나타내는 플래그
 }

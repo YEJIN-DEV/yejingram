@@ -100,3 +100,26 @@ export const selectUserDescription = createSelector(
     [selectSelectedPersona, selectSettingsState],
     (persona, settings) => persona?.description ?? settings.userDescription ?? ''
 );
+
+export const selectArtStyles = createSelector(
+    [selectSettingsState],
+    (settings) => settings.artStyles || []
+);
+
+export const selectSelectedArtStyleId = createSelector(
+    [selectSettingsState],
+    (settings) => settings.selectedArtStyleId ?? null
+);
+
+export const selectSelectedArtStyle = createSelector(
+    [selectArtStyles, selectSelectedArtStyleId],
+    (artStyles, selectedId) => {
+        if (!artStyles || artStyles.length === 0) {
+            return null;
+        }
+        if (!selectedId) {
+            return artStyles[0];
+        }
+        return artStyles.find(a => a.id === selectedId) || artStyles[0];
+    }
+);

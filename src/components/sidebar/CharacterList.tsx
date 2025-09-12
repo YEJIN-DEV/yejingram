@@ -13,6 +13,7 @@ import RoomList from './RoomList';
 import { Avatar } from '../../utils/Avatar';
 import { useCharacterOnlineStatus } from '../../utils/simulateOnline';
 import { getMessageDisplayText } from '../../utils/message';
+import { useFirstMessage } from '../../hooks/useFirstMessage';
 
 interface CharacterListProps {
     character: Character;
@@ -31,6 +32,7 @@ function CharacterList({
     const [isExpanded, setIsExpanded] = useState(false);
     const dispatch = useDispatch();
     const isDarkMode = useSelector(selectIsDarkMode);
+    const { scheduleForNewRoom } = useFirstMessage();
 
     let lastMessage: Message | null = null as Message | null;
     let totalUnreadCount = 0;
@@ -68,14 +70,18 @@ function CharacterList({
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            dispatch(roomsActions.upsertOne({
+                            const newRoom = {
                                 id: `${character.id}-${Date.now()}`,
                                 name: '새 채팅',
                                 memberIds: [character.id],
                                 lastMessageId: null,
-                                type: "Direct",
+                                type: "Direct" as const,
                                 unreadCount: 0,
-                            }));
+                            };
+                            dispatch(roomsActions.upsertOne(newRoom));
+                            
+                            // 새로운 Direct 채팅에 대해 선톡 스케줄링
+                            scheduleForNewRoom(newRoom);
                         }}
                         className={`p-1 ${isDarkMode ? 'bg-gray-600 hover:bg-blue-500' : 'bg-gray-100 hover:bg-blue-500'} rounded-full ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} hover:text-white transition-colors`}
                         title="새 채팅방"

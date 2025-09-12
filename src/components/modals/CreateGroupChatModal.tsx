@@ -8,6 +8,7 @@ import type { Character } from '../../entities/character/types';
 import { Avatar } from '../../utils/Avatar';
 import { nanoid } from '@reduxjs/toolkit';
 import type { ParticipantSettings } from '../../entities/room/types';
+import { useFirstMessage } from '../../hooks/useFirstMessage';
 
 interface CreateGroupChatModalProps {
     isOpen: boolean;
@@ -18,6 +19,7 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const isDarkMode = useSelector(selectIsDarkMode);
+    const { scheduleForNewRoom } = useFirstMessage();
     const [groupName, setGroupName] = useState('');
     const [groupDescription, setGroupDescription] = useState('');
     const [selectedParticipantIds, setSelectedParticipantIds] = useState<number[]>([]);
@@ -61,9 +63,18 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                     maxRespondingCharacters: 2,
                     responseDelay: 800,
                     participantSettings: participantSettings,
+                    firstMessageEnabled: false, // 기본값: 비활성화
+                    firstMessageFrequencyMin: 30,
+                    firstMessageFrequencyMax: 120,
+                    characterInteractionEnabled: false, // 기본값: 비활성화
+                    characterInteractionCount: 3        // 기본값: 3회
                 }
             };
             dispatch(roomsActions.upsertOne(newRoom));
+            
+            // 새로운 그룹 채팅에 대해 선톡 스케줄링
+            scheduleForNewRoom(newRoom);
+            
             initializeState();
             onClose();
         }
@@ -125,7 +136,7 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                                         <div>
                                             <div className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{char.name}</div>
                                             <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} truncate`}>
-                                                {char.description || `${char.name}과 함께 채팅하기`}
+                                                {char.prompt.substring(0, 50) + (char.prompt.length > 50 ? '...' : '') || `${char.name}과 함께 채팅하기`}
                                             </div>
                                         </div>
                                     </div>

@@ -17,6 +17,7 @@ import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
+import FirstMessageManager from './components/FirstMessageManager';
 
 function App() {
   const [roomId, setRoomId] = useState<string | null>(null)
@@ -148,6 +149,10 @@ function App() {
           className={`fixed inset-0 z-20 bg-black/50 md:hidden ${isMobileSidebarOpen ? 'block' : 'hidden'}`}
         />
       </div>
+      
+      {/* First Message Manager - 선톡 기능 전역 관리 */}
+      <FirstMessageManager />
+      
       <Toaster
         position="top-right"
         toastOptions={{

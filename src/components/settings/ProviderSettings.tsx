@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import type { SettingsState, ApiConfig, ImageApiConfig, ImageApiProvider } from '../../entities/setting/types';
 import { Key, Cpu, Link, Plus, X, Briefcase, Globe, Thermometer, Hash, Percent, ArrowUpToLine, Image } from 'lucide-react';
 import { initialApiConfigs, initialImageApiConfigs } from '../../entities/setting/slice';
+import { selectIsDarkMode } from '../../entities/theme/selectors';
 
 interface ProviderSettingsProps {
     settings: SettingsState;
@@ -49,6 +51,7 @@ const imageModels: string[] = [
 
 export function ProviderSettings({ settings, setSettings }: ProviderSettingsProps) {
     const [customModelInput, setCustomModelInput] = useState('');
+    const isDarkMode = useSelector(selectIsDarkMode);
     const provider = settings.apiProvider;
     const imageProvider = settings.imageApiProvider;
     const rawConfig = settings?.apiConfigs?.[provider] ?? initialApiConfigs[provider];
@@ -114,14 +117,14 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className={`flex items-center justify-between p-3 ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'} rounded-lg border`}>
                 <div className="flex flex-col">
-                    <label htmlFor="structured-output-toggle" className="font-medium text-gray-900 cursor-pointer">
+                    <label htmlFor="structured-output-toggle" className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} cursor-pointer`}>
                         구조화된 출력 사용
                     </label>
-                    <p className="text-xs text-gray-500">LLM이 응답 시간과 메시지를 직접 제어합니다. (권장)</p>
+                    <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>LLM이 응답 시간과 메시지를 직접 제어합니다. (권장)</p>
                     {provider === 'claude' && (
-                        <p className="text-xs text-gray-500 mt-1">주의: Claude의 경우 요청에 실패할 가능성이 있습니다.</p>
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>주의: Claude의 경우 요청에 실패할 가능성이 있습니다.</p>
                     )}
                 </div>
                 <label htmlFor="structured-output-toggle" className="relative flex items-center cursor-pointer">
@@ -132,16 +135,16 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         checked={settings.useStructuredOutput}
                         onChange={e => setSettings(prev => ({ ...prev, useStructuredOutput: e.target.checked }))}
                     />
-                    <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                    <div className={`w-11 h-6 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-300'} rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white ${isDarkMode ? 'after:border-gray-500' : 'after:border-gray-300'} after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500`}></div>
                 </label>
             </div>
             {settings.useStructuredOutput && (
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className={`flex items-center justify-between p-3 ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'} rounded-lg border`}>
                     <div className="flex flex-col">
-                        <label htmlFor="image-response-toggle" className="font-medium text-gray-900 cursor-pointer">
+                        <label htmlFor="image-response-toggle" className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} cursor-pointer`}>
                             이미지 응답 허용
                         </label>
-                        <p className="text-xs text-gray-500">대화 컨텍스트에 따라서 이미지 응답을 허용합니다.</p>
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>대화 컨텍스트에 따라서 이미지 응답을 허용합니다.</p>
                     </div>
                     <label htmlFor="image-response-toggle" className="relative flex items-center cursor-pointer">
                         <input
@@ -151,19 +154,19 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                             checked={settings.useImageResponse}
                             onChange={e => setSettings(prev => ({ ...prev, useImageResponse: e.target.checked }))}
                         />
-                        <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                        <div className={`w-11 h-6 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-300'} rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white ${isDarkMode ? 'after:border-gray-500' : 'after:border-gray-300'} after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500`}></div>
                     </label>
                 </div>
             )}
             {provider !== 'vertexai' && (
                 <div>
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Key className="w-4 h-4 mr-2" />API 키</label>
+                    <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><Key className="w-4 h-4 mr-2" />API 키</label>
                     <input
                         type="password"
                         value={config.apiKey}
                         onChange={e => handleConfigChange('apiKey', e.target.value)}
                         placeholder="API 키를 입력하세요"
-                        className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+                        className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm`}
                     />
                 </div>
             )}
@@ -171,33 +174,33 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
             {provider === 'vertexai' && (
                 <>
                     <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Briefcase className="w-4 h-4 mr-2" />Project ID</label>
+                        <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><Briefcase className="w-4 h-4 mr-2" />Project ID</label>
                         <input
                             type="text"
                             value={config.projectId || ''}
                             onChange={e => handleConfigChange('projectId', e.target.value)}
                             placeholder="Vertex AI Project ID"
-                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+                            className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm`}
                         />
                     </div>
                     <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Globe className="w-4 h-4 mr-2" />Location</label>
+                        <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><Globe className="w-4 h-4 mr-2" />Location</label>
                         <input
                             type="text"
                             value={config.location || ''}
                             onChange={e => handleConfigChange('location', e.target.value)}
                             placeholder="global"
-                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+                            className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm`}
                         />
                     </div>
                     <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Key className="w-4 h-4 mr-2" />Access Token</label>
+                        <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><Key className="w-4 h-4 mr-2" />Access Token</label>
                         <input
                             type="password"
                             value={config.accessToken || ''}
                             onChange={e => handleConfigChange('accessToken', e.target.value)}
                             placeholder="gcloud auth print-access-token"
-                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+                            className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm`}
                         />
                     </div>
                 </>
@@ -205,19 +208,19 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
             {provider === 'customOpenAI' && (
                 <div>
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Link className="w-4 h-4 mr-2" />Base URL</label>
+                    <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><Link className="w-4 h-4 mr-2" />Base URL</label>
                     <input
                         type="text"
                         value={config.baseUrl || ''}
                         onChange={e => handleConfigChange('baseUrl', e.target.value)}
                         placeholder="https://api.openai.com/v1"
-                        className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+                        className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm`}
                     />
                 </div>
             )}
 
             <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Cpu className="w-4 h-4 mr-2" />모델</label>
+                <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><Cpu className="w-4 h-4 mr-2" />모델</label>
 
                 {models.length > 0 && (
                     <div className="grid grid-cols-1 gap-2 mb-3">
@@ -226,7 +229,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                                 key={model}
                                 type="button"
                                 onClick={() => handleModelSelect(model)}
-                                className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors border ${config.model === model ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'}`}>
+                                className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors border ${config.model === model ? 'bg-blue-500 text-white border-blue-500' : (isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200')}`}>
                                 {model}
                             </button>
                         ))}
@@ -239,7 +242,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         value={customModelInput}
                         onChange={e => setCustomModelInput(e.target.value)}
                         placeholder="커스텀 모델명 입력"
-                        className="flex-1 px-3 py-2 bg-gray-50 text-gray-900 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm"
+                        className={`flex-1 px-3 py-2 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-lg border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm`}
                     />
                     <button
                         type="button"
@@ -251,13 +254,13 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
                 {config.customModels.length > 0 && (
                     <div className="mt-3 space-y-1">
-                        <label className="text-xs text-gray-500">커스텀 모델</label>
+                        <label className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>커스텀 모델</label>
                         {config.customModels.map((model, index) => (
                             <div key={index} className="flex items-center gap-2">
                                 <button
                                     type="button"
                                     onClick={() => handleModelSelect(model)}
-                                    className={`model-select-btn flex-1 px-3 py-2 text-left text-sm rounded-lg transition-colors border ${config.model === model ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'}`}>
+                                    className={`model-select-btn flex-1 px-3 py-2 text-left text-sm rounded-lg transition-colors border ${config.model === model ? 'bg-blue-500 text-white border-blue-500' : (isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200')}`}>
                                     {model}
                                 </button>
                                 <button
@@ -274,81 +277,95 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
             {settings.useImageResponse && (
                 <>
-                    <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Key className="w-4 h-4 mr-2" />이미지 생성용 API 키</label>
-                        <input
-                            type="password"
-                            value={imageConfig.apiKey}
-                            onChange={e => handleImageModelConfigChange(imageProvider, 'apiKey', e.target.value)}
-                            placeholder="이미지 모델 API 키를 입력하세요"
-                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Image className="w-4 h-4 mr-2" />이미지 생성 모델</label>
+                    {imageProvider === 'comfyui' ? (
+                        <div className={`p-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} rounded-xl`}>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                                <Image className="w-4 h-4 mr-2 inline" />
+                                ComfyUI 설정은 별도의 ComfyUI 탭에서 관리됩니다.
+                            </p>
+                            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                ComfyUI 탭에서 URL, Workflow JSON, Timeout 등을 설정해주세요.
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><Key className="w-4 h-4 mr-2" />이미지 생성용 API 키</label>
+                                <input
+                                    type="password"
+                                    value={imageConfig.apiKey}
+                                    onChange={e => handleImageModelConfigChange(imageProvider, 'apiKey', e.target.value)}
+                                    placeholder="이미지 모델 API 키를 입력하세요"
+                                    className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm`}
+                                />
+                            </div>
+                            <div>
+                                <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><Image className="w-4 h-4 mr-2" />이미지 생성 모델</label>
 
-                        {imageModels.length > 0 && (
-                            <div className="grid grid-cols-1 gap-2">
-                                {imageModels.map(model => (
-                                    <button
-                                        key={model}
-                                        type="button"
-                                        onClick={() => handleImageModelSelect(model)}
-                                        className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors border ${imageConfig.model === model ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'}`}>
-                                        {model}
-                                    </button>
-                                ))}
+                                {imageModels.length > 0 && (
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {imageModels.map(model => (
+                                            <button
+                                                key={model}
+                                                type="button"
+                                                onClick={() => handleImageModelSelect(model)}
+                                                className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors border ${imageConfig.model === model ? 'bg-blue-500 text-white border-blue-500' : (isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200')}`}>
+                                                {model}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                    {
-                        imageProvider === 'gemini' && (
-                            <div className="mb-3">
-                                <p className="text-xs text-gray-500">참고: Gemini는 이미지 생성이 검열될 수 있습니다.</p>
-                            </div>
-                        )
-                    }
+                            {
+                                imageProvider === 'gemini' && (
+                                    <div className="mb-3">
+                                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>참고: Gemini는 이미지 생성이 검열될 수 있습니다.</p>
+                                    </div>
+                                )
+                            }
+                        </>
+                    )}
                 </>
             )}
 
             <div className="content-inner pt-4 space-y-4">
                 <div>
-                    <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+                    <label className={`flex items-center justify-between text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                         <span className="flex items-center"><Thermometer className="w-4 h-4 mr-2" />온도</span>
-                        <span className="text-blue-500 font-semibold">{config.temperature || (provider !== 'claude' ? 1.25 : 1)}</span>
+                        <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} font-semibold`}>{config.temperature || (provider !== 'claude' ? 1.25 : 1)}</span>
                     </label>
                     <input id="settings-temperature" type="range" min={minTemp} max={maxTemp} step="0.01" value={config.temperature || (provider !== 'claude' ? 1.25 : 1)} onChange={e => handleConfigChange('temperature', +e.target.value)} className="w-full accent-blue-500" />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1"><span>{minTemp}</span><span>{maxTemp}</span></div>
+                    <div className={`flex justify-between text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}><span>{minTemp}</span><span>{maxTemp}</span></div>
                 </div>
                 <div>
-                    <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+                    <label className={`flex items-center justify-between text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                         <span className="flex items-center"><Percent className="w-4 h-4 mr-2" />Top-p</span>
-                        <span className="text-blue-500 font-semibold">{config.topP || 1}</span>
+                        <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} font-semibold`}>{config.topP || 1}</span>
                     </label>
                     <input id="settings-topk" type="range" min="0" max="1" step="0.01" value={config.topP || 1} onChange={e => handleConfigChange('topP', +e.target.value)} className="w-full accent-blue-500" />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1"><span>0</span><span>1</span></div>
+                    <div className={`flex justify-between text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}><span>0</span><span>1</span></div>
                 </div>
                 {provider !== 'openai' && (
                     <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Hash className="w-4 h-4 mr-2" />Top-k</label>
+                        <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><Hash className="w-4 h-4 mr-2" />Top-k</label>
                         <input
                             type="number"
                             value={config.topK ?? undefined}
                             onChange={e => handleConfigChange('topK', e.target.value === '' ? null : +e.target.value)}
                             placeholder={provider !== 'claude' ? '비워둘 경우 비활성화됩니다. (초기값: 40)' : '기본값: 40'}
-                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+                            className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm`}
                         />
                     </div>
                 )}
                 {provider === 'claude' && (
                     <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><ArrowUpToLine className="w-4 h-4 mr-2" />Max Tokens</label>
+                        <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><ArrowUpToLine className="w-4 h-4 mr-2" />Max Tokens</label>
                         <input
                             type="number"
                             value={config.maxTokens ?? 8192}
                             onChange={e => handleConfigChange('maxTokens', e.target.value)}
                             placeholder="기본값: 8192"
-                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+                            className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm`}
                         />
                     </div>
                 )}

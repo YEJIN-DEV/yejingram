@@ -1,5 +1,5 @@
 export type ApiProvider = 'gemini' | 'vertexai' | 'claude' | 'openai' | 'grok' | 'openrouter' | 'customOpenAI';
-export type ImageApiProvider = 'gemini' | 'novelai';
+export type ImageApiProvider = 'gemini' | 'novelai' | 'comfyui';
 
 export interface ApiConfig {
     apiKey: string;
@@ -18,6 +18,12 @@ export interface ApiConfig {
 export interface ImageApiConfig {
     apiKey: string;
     model: string;
+}
+
+export interface ComfyUIConfig {
+    baseUrl: string;
+    workflow: string;
+    timeout: number;
 }
 
 export type PromptRole = 'system' | 'assistant' | 'user';
@@ -59,6 +65,7 @@ export interface SettingsState {
     imageApiProvider: ImageApiProvider;
     apiConfigs: Record<ApiProvider, ApiConfig>;
     imageApiConfigs: Record<ImageApiProvider, ImageApiConfig>;
+    comfyUIConfig: ComfyUIConfig;
     fontScale: number;
     userName: string;
     userDescription: string;
@@ -70,13 +77,23 @@ export interface SettingsState {
     prompts: Prompts;
     useStructuredOutput: boolean;
     useImageResponse?: boolean | undefined;
+    autoImageGeneration: boolean; // 봇이 자동으로 이미지 생성할지 여부
     speedup: number;
     personas: Persona[];
     selectedPersonaId: string | null;
+    artStyles: ArtStyle[];
+    selectedArtStyleId: string | null;
 }
 
 export interface Persona {
     id: string;
     name: string;
     description: string;
+}
+
+export interface ArtStyle {
+    id: string;
+    name: string;
+    description: string;
+    prompt: string; // ComfyUI에 실제로 전송될 프롬프트 태그들
 }
