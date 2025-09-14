@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { X, ChevronDown, RotateCcw, Download, Upload, ArrowUp, ArrowDown, AlertTriangle, Thermometer, Percent, ArrowUpToLine } from 'lucide-react';
-import { selectPrompts } from '../../entities/setting/selectors';
+import { selectAllSettings, selectPrompts } from '../../entities/setting/selectors';
 import { settingsActions, initialState } from '../../entities/setting/slice';
 import type { Prompts, PromptItem, PromptRole, PromptType } from '../../entities/setting/types';
 
@@ -12,8 +12,10 @@ interface PromptModalProps {
 
 function PromptModal({ isOpen, onClose }: PromptModalProps) {
     const dispatch = useDispatch();
+    const settings = useSelector(selectAllSettings);
     const prompts = useSelector(selectPrompts);
 
+    const currentApiProvider = settings.apiProvider;
     const [localPrompts, setLocalPrompts] = useState<Prompts>(prompts);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -412,16 +414,16 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                             <input
                                 type="range"
                                 min="0"
-                                max="2"
+                                max={currentApiProvider === 'claude' ? 1 : 2}
                                 step="0.01"
-                                value={localPrompts.temperature || -1}
+                                value={localPrompts.temperature || 1.25}
                                 onChange={e => setLocalPrompts(prev => ({ ...prev, temperature: parseFloat(parseFloat(e.target.value).toFixed(2)) ?? -1 }))}
 
                                 className="w-full accent-indigo-500"
                             />
                             <div className="flex justify-between text-xs text-gray-500 mt-1">
                                 <span>0</span>
-                                <span>2</span>
+                                <span>{currentApiProvider === 'claude' ? 1 : 2}</span>
                             </div>
                         </div>
                         <div className="flex flex-col">
@@ -434,7 +436,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                 min="0"
                                 max="1"
                                 step="0.01"
-                                value={localPrompts.topP || -1}
+                                value={localPrompts.topP || 0.95}
                                 onChange={e => setLocalPrompts(prev => ({ ...prev, topP: parseFloat(parseFloat(e.target.value).toFixed(2)) ?? -1 }))}
                                 className="w-full accent-indigo-500"
                             />
@@ -453,7 +455,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                 min="1"
                                 max="100"
                                 step="1"
-                                value={localPrompts.topK || -1}
+                                value={localPrompts.topK || 40}
                                 onChange={e => setLocalPrompts(prev => ({ ...prev, topK: parseInt(e.target.value) ?? -1 }))}
                                 className="w-full accent-indigo-500"
                             />
