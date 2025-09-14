@@ -1,9 +1,7 @@
 @import "tailwindcss";
 
 /* 다크 모드 설정 - Tailwind CSS v4 방식 */
-@theme {
-  --dark: class;
-}
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* Instagram 스타일 Inter 폰트 설정 */
 * {

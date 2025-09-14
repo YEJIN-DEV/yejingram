@@ -16,7 +16,6 @@ import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
 import settingsReducer, { initialState as settingsInitialState } from '../entities/setting/slice';
-import themeReducer from '../entities/theme/slice';
 import { applyRules } from '../utils/migration';
 
 localforage.config({
@@ -32,6 +31,11 @@ const migrations = {
                     path: 'settings.prompts',
                     keys: ['maxContextTokens', 'maxResponseTokens', 'temperature', 'topP', 'topK'],
                     defaults: settingsInitialState.prompts
+                },
+                {
+                    path: 'settings',
+                    keys: ['isDarkMode', 'autoImageGeneration', 'artStyles', 'selectedArtStyleId', 'comfyUIConfig'],
+                    defaults: settingsInitialState
                 }
             ],
             delete: [
@@ -51,7 +55,7 @@ const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
     version: 1,
-    whitelist: ['characters', 'rooms', 'messages', 'settings', 'theme'],
+    whitelist: ['characters', 'rooms', 'messages', 'settings'],
     migrate: createMigrate(migrations, { debug: true }),
 };
 
@@ -60,7 +64,6 @@ const appReducer = combineReducers({
     rooms: roomReducer,
     settings: settingsReducer,
     messages: messageReducer,
-    theme: themeReducer,
 });
 
 export const RESET_ALL = 'app/resetAll' as const;

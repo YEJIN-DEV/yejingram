@@ -79,6 +79,7 @@ export const initialState: SettingsState = {
     randomMessageFrequencyMax: 60,
     useStructuredOutput: true,
     autoImageGeneration: false, // 기본적으로 비활성화
+    isDarkMode: false,
     speedup: 2,
     personas: [],
     selectedPersonaId: null,
@@ -140,6 +141,9 @@ const settingsSlice = createSlice({
         },
         importSettings: (_state, action: PayloadAction<SettingsState>) => {
             return action.payload;
+        },
+        toggleDarkMode: (state) => {
+            state.isDarkMode = !state.isDarkMode;
         },
         addPersona: (state, action: PayloadAction<Omit<Persona, 'id'>>) => {
             // personas 배열이 없으면 초기화

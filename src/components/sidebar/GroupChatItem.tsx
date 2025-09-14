@@ -6,7 +6,6 @@ import { selectAllCharacters } from '../../entities/character/selectors';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import { settingsActions } from '../../entities/setting/slice';
-import { selectIsDarkMode } from '../../entities/theme/selectors';
 
 interface GroupChatItemProps {
     room: Room;
@@ -19,7 +18,6 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
     const dispatch = useDispatch();
     const allCharacters = useSelector(selectAllCharacters);
     const messages = useSelector((state: any) => selectMessagesByRoomId(state, room.id));
-    const isDarkMode = useSelector(selectIsDarkMode);
     const participants = room.memberIds.map(id => allCharacters.find(c => c.id === id)).filter(Boolean);
 
     const handleRoomSelect = () => {
@@ -55,23 +53,21 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
 
     return (
         <div
-            className={`relative group cursor-pointer transition-all duration-200 px-4 py-3 select-none ${isSelected 
-                ? (isDarkMode ? 'bg-blue-900 border-l-4 border-blue-400' : 'bg-blue-50 border-l-4 border-blue-500') 
-                : (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50')
+            className={`relative group cursor-pointer transition-all duration-200 px-4 py-3 select-none ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
                 }`}
             onDoubleClick={handleRoomSelect}
         >
             <div className="absolute top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
                 <button
                     onClick={handleEdit}
-                    className={`p-1 ${isDarkMode ? 'bg-gray-600 hover:bg-gray-500 text-gray-300 hover:text-gray-100' : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800'} rounded-full transition-colors`}
+                    className="p-1 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 hover:text-gray-800 transition-colors"
                     title="수정"
                 >
                     <Edit3 className="w-3 h-3" />
                 </button>
                 <button
                     onClick={handleDelete}
-                    className={`p-1 ${isDarkMode ? 'bg-gray-600 hover:bg-red-600 text-gray-300 hover:text-white' : 'bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-600'} rounded-full transition-colors`}
+                    className="p-1 bg-gray-100 hover:bg-red-100 rounded-full text-gray-600 hover:text-red-600 transition-colors"
                     title="삭제"
                 >
                     <Trash2 className="w-3 h-3" />
@@ -85,16 +81,13 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
 
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                        <h4 className={`font-semibold truncate text-sm ${
-                            isSelected 
-                                ? (isDarkMode ? 'text-blue-200' : 'text-blue-900')
-                                : (isDarkMode ? 'text-gray-100' : 'text-gray-900')
+                        <h4 className={`font-semibold truncate text-sm ${isSelected ? 'text-blue-900' : 'text-gray-900'
                             }`}>
                             {room.name}
                         </h4>
                         <div className="flex items-center space-x-2 ml-2">
                             {lastMessage?.createdAt && (
-                                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} flex-shrink-0`}>
+                                <span className="text-xs text-gray-500 flex-shrink-0">
                                     {new Date(lastMessage.createdAt).toLocaleTimeString('ko-KR', {
                                         hour: '2-digit',
                                         minute: '2-digit'
@@ -108,10 +101,10 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
                             )}
                         </div>
                     </div>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} truncate mt-1`}>
+                    <p className="text-sm text-gray-500 truncate mt-1">
                         {participants.map(p => p?.name).filter(Boolean).join(', ')}
                     </p>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} truncate`}>
+                    <p className="text-sm text-gray-500 truncate">
                         {lastMessageContent}
                     </p>
                 </div>

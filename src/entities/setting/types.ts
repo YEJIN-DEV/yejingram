@@ -79,6 +79,7 @@ export interface SettingsState {
     useStructuredOutput: boolean;
     useImageResponse?: boolean | undefined;
     autoImageGeneration: boolean; // 봇이 자동으로 이미지 생성할지 여부
+    isDarkMode: boolean;
     speedup: number;
     personas: Persona[];
     selectedPersonaId: string | null;

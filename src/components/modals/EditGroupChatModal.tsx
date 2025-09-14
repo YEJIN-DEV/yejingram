@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { LogOut, X, MessageSquarePlus, Users } from 'lucide-react';
+import { LogOut, X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '../../app/store';
 import { selectRoomById } from '../../entities/room/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import { selectEditingRoomId } from '../../entities/setting/selectors';
 import { selectAllCharacters } from '../../entities/character/selectors';
-import { selectIsDarkMode } from '../../entities/theme/selectors';
 import type { GroupChatSettings, ParticipantSettings } from '../../entities/room/types';
 import type { Character } from '../../entities/character/types';
 import { settingsActions } from '../../entities/setting/slice';
@@ -15,7 +14,6 @@ import { messagesActions } from '../../entities/message/slice';
 import { nanoid } from '@reduxjs/toolkit';
 import type { Message } from '../../entities/message/types';
 import { inviteCharacter } from '../../utils/inviteCharacter';
-import { useFirstMessage } from '../../hooks/useFirstMessage';
 
 interface EditGroupChatModalProps {
     isOpen: boolean;
@@ -27,8 +25,6 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
     const editingRoomId = useSelector(selectEditingRoomId);
     const room = useSelector((state: RootState) => editingRoomId ? selectRoomById(state, editingRoomId) : null);
     const allCharacters = useSelector(selectAllCharacters);
-    const isDarkMode = useSelector(selectIsDarkMode);
-    const { updateScheduleForRoom } = useFirstMessage();
 
     const [name, setName] = useState('');
     const [settings, setSettings] = useState<GroupChatSettings | undefined>(undefined);
@@ -62,12 +58,7 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
 
     const handleSave = () => {
         if (name.trim()) {
-            const updatedRoom = { ...room, name: name.trim(), groupSettings: settings };
-            dispatch(roomsActions.upsertOne(updatedRoom));
-            
-            // 그룹 설정 변경에 따른 선톡 스케줄 업데이트
-            updateScheduleForRoom(updatedRoom);
-            
+            dispatch(roomsActions.upsertOne({ ...room, name: name.trim(), groupSettings: settings }));
             handleClose();
         }
     };
@@ -154,11 +145,11 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
     return (
         <>
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl`}>
-                    <div className={`sticky top-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} px-6 py-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} rounded-t-2xl`}>
+                <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+                    <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 rounded-t-2xl">
                         <div className="flex items-center justify-between">
-                            <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>그룹 채팅 설정</h2>
-                            <button onClick={handleClose} className={`p-2 ${isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'} rounded-full transition-colors`}>
+                            <h2 className="text-xl font-semibold text-gray-900">그룹 채팅 설정</h2>
+                            <button onClick={handleClose} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -166,127 +157,35 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
 
                     <div className="p-6 space-y-6">
                         <div>
-                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>그룹 채팅 이름</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">그룹 채팅 이름</label>
                             <input type="text" value={name} onChange={e => setName(e.target.value)}
-                                className={`w-full p-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none`} />
+                                className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none" />
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>선톡 설정</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className={`flex items-center justify-between text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} cursor-pointer`}>
-                                        <span className="flex items-center"><MessageSquarePlus className="w-4 h-4 mr-2" />그룹 내 선톡 활성화</span>
-                                        <div className="relative inline-block w-10 align-middle select-none">
-                                            <input 
-                                                type="checkbox" 
-                                                id="group-first-message-toggle" 
-                                                checked={settings?.firstMessageEnabled ?? false} 
-                                                onChange={e => handleSettingChange('firstMessageEnabled', e.target.checked)} 
-                                                className="absolute opacity-0 w-0 h-0 peer" 
-                                            />
-                                            <label htmlFor="group-first-message-toggle" className={`block overflow-hidden h-6 rounded-full ${isDarkMode ? 'bg-gray-600' : 'bg-gray-300'} cursor-pointer peer-checked:bg-blue-500`}></label>
-                                            <span className="absolute left-0.5 top-0.5 block w-5 h-5 rounded-full bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
-                                        </div>
-                                    </label>
-                                </div>
-                                {settings?.firstMessageEnabled && (
-                                    <div className="space-y-4 ml-6">
-                                        <div>
-                                            <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2 block`}>선톡 시간 간격 (분 단위)</label>
-                                            <div className="flex items-center gap-2">
-                                                <input 
-                                                    type="number" 
-                                                    min="1" 
-                                                    value={settings?.firstMessageFrequencyMin ?? 30} 
-                                                    onChange={e => handleSettingChange('firstMessageFrequencyMin', +e.target.value)} 
-                                                    className={`w-full px-3 py-2 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-lg border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm`} 
-                                                    placeholder="최소" 
-                                                />
-                                                <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>-</span>
-                                                <input 
-                                                    type="number" 
-                                                    min="1" 
-                                                    value={settings?.firstMessageFrequencyMax ?? 120} 
-                                                    onChange={e => handleSettingChange('firstMessageFrequencyMax', +e.target.value)} 
-                                                    className={`w-full px-3 py-2 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-lg border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm`} 
-                                                    placeholder="최대" 
-                                                />
-                                            </div>
-                                            <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>그룹 내 캐릭터들이 이 시간 간격으로 선톡을 시작할 수 있습니다.</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>상호톡 설정</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className={`flex items-center justify-between text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} cursor-pointer`}>
-                                        <span className="flex items-center"><Users className="w-4 h-4 mr-2" />인물들 간 상호톡 활성화</span>
-                                        <div className="relative inline-block w-10 align-middle select-none">
-                                            <input 
-                                                type="checkbox" 
-                                                id="group-character-interaction-toggle" 
-                                                checked={settings?.characterInteractionEnabled ?? false} 
-                                                onChange={e => handleSettingChange('characterInteractionEnabled', e.target.checked)} 
-                                                className="absolute opacity-0 w-0 h-0 peer" 
-                                            />
-                                            <label htmlFor="group-character-interaction-toggle" className={`block overflow-hidden h-6 rounded-full ${isDarkMode ? 'bg-gray-600' : 'bg-gray-300'} cursor-pointer peer-checked:bg-blue-500`}></label>
-                                            <span className="absolute left-0.5 top-0.5 block w-5 h-5 rounded-full bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
-                                        </div>
-                                    </label>
-                                    <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-2`}>캐릭터들이 유저 입력 없이 서로 대화를 나눌 수 있습니다.</p>
-                                </div>
-                                {settings?.characterInteractionEnabled && (
-                                    <div className="space-y-4 ml-6">
-                                        <div>
-                                            <label className={`flex items-center justify-between text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                                                <span>연속 대화 횟수</span>
-                                                <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} font-semibold`}>{settings?.characterInteractionCount ?? 3}회</span>
-                                            </label>
-                                            <input 
-                                                type="range" 
-                                                min="1" 
-                                                max="50" 
-                                                step="1" 
-                                                value={settings?.characterInteractionCount ?? 3} 
-                                                onChange={e => handleSettingChange('characterInteractionCount', +e.target.value)} 
-                                                className="w-full accent-blue-500" 
-                                            />
-                                            <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>설정된 횟수만큼 연속으로 대화한 후 유저 입력을 기다립니다.</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>응답 설정</h3>
+                            <h3 className="text-lg font-semibold text-gray-900">응답 설정</h3>
                             <div>
-                                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     <span>채팅방 응답 빈도 ({Math.round(settings.responseFrequency * 100)}%)</span>
-                                    <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} ml-2`}>0%: 입력에 반응하지 않음, 100%: 입력에 항상 반응함</span>
+                                    <span className="text-xs text-gray-500 ml-2">0%: 입력에 반응하지 않음, 100%: 입력에 항상 반응함</span>
                                 </label>
                                 <input type="range" min="0" max="100" value={Math.round(settings.responseFrequency * 100)}
                                     onChange={e => handleSettingChange('responseFrequency', parseInt(e.target.value) / 100)}
-                                    className={`w-full h-2 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'} rounded-lg appearance-none cursor-pointer slider-thumb`} />
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb" />
                             </div>
                             <div>
-                                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>최대 동시 응답 캐릭터 수</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">최대 동시 응답 캐릭터 수</label>
                                 <div className="relative">
                                     <input type="number" min="1" max={participants.length} value={settings.maxRespondingCharacters}
                                         onChange={e => handleSettingChange('maxRespondingCharacters', parseInt(e.target.value))}
-                                        className={`w-full p-3 pr-10 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none`} />
-                                    <span className={`absolute inset-y-0 right-3 flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>명</span>
+                                        className="w-full p-3 pr-10 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none" />
+                                    <span className="absolute inset-y-0 right-3 flex items-center text-gray-500">명</span>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>개별 캐릭터 설정</h3>
+                            <h3 className="text-lg font-semibold text-gray-900">개별 캐릭터 설정</h3>
                             <div className="space-y-4">
                                 {participants.map(participant => (
                                     <div key={participant.id} className="space-y-2 max-h-60 overflow-y-auto">
