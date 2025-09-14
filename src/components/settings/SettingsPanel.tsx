@@ -54,6 +54,11 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
         onClose();
     };
 
+    const handlePromptModalOpen = () => {
+        dispatch(settingsActions.setSettings(localSettings));
+        openPromptModal();
+    }
+
     const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const provider = e.target.value as ApiProvider;
         setLocalSettings(prev => ({ ...prev, apiProvider: provider }));
@@ -162,7 +167,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 </div>
                                 <ProviderSettings settings={localSettings} setSettings={setLocalSettings} />
                                 <div>
-                                    <button id="open-prompt-modal" onClick={openPromptModal} className="w-full mt-2 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                                    <button id="open-prompt-modal" onClick={handlePromptModalOpen} className="w-full mt-2 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
                                         <FilePenLine className="w-4 h-4" /> 프롬프트 수정
                                     </button>
                                 </div>

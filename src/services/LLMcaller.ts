@@ -513,16 +513,24 @@ async function callApi(
 
     switch (apiProvider) {
         case 'gemini':
+            payload = await buildGeminiApiPayload('gemini', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, { apiKey: apiConfig.apiKey! }, extraSystemInstruction);
+            break;
         case 'vertexai':
-            payload = buildGeminiApiPayload(room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, extraSystemInstruction);
+            payload = await buildGeminiApiPayload('vertexai', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, {
+                apiKey: apiConfig.accessToken!,
+                location: apiConfig.location!,
+                projectId: apiConfig.projectId!
+            }, extraSystemInstruction);
             break;
         case 'claude':
+            payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
+            break;
         case 'grok':
-            payload = buildClaudeApiPayload(apiConfig.model, room, persona, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
+            payload = await buildClaudeApiPayload('grok', room, persona, character, messages, isProactive, settings.useStructuredOutput, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
             break;
         case 'openai':
         case 'customOpenAI':
-            payload = buildOpenAIApiPayload(apiConfig.model, room, persona, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
+            payload = await buildOpenAIApiPayload(room, persona, character, messages, isProactive, settings.useStructuredOutput, apiConfig.model, extraSystemInstruction);
             break;
     }
     let url: string;

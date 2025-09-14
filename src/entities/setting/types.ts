@@ -9,10 +9,6 @@ export interface ApiConfig {
     projectId?: string;
     location?: string;
     accessToken?: string;
-    temperature?: number;
-    maxTokens?: number;
-    topP?: number;
-    topK?: number;
 }
 
 export interface ImageApiConfig {
@@ -53,6 +49,11 @@ export interface PromptItem {
 export interface Prompts {
     main: PromptItem[];
     image_response_generation: PromptItem;
+    maxContextTokens: number;
+    maxResponseTokens: number;
+    temperature: number;
+    topP: number;
+    topK: number;
 }
 
 export interface SettingsState {

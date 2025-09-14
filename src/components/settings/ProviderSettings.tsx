@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import type { SettingsState, ApiConfig, ImageApiConfig, ImageApiProvider } from '../../entities/setting/types';
-import { Key, Cpu, Link, Plus, X, Briefcase, Globe, Thermometer, Hash, Percent, ArrowUpToLine, Image } from 'lucide-react';
+import { Key, Cpu, Link, Plus, X, Briefcase, Globe, Image } from 'lucide-react';
 import { initialApiConfigs, initialImageApiConfigs } from '../../entities/setting/slice';
 import { selectIsDarkMode } from '../../entities/theme/selectors';
 
@@ -40,6 +40,7 @@ const providerModels: Record<string, string[]> = {
     // openrouter: [],
     customOpenAI: []
 };
+export type ProviderModel = typeof providerModels[keyof typeof providerModels][number];
 
 const imageModels: string[] = [
     'gemini-2.5-flash-image-preview',
@@ -61,9 +62,6 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
         customModels: rawConfig.customModels || []
     };
     const models = providerModels[provider] || [];
-
-    const minTemp = 0;
-    const maxTemp = (provider !== 'claude') ? 2 : 1;
 
     const handleConfigChange = (key: keyof ApiConfig, value: any) => {
         setSettings(prev => {
@@ -327,49 +325,6 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                     )}
                 </>
             )}
-
-            <div className="content-inner pt-4 space-y-4">
-                <div>
-                    <label className={`flex items-center justify-between text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                        <span className="flex items-center"><Thermometer className="w-4 h-4 mr-2" />온도</span>
-                        <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} font-semibold`}>{config.temperature || (provider !== 'claude' ? 1.25 : 1)}</span>
-                    </label>
-                    <input id="settings-temperature" type="range" min={minTemp} max={maxTemp} step="0.01" value={config.temperature || (provider !== 'claude' ? 1.25 : 1)} onChange={e => handleConfigChange('temperature', +e.target.value)} className="w-full accent-blue-500" />
-                    <div className={`flex justify-between text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}><span>{minTemp}</span><span>{maxTemp}</span></div>
-                </div>
-                <div>
-                    <label className={`flex items-center justify-between text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                        <span className="flex items-center"><Percent className="w-4 h-4 mr-2" />Top-p</span>
-                        <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} font-semibold`}>{config.topP || 1}</span>
-                    </label>
-                    <input id="settings-topk" type="range" min="0" max="1" step="0.01" value={config.topP || 1} onChange={e => handleConfigChange('topP', +e.target.value)} className="w-full accent-blue-500" />
-                    <div className={`flex justify-between text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}><span>0</span><span>1</span></div>
-                </div>
-                {provider !== 'openai' && (
-                    <div>
-                        <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><Hash className="w-4 h-4 mr-2" />Top-k</label>
-                        <input
-                            type="number"
-                            value={config.topK ?? undefined}
-                            onChange={e => handleConfigChange('topK', e.target.value === '' ? null : +e.target.value)}
-                            placeholder={provider !== 'claude' ? '비워둘 경우 비활성화됩니다. (초기값: 40)' : '기본값: 40'}
-                            className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm`}
-                        />
-                    </div>
-                )}
-                {provider === 'claude' && (
-                    <div>
-                        <label className={`flex items-center text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}><ArrowUpToLine className="w-4 h-4 mr-2" />Max Tokens</label>
-                        <input
-                            type="number"
-                            value={config.maxTokens ?? 8192}
-                            onChange={e => handleConfigChange('maxTokens', e.target.value)}
-                            placeholder="기본값: 8192"
-                            className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-200'} rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm`}
-                        />
-                    </div>
-                )}
-            </div>
         </div>
     );
 }
