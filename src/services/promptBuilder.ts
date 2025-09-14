@@ -372,21 +372,25 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
         const content: ({ type: string; text: string; } |
         { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[] = [{ type: 'text', text: msg.content ? `${header}${msg.content}` : (header ? header : '') }];
         if (msg.file && model !== "grok-3") {
-            const mimeType = msg.file.mimeType;
-            if (mimeType.startsWith('image')) {
-                if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
-                    throw new Error(`Unsupported image type: ${mimeType} `);
-                }
-                const base64Data = msg.file.dataUrl.split(',')[1];
-                if (mimeType && base64Data) {
-                    content.push({
-                        type: 'image',
-                        source: {
-                            data: base64Data,
-                            media_type: mimeType,
-                            type: 'base64'
-                        }
-                    });
+            if (model?.startsWith("claude") && role === 'assistant') {
+                content.push({ type: 'text', text: `${header}[이미지 전송]` });
+            } else {
+                const mimeType = msg.file.mimeType;
+                if (mimeType.startsWith('image')) {
+                    if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
+                        throw new Error(`Unsupported image type: ${mimeType} `);
+                    }
+                    const base64Data = msg.file.dataUrl.split(',')[1];
+                    if (mimeType && base64Data) {
+                        content.push({
+                            type: 'image',
+                            source: {
+                                data: base64Data,
+                                media_type: mimeType,
+                                type: 'base64'
+                            }
+                        });
+                    }
                 }
             }
         }
