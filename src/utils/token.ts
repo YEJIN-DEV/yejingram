@@ -126,8 +126,22 @@ export async function CountTokens(prompts: Prompts, provider: ApiProvider, model
                 try {
                     const url = "https://api.x.ai/v1/tokenize-text";
                     const claudePayload = prompts.payload as ClaudeApiPayload;
+                    // Extract system message as a string, if present
+                    let systemMessage = '';
+                    if (claudePayload.system) {
+                        if (typeof claudePayload.system === 'string') {
+                            systemMessage = `System: ${claudePayload.system}<|separator|>\n`;
+                        } else {
+                            const textParts = claudePayload.system
+                                .filter(c => c.type === 'text')
+                                .map(c => (c as { type: 'text', text: string }).text)
+                                .join('')
+                                .trim();
+                            systemMessage = `System: ${textParts}<|separator|>\n`;
+                        }
+                    }
                     const serialized = [
-                        claudePayload.system ? `System: ${typeof claudePayload.system === 'string' ? claudePayload.system : claudePayload.system.filter(c => c.type === 'text').map(c => (c as { type: 'text', text: string }).text).join('').trim()}<|separator|>\n` : '',
+                        systemMessage,
                         ...claudePayload.messages.map(({ role, content }) => {
                             let rolePrefix = '';
                             switch (role) {
