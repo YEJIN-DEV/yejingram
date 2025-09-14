@@ -24,7 +24,10 @@
     "react-hot-toast": "^2.6.0",
     "react-redux": "^9.2.0",
     "redux-persist": "^6.0.0",
-    "tailwindcss": "^4.1.12"
+    "tailwindcss": "^4.1.12",
+    "tiktoken": "^1.0.22",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.5.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",

@@ -5,7 +5,6 @@ import { selectPrompts } from "../entities/setting/selectors";
 import type { GeminiApiPayload, ClaudeApiPayload, OpenAIApiPayload } from "./type";
 import { getActiveRoomId } from "../utils/activeRoomTracker";
 import { selectRoomById } from "../entities/room/selectors";
-import { selectCurrentApiConfig } from "../entities/setting/selectors";
 import { selectCharacterById } from "../entities/character/selectors";
 import type { Persona } from "../entities/setting/types";
 import { replacePlaceholders } from "../utils/placeholder";
@@ -13,13 +12,14 @@ import type { PlaceholderValues } from "../utils/placeholder";
 import type { Room } from "../entities/room/types";
 import type { PromptItem } from "../entities/setting/types";
 import type { Lore } from "../entities/lorebook/types";
+import { CountTokens } from "../utils/token";
 
-type GeminiContent = {
+export type GeminiContent = {
     role: string;
     parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; } | { file_data: { file_uri: string; }; })[];
 };
 
-type ClaudeMessage = {
+export type ClaudeContent = {
     role: string;
     content: ({
         type: string;
@@ -34,7 +34,7 @@ type ClaudeMessage = {
     })[];
 };
 
-type OpenAIMessage = {
+export type OpenAIContent = {
     role: 'system' | 'user' | 'assistant' | string;
     content: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>;
 };
@@ -281,7 +281,8 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
     return contents;
 }
 
-export function buildGeminiApiPayload(
+export async function buildGeminiApiPayload(
+    provider: 'gemini' | 'vertexai',
     room: Room,
     persona: Persona,
     character: Character,
@@ -289,50 +290,72 @@ export function buildGeminiApiPayload(
     isProactive: boolean,
     useStructuredOutput: boolean,
     useImageResponse: boolean | undefined,
+    model: string,
+    auth: {
+        apiKey: string;
+        location?: string;
+        projectId?: string;
+    },
     extraSystemInstruction?: string
-): GeminiApiPayload {
-    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, messages, useStructuredOutput);
-    const contents = buildGeminiContents(messages, isProactive, persona, character, room, useStructuredOutput);
+): Promise<GeminiApiPayload> {
+    const maxTokens = selectPrompts(store.getState()).maxContextTokens;
+    let trimmedMessages = [...messages];
 
-    const generationConfig: any = {
-        temperature: selectCurrentApiConfig(store.getState()).temperature || 1.25,
-        topP: selectCurrentApiConfig(store.getState()).topP || 0.95,
-    };
+    while (true) {
+        const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput);
+        const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput);
 
-    const topK = selectCurrentApiConfig(store.getState()).topK;
+        const generationConfig: any = {
+            temperature: selectPrompts(store.getState()).temperature,
+            topP: selectPrompts(store.getState()).topP,
+        };
 
-    if (topK) {
-        generationConfig.topK = topK;
-    }
+        const topK = selectPrompts(store.getState()).topK;
 
-    if (useStructuredOutput) {
-        generationConfig.responseMimeType = "application/json";
-        generationConfig.responseSchema = structuredOutputSchema;
-        if (useImageResponse) {
-            generationConfig.responseSchema.properties.messages.items.properties.imageGenerationSetting = {
-                type: "OBJECT",
-                properties: {
-                    "prompt": { "type": "STRING" },
-                    "isSelfie": { "type": "BOOLEAN" }
-                },
-                required: ["prompt", "isSelfie"]
-            };
+        if (topK) {
+            generationConfig.topK = topK;
+        }
+
+        if (useStructuredOutput) {
+            generationConfig.responseMimeType = "application/json";
+            generationConfig.responseSchema = structuredOutputSchema;
+            if (useImageResponse) {
+                generationConfig.responseSchema.properties.messages.items.properties.imageGenerationSetting = {
+                    type: "OBJECT",
+                    properties: {
+                        "prompt": { "type": "STRING" },
+                        "isSelfie": { "type": "BOOLEAN" }
+                    },
+                    required: ["prompt", "isSelfie"]
+                };
+            }
+        }
+
+        const payload: GeminiApiPayload = {
+            contents: contents,
+            systemInstruction: {
+                parts: [{ text: systemPrompt }]
+            },
+            generationConfig: generationConfig,
+            safetySettings: [
+                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+            ]
+        };
+
+        const tokenCount = await CountTokens({ payload }, provider, model, auth);
+        console.debug("Total tokens after trimming:", tokenCount);
+
+        if (tokenCount <= maxTokens) {
+            return payload;
+        } else if (trimmedMessages.length <= 1) {
+            throw new Error("Cannot trim messages further to meet token limit.");
+        } else {
+            trimmedMessages.shift(); // Remove the oldest message
         }
     }
-
-    return {
-        contents: contents,
-        systemInstruction: {
-            parts: [{ text: systemPrompt }]
-        },
-        generationConfig: generationConfig,
-        safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-        ]
-    };
 }
 
 function buildClaudeContents(messages: Message[], isProactive: boolean, persona?: Persona, model?: string, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean) {
@@ -342,28 +365,32 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
     const { main } = selectPrompts(state);
     const { userName, userDescription, groupValues, roomMemories } = getCommonPromptData(persona, character, currentRoom);
 
-    const messagesPart: ClaudeMessage[] = [];
+    const messagesPart: ClaudeContent[] = [];
 
     // Add messages
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         const content: ({ type: string; text: string; } |
         { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[] = [{ type: 'text', text: msg.content ? `${header}${msg.content}` : (header ? header : '') }];
         if (msg.file && model !== "grok-3") {
-            const mimeType = msg.file.mimeType;
-            if (mimeType.startsWith('image')) {
-                if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
-                    throw new Error(`Unsupported image type: ${mimeType} `);
-                }
-                const base64Data = msg.file.dataUrl.split(',')[1];
-                if (mimeType && base64Data) {
-                    content.push({
-                        type: 'image',
-                        source: {
-                            data: base64Data,
-                            media_type: mimeType,
-                            type: 'base64'
-                        }
-                    });
+            if (model?.startsWith("claude") && role === 'assistant') {
+                content.push({ type: 'text', text: `${header}[이미지 전송]` });
+            } else {
+                const mimeType = msg.file.mimeType;
+                if (mimeType.startsWith('image')) {
+                    if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
+                        throw new Error(`Unsupported image type: ${mimeType} `);
+                    }
+                    const base64Data = msg.file.dataUrl.split(',')[1];
+                    if (mimeType && base64Data) {
+                        content.push({
+                            type: 'image',
+                            source: {
+                                data: base64Data,
+                                media_type: mimeType,
+                                type: 'base64'
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -418,42 +445,60 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
     return messagesPart;
 }
 
-export function buildClaudeApiPayload(
-    model: string,
+export async function buildClaudeApiPayload(
+    provider: 'claude' | 'grok',
     room: Room,
     persona: Persona,
     character: Character,
     messages: Message[],
     isProactive: boolean,
     useStructuredOutput: boolean,
+    model: string,
+    apiKey: string,
     extraSystemInstruction?: string
-): ClaudeApiPayload {
-    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, messages, useStructuredOutput);
-    const contents = buildClaudeContents(messages, isProactive, persona, model, character, extraSystemInstruction, room, useStructuredOutput);
+): Promise<ClaudeApiPayload> {
+    const maxTokens = selectPrompts(store.getState()).maxContextTokens;
+    let trimmedMessages = [...messages];
 
-    return {
-        model: model,
-        messages: contents,
-        system: [{
-            type: "text",
-            text: systemPrompt
-        }],
-        temperature: selectCurrentApiConfig(store.getState()).temperature || 1,
-        top_k: selectCurrentApiConfig(store.getState()).topK || 40,
-        ...(model.startsWith("claude-opus-4-1") ? {} : { top_p: selectCurrentApiConfig(store.getState()).topP || 0.95 }),
-        max_tokens: selectCurrentApiConfig(store.getState()).maxTokens || 8192,
-    };
+    while (true) {
+        const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput);
+        const contents = buildClaudeContents(trimmedMessages, isProactive, persona, model, character, extraSystemInstruction, room, useStructuredOutput);
+
+        const payload: ClaudeApiPayload = {
+            model: model,
+            messages: contents,
+            system: [{
+                type: "text",
+                text: systemPrompt
+            }],
+            temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature,
+            top_k: selectPrompts(store.getState()).topK,
+            ...(model.startsWith("claude-opus-4-1") ? {} : { top_p: selectPrompts(store.getState()).topP }),
+            max_tokens: selectPrompts(store.getState()).maxResponseTokens,
+        };
+
+        const tokenCount = await CountTokens({ payload }, provider, model, { apiKey });
+        console.debug("Total tokens after trimming:", tokenCount);
+
+        if (tokenCount <= maxTokens) {
+            return payload;
+        } else if (trimmedMessages.length <= 1) {
+            throw new Error("Cannot trim messages further to meet token limit.");
+        } else {
+            trimmedMessages.shift(); // Remove the oldest message
+        }
+    }
 }
 
 // OpenAI (Chat Completions) payload builders
-function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean) {
+async function buildOpenAIContents(messages: Message[], isProactive: boolean, model: string, persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
     const { main } = selectPrompts(state);
     const { userName, userDescription, groupValues, roomMemories } = getCommonPromptData(persona, character, currentRoom);
 
-    const items: OpenAIMessage[] = [];
+    const items: OpenAIContent[] = [];
 
     // Add messages
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
@@ -522,30 +567,47 @@ function buildOpenAIContents(messages: Message[], isProactive: boolean, persona?
     if (isProactive && items.length === 0) {
         items.push({ role: 'user', content: '(SYSTEM: You are starting this conversation. Please begin.)' });
     }
+
+    console.debug("Total tokens", await CountTokens({ content: items }, 'openai', model));
     return items;
 }
 
-export function buildOpenAIApiPayload(
-    model: string,
+export async function buildOpenAIApiPayload(
     room: Room,
     persona: Persona,
     character: Character,
     messages: Message[],
     isProactive: boolean,
     useStructuredOutput: boolean,
+    model: string,
     extraSystemInstruction?: string
-): OpenAIApiPayload {
-    const history = buildOpenAIContents(messages, isProactive, persona, character, extraSystemInstruction, room, useStructuredOutput);
+): Promise<OpenAIApiPayload> {
+    const maxTokens = selectPrompts(store.getState()).maxContextTokens;
+    let trimmedMessages = [...messages];
 
-    const payload: OpenAIApiPayload = {
-        model,
-        messages: history,
-        temperature: model == "gpt-5" ? 1 : selectCurrentApiConfig(store.getState()).temperature || 1.25,
-        top_p: model == "gpt-5" ? undefined : selectCurrentApiConfig(store.getState()).topP || 0.95,
-        max_completion_tokens: selectCurrentApiConfig(store.getState()).maxTokens || 8192,
-        response_format: useStructuredOutput ? { type: 'json_object' } : { type: 'text' },
-    };
-    return payload;
+    while (true) {
+        const history = await buildOpenAIContents(trimmedMessages, isProactive, model, persona, character, extraSystemInstruction, room, useStructuredOutput);
+
+        const payload: OpenAIApiPayload = {
+            model,
+            messages: history,
+            temperature: model == "gpt-5" ? 1 : selectPrompts(store.getState()).temperature,
+            top_p: model == "gpt-5" ? undefined : selectPrompts(store.getState()).topP,
+            max_completion_tokens: selectPrompts(store.getState()).maxResponseTokens,
+            response_format: useStructuredOutput ? { type: 'json_object' } : { type: 'text' },
+        };
+
+        const tokenCount = await CountTokens({ content: history }, 'openai', model);
+        console.debug("Total tokens after trimming:", tokenCount);
+
+        if (tokenCount <= maxTokens) {
+            return payload;
+        } else if (trimmedMessages.length <= 1) {
+            throw new Error("Cannot trim messages further to meet token limit.");
+        } else {
+            trimmedMessages.shift(); // Remove the oldest message
+        }
+    }
 }
 
 export function buildGeminiImagePayload(prompt: string, isSelfie: boolean, char: Character) {
@@ -563,7 +625,7 @@ export function buildGeminiImagePayload(prompt: string, isSelfie: boolean, char:
             { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
         ]
     };
-    
+
 }
 
 export function buildNovelAIImagePayload(prompt: string, model: string) {
@@ -597,29 +659,29 @@ export function buildNovelAIImagePayload(prompt: string, model: string) {
             "autoSmea": false,
             "use_coords": false,
             "legacy_uc": false,
-            "v4_prompt":{
-                "caption":{
+            "v4_prompt": {
+                "caption": {
                     "base_caption": prompt,
                     "char_captions": []
                 },
                 "use_coords": false,
                 "use_order": true
             },
-            "v4_negative_prompt":{
-                "caption":{
+            "v4_negative_prompt": {
+                "caption": {
                     "base_caption": "",
                     "char_captions": []
                 },
                 "legacy_uc": false
             },
-            "reference_image_multiple" : [],
-            "reference_strength_multiple" : [],
+            "reference_image_multiple": [],
+            "reference_strength_multiple": [],
             //add reference image
             // "image": undefined, 
             // "strength": undefined,
             // "noise": undefined,
-            "seed": random(0, 2**32-1),
-            "extra_noise_seed": random(0, 2**32-1),
+            "seed": random(0, 2 ** 32 - 1),
+            "extra_noise_seed": random(0, 2 ** 32 - 1),
             "prefer_brownian": true,
             "deliberate_euler_ancestral_bug": false,
             "skip_cfg_above_sigma": null
