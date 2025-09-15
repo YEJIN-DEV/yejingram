@@ -88,9 +88,9 @@ export async function restoreStateFromFile(file: File) {
   }
   const { characters, rooms, messages, settings } = state;
 
+  persistor.persist(); // ← 복원 직전에 persist 재개
   if (characters) store.dispatch(charactersActions.importCharacters(entityStateToArray(characters)));
   if (rooms) store.dispatch(roomsActions.importRooms(entityStateToArray(rooms)));
   if (messages) store.dispatch(messagesActions.importMessages(entityStateToArray(messages)));
   if (settings) store.dispatch(settingsActions.importSettings(settings));
-  persistor.persist();
 }
