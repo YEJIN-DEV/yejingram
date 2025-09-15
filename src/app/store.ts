@@ -10,6 +10,7 @@ import {
     PURGE,
     REGISTER,
     createMigrate,
+    type MigrationManifest,
 } from 'redux-persist';
 
 import characterReducer from '../entities/character/slice';
@@ -23,7 +24,7 @@ localforage.config({
     storeName: 'persist',
 });
 
-const migrations = {
+export const migrations = {
     1: (state: any) => {
         state = applyRules(state, {
             add: [
@@ -43,10 +44,10 @@ const migrations = {
 
         return state;
     },
-};
+} as MigrationManifest;
 
 
-const persistConfig = {
+export const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
     version: 1,

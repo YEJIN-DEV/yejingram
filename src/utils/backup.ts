@@ -1,5 +1,5 @@
 // src/app/stateBackup.ts
-import { store, persistor, resetAll } from '../app/store';
+import { store, persistor, resetAll, migrations, persistConfig } from '../app/store';
 import type { RootState } from '../app/store';
 import { charactersActions } from '../entities/character/slice';
 import { roomsActions } from '../entities/room/slice';
@@ -80,7 +80,13 @@ export async function restoreStateFromFile(file: File) {
 
   await wipeAllState();
 
-  const { characters, rooms, messages, settings } = parsed.data;
+  let state = parsed.data;
+
+  for (let v = parsed.version; v <= persistConfig.version; v++) {
+    if (migrations[v] == null) continue;
+    state = migrations[v](state as unknown as any) as unknown as typeof state;
+  }
+  const { characters, rooms, messages, settings } = state;
 
   if (characters) store.dispatch(charactersActions.importCharacters(entityStateToArray(characters)));
   if (rooms) store.dispatch(roomsActions.importRooms(entityStateToArray(rooms)));
