@@ -7,7 +7,7 @@ import { ProviderSettings } from './ProviderSettings';
 import { backupStateToFile, restoreStateFromFile } from '../../utils/backup';
 import { settingsActions } from '../../entities/setting/slice';
 import PersonaManager from './PersonaModal';
-import { ComfySettings } from './ComfySettings';
+import { ImageSettings } from './ImageSettings';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;
@@ -159,7 +159,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             </div>
                         )}
 
-                        {activeTab === 'image' && <ComfySettings />}
+                        {activeTab === 'image' && <ImageSettings settings={localSettings} setSettings={setLocalSettings} />}
                         {activeTab === 'scale' && (
                             <div className="space-y-4">
                                 <div>

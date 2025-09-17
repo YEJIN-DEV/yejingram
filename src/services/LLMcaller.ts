@@ -9,6 +9,7 @@ import type { ChatResponse, MessagePart } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
 import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload, buildGeminiImagePayload, buildNovelAIImagePayload } from "./promptBuilder";
+import { selectCurrentArtStyle, selectCurrentImageApiConfig } from "../entities/setting/image/selectors";
 import type { ApiConfig, Persona, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
 import { nanoid } from "@reduxjs/toolkit";
@@ -120,68 +121,167 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
     return message;
 }
 
-// async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
-//     // 이미지 생성 API 호출
-//     const imageConfig = selectCurrentImageApiConfig(store.getState());
-//     const imageApiProvider = imageConfig.model.startsWith('nai-') ? 'novelai' : 'gemini';
-//     let url: string;
-//     let headers: { 'Content-Type': string; 'Authorization'?: string } = { 'Content-Type': 'application/json' };
-//     let payload: object = {};
-//     if (imageApiProvider === 'novelai') {
-//         url = NAI_DIFFUSION_API_BASE_URL;
-//         headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
-//         payload = buildNovelAIImagePayload(imageGenerationSetting.prompt, imageConfig.model);
-//     } else { // gemini
-//         url = `${GEMINI_API_BASE_URL}${imageConfig.model}:generateContent?key=${imageConfig.apiKey}`;
-//         payload = buildGeminiImagePayload(imageGenerationSetting.prompt, imageGenerationSetting.isSelfie, char);
-//     }
+async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
+    // 이미지 생성 API 호출: 상태에서 provider/mode/apiKey 통합 selector 사용
+    const imageConfig = selectCurrentImageApiConfig(store.getState());
+    const artStyle = selectCurrentArtStyle(store.getState());
 
-//     try {
-//         const response = await fetch(url, {
-//             method: 'POST',
-//             headers: headers,
-//             body: JSON.stringify(payload)
-//         });
+    if (!artStyle) {
+        throw new Error('현재 그림체가 선택되지 않았습니다.');
+    }
 
-//         if (imageApiProvider === 'gemini') {
-//             const data = await response.json();
+    const positivePrompt = imageGenerationSetting.prompt + ',' + artStyle.positivePrompt;
+    const negativePrompt = artStyle.negativePrompt;
 
-//             if (!response.ok) {
-//                 console.error("API Error:", data);
-//                 const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
-//                 throw new Error(errorMessage);
-//             }
+    const provider = imageConfig.provider;
+    const model = imageConfig.model;
+    let url = '';
+    let headers: { 'Content-Type': string; 'Authorization'?: string } = { 'Content-Type': 'application/json' };
+    let payload: object = {};
 
-//             return data;
-//         } else { // novelai
-//             if (!response.ok) {
-//                 const errorData = await response.json();
-//                 console.error("NovelAI API Error:", errorData);
-//                 const errorMessage = errorData?.message || `API 요청 실패: ${response.statusText}`;
-//                 throw new Error(errorMessage);
-//             } else {
-//                 const imageData = await unzipToDataUrls(await response.arrayBuffer());
-//                 return {
-//                     candidates: [{
-//                         content: {
-//                             parts: [{
-//                                 inlineData: {
-//                                     mimeType: imageData.mimeType,
-//                                     data: imageData.data
-//                                 }
-//                             }]
-//                         },
-//                         finishReason: 'stop'
-//                     }]
-//                 };
-//             }
-//         }
+    if (provider === 'novelai') {
+        if (!imageConfig.apiKey) throw new Error('NovelAI API Key가 설정되지 않았습니다.');
+        url = NAI_DIFFUSION_API_BASE_URL;
+        headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
+        payload = buildNovelAIImagePayload(positivePrompt, model);
+    } else if (provider === 'gemini') {
+        if (!imageConfig.apiKey) throw new Error('Gemini API Key가 설정되지 않았습니다.');
+        url = `${GEMINI_API_BASE_URL}${model}:generateContent?key=${imageConfig.apiKey}`;
+        payload = buildGeminiImagePayload(positivePrompt, imageGenerationSetting.isSelfie, char);
+    } else if (provider === 'comfy') {
+        // ComfyUI 커스텀 서버 (추후 구현 placeholder)
+        const customCfg = imageConfig.custom;
+        if (!customCfg?.baseUrl) {
+            throw new Error('Comfy 서버 주소가 설정되지 않았습니다.');
+        }
+        try {
+            let baseJson = customCfg.json ? JSON.parse(customCfg.json) : {};
 
-//     } catch (error: unknown) {
-//         console.error(`이미지 생성 API 호출 중 오류 발생:`, error);
-//         throw error;
-//     }
-// }
+            function replacePlaceholders(obj: any, positive: string, negative: string): any {
+                if (typeof obj === 'string') {
+                    return obj.replace(/\{\{positive\}\}/g, positive).replace(/\{\{negative\}\}/g, negative);
+                } else if (Array.isArray(obj)) {
+                    return obj.map(item => replacePlaceholders(item, positive, negative));
+                } else if (obj && typeof obj === 'object') {
+                    const newObj: any = {};
+                    for (const key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            newObj[key] = replacePlaceholders(obj[key], positive, negative);
+                        }
+                    }
+                    return newObj;
+                }
+                return obj;
+            }
+
+            baseJson = replacePlaceholders(baseJson, positivePrompt, negativePrompt);
+
+            url = `${customCfg.baseUrl}/prompt`;
+            payload = {
+                "prompt": baseJson
+            };
+        } catch (e) {
+            throw new Error('Comfy JSON 파싱 실패: ' + (e instanceof Error ? e.message : String(e)));
+        }
+    } else {
+        throw new Error(`지원되지 않는 이미지 Provider: ${provider}`);
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+        });
+
+        if (provider === 'gemini') {
+            const data = await response.json();
+            if (!response.ok) {
+                console.error('Gemini Image API Error:', data);
+                const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
+                throw new Error(errorMessage);
+            }
+            return data;
+        } else if (provider === 'novelai') {
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('NovelAI API Error:', errorData);
+                const errorMessage = errorData?.message || `API 요청 실패: ${response.statusText}`;
+                throw new Error(errorMessage);
+            }
+            const imageData = await unzipToDataUrls(await response.arrayBuffer());
+            return {
+                candidates: [{
+                    content: {
+                        parts: [{
+                            inlineData: {
+                                mimeType: imageData.mimeType,
+                                data: imageData.data
+                            }
+                        }]
+                    },
+                    finishReason: 'stop'
+                }]
+            };
+        } else {
+            const promptID = (await response.json())['prompt_id'];
+
+            const customCfg = imageConfig.custom;
+
+            let generatedImageInfo: {
+                filename: string;
+                subfolder: string,
+                type: string
+            } | null = null;
+            while (true) {
+                const response = await fetch(`${customCfg!.baseUrl}/history`, {
+                    method: 'GET',
+                });
+                const data = (await response.json())[promptID];
+                if (data) {
+                    generatedImageInfo = Object.values(data['outputs']).flatMap((output: any) => output.images)[0];
+                    break;
+                }
+                await new Promise(r => setTimeout(r, 1000))
+            }
+            generatedImageInfo = generatedImageInfo!;
+
+            const imageResponse = await fetch(`${customCfg!.baseUrl}/view?filename=${encodeURIComponent(generatedImageInfo.filename)}&subfolder=${encodeURIComponent(generatedImageInfo.subfolder)}&type=${encodeURIComponent(generatedImageInfo.type)}`, {
+                method: 'GET',
+            });
+
+            async function imageUrlToBase64(blob: Blob): Promise<string> {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const result = reader.result as string;
+                        const base64 = result.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            }
+
+            return {
+                candidates: [{
+                    content: {
+                        parts: [{
+                            inlineData: {
+                                mimeType: imageResponse.headers.get('Content-Type'),
+                                data: await imageUrlToBase64(await imageResponse.blob())
+                            }
+                        }]
+                    },
+                    finishReason: 'stop'
+                }]
+            };
+        }
+    } catch (error: unknown) {
+        console.error('이미지 생성 API 호출 중 오류 발생:', error);
+        throw error;
+    }
+}
 
 function handleError(error: unknown, roomId: string, charId: number, dispatch: AppDispatch) {
     console.error("Error in LLMSend:", error);

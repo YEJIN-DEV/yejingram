@@ -1,14 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Palette, BrainCircuit, X, Plus, Trash2, Edit3, AlertTriangle, Code, Minus } from 'lucide-react';
-import { nanoid } from '@reduxjs/toolkit';
-
-export type ArtStyle = {
-    id: string;
-    name: string;
-    description?: string;
-    prompt?: string;
-    negativePrompt?: string;
-};
+import { useSelector, useDispatch } from 'react-redux';
+import { selectArtStyles, selectSelectedArtStyleId } from '../../entities/setting/image/selectors';
+import { settingsActions } from '../../entities/setting/slice';
+import type { ArtStyle } from '../../entities/setting/image/types';
 
 interface ArtStyleModalProps {
     isOpen: boolean;
@@ -24,31 +19,46 @@ export function ArtStyleModal({
     onClose,
     onSave,
 }: ArtStyleModalProps) {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [prompt, setPrompt] = useState('');
-    const [negativePrompt, setNegativePrompt] = useState('');
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        prompt: '',
+        negativePrompt: ''
+    });
 
     useEffect(() => {
-        setName(editingArtStyle?.name || '');
-        setDescription(editingArtStyle?.description || '');
-        setPrompt(editingArtStyle?.prompt || '');
-        setNegativePrompt(editingArtStyle?.negativePrompt || '');
+        setFormData({
+            name: editingArtStyle?.name || '',
+            description: editingArtStyle?.description || '',
+            prompt: editingArtStyle?.positivePrompt || '',
+            negativePrompt: editingArtStyle?.negativePrompt || ''
+        });
     }, [editingArtStyle]);
+
+    const handleInputChange = (field: keyof typeof formData) => (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: e.target.value
+        }));
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name.trim()) return;
+        if (!formData.name.trim()) return;
         onSave({
-            name: name.trim(),
-            description: description.trim(),
-            prompt: prompt.trim(),
-            negativePrompt: negativePrompt.trim(),
+            name: formData.name.trim(),
+            description: formData.description.trim(),
+            positivePrompt: formData.prompt.trim(),
+            negativePrompt: formData.negativePrompt.trim(),
         });
-        setName('');
-        setDescription('');
-        setPrompt('');
-        setNegativePrompt('');
+        setFormData({
+            name: '',
+            description: '',
+            prompt: '',
+            negativePrompt: ''
+        });
     };
 
     if (!isOpen) return null;
@@ -73,8 +83,8 @@ export function ArtStyleModal({
                         </label>
                         <input
                             type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            value={formData.name}
+                            onChange={handleInputChange('name')}
                             placeholder="그림체 이름을 입력하세요"
                             className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm bg-gray-50 text-gray-900 border-gray-200"
                             required
@@ -87,8 +97,8 @@ export function ArtStyleModal({
                             설명
                         </label>
                         <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                            value={formData.description}
+                            onChange={handleInputChange('description')}
                             placeholder="이 그림체는 어떤 특징을 가지고 있는지 설명해주세요"
                             rows={3}
                             className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm bg-gray-50 text-gray-900 border-gray-200"
@@ -101,8 +111,8 @@ export function ArtStyleModal({
                             프롬프트 태그
                         </label>
                         <textarea
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
+                            value={formData.prompt}
+                            onChange={handleInputChange('prompt')}
                             placeholder="예: anime style, soft shading, pastel colors"
                             rows={4}
                             className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm font-mono bg-gray-50 text-gray-900 border-gray-200"
@@ -119,8 +129,8 @@ export function ArtStyleModal({
                             네거티브 프롬프트 태그
                         </label>
                         <textarea
-                            value={negativePrompt}
-                            onChange={(e) => setNegativePrompt(e.target.value)}
+                            value={formData.negativePrompt}
+                            onChange={handleInputChange('negativePrompt')}
                             placeholder="예: blurry, low quality, deformed"
                             rows={4}
                             className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm font-mono bg-gray-50 text-gray-900 border-gray-200"
@@ -152,16 +162,16 @@ export function ArtStyleModal({
 }
 
 export default function ArtStyleList() {
-    const [artStyles, setArtStyles] = useState<ArtStyle[]>([]);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const dispatch = useDispatch();
+    const artStyles = useSelector(selectArtStyles);
+    const selectedId = useSelector(selectSelectedArtStyleId);
+    const selected = useSelector(selectSelectedArtStyleId);
 
     const [editingArtStyle, setEditingArtStyle] = useState<ArtStyle | null>(null);
     const [showModal, setShowModal] = useState(false);
 
-    const selected = useMemo(() => artStyles.find(s => s.id === selectedId) || null, [artStyles, selectedId]);
-
     const openAdd = () => {
-        setEditingArtStyle({ id: '', name: '', description: '', prompt: '' });
+        setEditingArtStyle({ id: '', name: '', description: '', positivePrompt: '', negativePrompt: '' });
         setShowModal(true);
     };
     const openEdit = (style: ArtStyle) => {
@@ -176,23 +186,20 @@ export default function ArtStyleList() {
     const saveArtStyle = (data: Omit<ArtStyle, 'id'>) => {
         if (editingArtStyle?.id) {
             // 수정
-            setArtStyles(prev => prev.map(s => (s.id === editingArtStyle.id ? { ...s, ...data } : s)));
+            dispatch(settingsActions.updateArtStyleInImageSettings({ id: editingArtStyle.id, ...data }));
         } else {
             // 추가
-            const newItem: ArtStyle = { id: nanoid(), ...data };
-            setArtStyles(prev => [newItem, ...prev]);
-            setSelectedId(prev => prev ?? newItem.id);
+            dispatch(settingsActions.addArtStyleToImageSettings(data));
         }
         closeModal();
     };
 
     const deleteArtStyle = (id: string) => {
         if (!confirm('이 그림체를 삭제하시겠습니까?')) return;
-        setArtStyles(prev => prev.filter(s => s.id !== id));
-        setSelectedId(prev => (prev === id ? null : prev));
+        dispatch(settingsActions.deleteArtStyleFromImageSettings(id));
     };
 
-    const selectArtStyle = (id: string) => setSelectedId(id);
+    const selectArtStyle = (id: string) => dispatch(settingsActions.selectArtStyleInImageSettings(id));
 
     return (
         <>
@@ -251,9 +258,9 @@ export default function ArtStyleList() {
                                                 {artStyle.description}
                                             </p>
                                         )}
-                                        {artStyle.prompt && (
+                                        {artStyle.positivePrompt && (
                                             <p className="text-xs mt-1 font-mono truncate text-gray-400">
-                                                {artStyle.prompt}
+                                                {artStyle.positivePrompt}
                                             </p>
                                         )}
                                         {artStyle.negativePrompt && (

@@ -6,15 +6,16 @@ export interface ImageApiConfig {
     custom?: {
         baseUrl: string;
         json: string;
+        timeout: number;
     }
 }
 
 export interface ArtStyle {
     id: string;
     name: string;
-    description?: string;
-    prompt?: string;
-    negativePrompt?: string;
+    description: string;
+    positivePrompt: string;
+    negativePrompt: string;
 }
 
 export interface ImageGenerationSettingsState {

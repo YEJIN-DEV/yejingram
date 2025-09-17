@@ -15,7 +15,8 @@ export const initialImageApiConfigs: Record<ImageApiProvider, ImageApiConfig> = 
     comfy: {
         custom: {
             baseUrl: '',
-            json: ''
+            json: '',
+            timeout: 60
         }
     }
 };
@@ -23,7 +24,7 @@ export const initialImageApiConfigs: Record<ImageApiProvider, ImageApiConfig> = 
 export const initialState: ImageGenerationSettingsState = {
     config: initialImageApiConfigs,
     artStyles: [
-        { id: nanoid(), name: 'Anime', prompt: 'masterpiece, best quality, 1girl, solo, dynamic angle, intricate details, sharp focus, vibrant colors', negativePrompt: 'lowres, bad anatomy, error body, error arm, error hand, error fingers, error legs, error feet, error face, deformed, blurry, fuzzy' },
+        { id: nanoid(), name: 'Anime', description: 'Anime style art generation', positivePrompt: 'masterpiece, best quality, 1girl, solo, dynamic angle, intricate details, sharp focus, vibrant colors', negativePrompt: 'lowres, bad anatomy, error body, error arm, error hand, error fingers, error legs, error feet, error face, deformed, blurry, fuzzy' },
     ],
     imageProvider: 'gemini',
     model: 'gemini-2.5-flash-image-preview',

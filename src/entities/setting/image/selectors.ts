@@ -1,6 +1,6 @@
 import type { RootState } from '../../../app/store';
 import { createSelector } from '@reduxjs/toolkit';
-import type { ArtStyle } from './types';
+import type { ArtStyle, ImageApiProvider } from './types';
 
 const selectImageSettingsState = (state: RootState) => state.settings.imageSettings;
 
@@ -19,6 +19,27 @@ export const selectImageApiConfig = createSelector(
     (configs) => (provider: keyof typeof configs) => configs[provider]
 );
 
+// 현재 선택된 이미지 생성 provider
+export const selectImageProvider = createSelector(
+    [selectImageSettingsState],
+    (imageSettings) => imageSettings.imageProvider
+);
+
+// 현재 선택된 이미지 모델
+export const selectImageModel = createSelector(
+    [selectImageSettingsState],
+    (imageSettings) => imageSettings.model
+);
+
+// 현재 provider 에 해당하는 api config + model 을 종합해서 반환
+export const selectCurrentImageApiConfig = createSelector(
+    [selectImageProvider, selectImageApiConfigs, selectImageModel],
+    (provider, configs, model) => {
+        const cfg = configs[provider as ImageApiProvider] || {};
+        return { provider, model, ...cfg } as { provider: ImageApiProvider; model: string; apiKey?: string; custom?: { baseUrl: string; json: string } };
+    }
+);
+
 export const selectArtStyles = createSelector(
     [selectImageSettingsState],
     (imageSettings) => imageSettings.artStyles
@@ -29,7 +50,7 @@ export const selectSelectedArtStyleId = createSelector(
     (imageSettings) => imageSettings.selectedArtStyleId
 );
 
-export const selectSelectedArtStyle = createSelector(
+export const selectCurrentArtStyle = createSelector(
     [selectArtStyles, selectSelectedArtStyleId],
     (artStyles, selectedId) => {
         if (!artStyles || artStyles.length === 0) {
