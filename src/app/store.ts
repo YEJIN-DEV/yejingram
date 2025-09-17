@@ -17,6 +17,7 @@ import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
 import settingsReducer, { initialState as settingsInitialState } from '../entities/setting/slice';
+import { initialState as imageSettingsInitialState } from '../entities/setting/image/slice';
 import { applyRules } from '../utils/migration';
 
 localforage.config({
@@ -44,13 +45,25 @@ export const migrations = {
 
         return state;
     },
+    2: (state: any) => {
+        state = applyRules(state, {
+            add: [
+                {
+                    path: 'settings.imageApiConfigs.comfy',
+                    keys: ['*'],
+                    defaults: imageSettingsInitialState.config.gemini
+                }
+            ]
+        });
+        return state;
+    }
 } as MigrationManifest;
 
 
 export const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
-    version: 1,
+    version: 2,
     whitelist: ['characters', 'rooms', 'messages', 'settings'],
     migrate: createMigrate(migrations, { debug: true }),
 };

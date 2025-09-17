@@ -2,7 +2,7 @@ import { store, type AppDispatch } from "../app/store";
 import { selectCharacterById, selectAllCharacters } from "../entities/character/selectors";
 import type { Message } from "../entities/message/types";
 import type { Room } from "../entities/room/types";
-import { selectAllSettings, selectCurrentApiConfig, selectCurrentImageApiConfig, selectSelectedPersona } from "../entities/setting/selectors";
+import { selectAllSettings, selectCurrentApiConfig, selectSelectedPersona } from "../entities/setting/selectors";
 import { messagesActions } from "../entities/message/slice";
 import { roomsActions } from "../entities/room/slice";
 import type { ChatResponse, MessagePart } from "./type";
@@ -120,68 +120,68 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
     return message;
 }
 
-async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
-    // 이미지 생성 API 호출
-    const imageConfig = selectCurrentImageApiConfig(store.getState());
-    const imageApiProvider = imageConfig.model.startsWith('nai-') ? 'novelai' : 'gemini';
-    let url: string;
-    let headers: { 'Content-Type': string; 'Authorization'?: string } = { 'Content-Type': 'application/json' };
-    let payload: object = {};
-    if (imageApiProvider === 'novelai') {
-        url = NAI_DIFFUSION_API_BASE_URL;
-        headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
-        payload = buildNovelAIImagePayload(imageGenerationSetting.prompt, imageConfig.model);
-    } else { // gemini
-        url = `${GEMINI_API_BASE_URL}${imageConfig.model}:generateContent?key=${imageConfig.apiKey}`;
-        payload = buildGeminiImagePayload(imageGenerationSetting.prompt, imageGenerationSetting.isSelfie, char);
-    }
+// async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
+//     // 이미지 생성 API 호출
+//     const imageConfig = selectCurrentImageApiConfig(store.getState());
+//     const imageApiProvider = imageConfig.model.startsWith('nai-') ? 'novelai' : 'gemini';
+//     let url: string;
+//     let headers: { 'Content-Type': string; 'Authorization'?: string } = { 'Content-Type': 'application/json' };
+//     let payload: object = {};
+//     if (imageApiProvider === 'novelai') {
+//         url = NAI_DIFFUSION_API_BASE_URL;
+//         headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
+//         payload = buildNovelAIImagePayload(imageGenerationSetting.prompt, imageConfig.model);
+//     } else { // gemini
+//         url = `${GEMINI_API_BASE_URL}${imageConfig.model}:generateContent?key=${imageConfig.apiKey}`;
+//         payload = buildGeminiImagePayload(imageGenerationSetting.prompt, imageGenerationSetting.isSelfie, char);
+//     }
 
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(payload)
-        });
+//     try {
+//         const response = await fetch(url, {
+//             method: 'POST',
+//             headers: headers,
+//             body: JSON.stringify(payload)
+//         });
 
-        if (imageApiProvider === 'gemini') {
-            const data = await response.json();
+//         if (imageApiProvider === 'gemini') {
+//             const data = await response.json();
 
-            if (!response.ok) {
-                console.error("API Error:", data);
-                const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
-                throw new Error(errorMessage);
-            }
+//             if (!response.ok) {
+//                 console.error("API Error:", data);
+//                 const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
+//                 throw new Error(errorMessage);
+//             }
 
-            return data;
-        } else { // novelai
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("NovelAI API Error:", errorData);
-                const errorMessage = errorData?.message || `API 요청 실패: ${response.statusText}`;
-                throw new Error(errorMessage);
-            } else {
-                const imageData = await unzipToDataUrls(await response.arrayBuffer());
-                return {
-                    candidates: [{
-                        content: {
-                            parts: [{
-                                inlineData: {
-                                    mimeType: imageData.mimeType,
-                                    data: imageData.data
-                                }
-                            }]
-                        },
-                        finishReason: 'stop'
-                    }]
-                };
-            }
-        }
+//             return data;
+//         } else { // novelai
+//             if (!response.ok) {
+//                 const errorData = await response.json();
+//                 console.error("NovelAI API Error:", errorData);
+//                 const errorMessage = errorData?.message || `API 요청 실패: ${response.statusText}`;
+//                 throw new Error(errorMessage);
+//             } else {
+//                 const imageData = await unzipToDataUrls(await response.arrayBuffer());
+//                 return {
+//                     candidates: [{
+//                         content: {
+//                             parts: [{
+//                                 inlineData: {
+//                                     mimeType: imageData.mimeType,
+//                                     data: imageData.data
+//                                 }
+//                             }]
+//                         },
+//                         finishReason: 'stop'
+//                     }]
+//                 };
+//             }
+//         }
 
-    } catch (error: unknown) {
-        console.error(`이미지 생성 API 호출 중 오류 발생:`, error);
-        throw error;
-    }
-}
+//     } catch (error: unknown) {
+//         console.error(`이미지 생성 API 호출 중 오류 발생:`, error);
+//         throw error;
+//     }
+// }
 
 function handleError(error: unknown, roomId: string, charId: number, dispatch: AppDispatch) {
     console.error("Error in LLMSend:", error);

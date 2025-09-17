@@ -2,11 +2,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import { useEffect, useState } from 'react';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
-import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Search } from 'lucide-react';
+import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Search, Image } from 'lucide-react';
 import { ProviderSettings } from './ProviderSettings';
 import { backupStateToFile, restoreStateFromFile } from '../../utils/backup';
 import { settingsActions } from '../../entities/setting/slice';
 import PersonaManager from './PersonaModal';
+import { ComfySettings } from './ComfySettings';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;
@@ -18,7 +19,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
     const settings = useSelector(selectAllSettings);
 
     const [localSettings, setLocalSettings] = useState<SettingsState>(settings);
-    const [activeTab, setActiveTab] = useState<'ai' | 'scale' | 'persona' | 'proactive' | 'data'>('ai');
+    const [activeTab, setActiveTab] = useState<'ai' | 'image' | 'scale' | 'persona' | 'proactive' | 'data'>('ai');
 
     const importBackup = () => {
         const input = document.createElement("input");
@@ -81,6 +82,16 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             <Globe className="w-4 h-4 inline mr-2" />
                             AI
                         </button>
+                        {localSettings.useImageResponse && (<button
+                            onClick={() => setActiveTab('image')}
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'image'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            <Image className="w-4 h-4 inline mr-2" />
+                            이미지
+                        </button>)}
                         <button
                             onClick={() => setActiveTab('scale')}
                             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'scale'
@@ -148,6 +159,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             </div>
                         )}
 
+                        {activeTab === 'image' && <ComfySettings />}
                         {activeTab === 'scale' && (
                             <div className="space-y-4">
                                 <div>

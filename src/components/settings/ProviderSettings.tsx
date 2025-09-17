@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import type { SettingsState, ApiConfig, ImageApiConfig, ImageApiProvider } from '../../entities/setting/types';
+import type { SettingsState, ApiConfig } from '../../entities/setting/types';
 import { Key, Cpu, Link, Plus, X, Briefcase, Globe, Image } from 'lucide-react';
-import { initialApiConfigs, initialImageApiConfigs } from '../../entities/setting/slice';
+import { initialApiConfigs } from '../../entities/setting/slice';
+import type { ImageApiConfig, ImageApiProvider } from '../../entities/setting/image/types';
+import { initialImageApiConfigs } from '../../entities/setting/image/slice';
 
 interface ProviderSettingsProps {
     settings: SettingsState;
@@ -46,14 +48,15 @@ const imageModels: string[] = [
     'nai-diffusion-4-5-curated',
     'nai-diffusion-4-full',
     'nai-diffusion-4-curated-preview',
+    'comfy',
 ];
 
 export function ProviderSettings({ settings, setSettings }: ProviderSettingsProps) {
     const [customModelInput, setCustomModelInput] = useState('');
     const provider = settings.apiProvider;
-    const imageProvider = settings.imageApiProvider;
-    const rawConfig = settings?.apiConfigs?.[provider] ?? initialApiConfigs[provider];
-    const imageConfig = settings?.imageApiConfigs?.[imageProvider] ?? initialImageApiConfigs[imageProvider];
+    const imageProvider = settings.imageSettings.imageProvider;
+    const rawConfig = settings?.apiConfigs?.[provider];
+    const imageConfig = settings.imageSettings.config[imageProvider];
     const config = {
         ...rawConfig,
         customModels: rawConfig.customModels || []
@@ -75,13 +78,16 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
     const handleImageModelConfigChange = (provider: ImageApiProvider, key: keyof ImageApiConfig, value: any) => {
         setSettings(prev => {
-            const currentImageProviderConfig = prev.imageApiConfigs[provider] ?? initialImageApiConfigs[provider]; // Use initial config as fallback
+            const currentImageProviderConfig = prev.imageSettings.config[provider] ?? initialImageApiConfigs[provider]; // Use initial config as fallback
             return {
                 ...prev,
-                imageApiProvider: provider,
-                imageApiConfigs: {
-                    ...prev.imageApiConfigs,
-                    [provider]: { ...currentImageProviderConfig, [key]: value }
+                imageSettings: {
+                    ...prev.imageSettings,
+                    imageProvider: provider,
+                    config: {
+                        ...prev.imageSettings.config,
+                        [provider]: { ...currentImageProviderConfig, [key]: value }
+                    }
                 }
             };
         });
@@ -92,7 +98,14 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
     };
 
     const handleImageModelSelect = (model: string) => {
-        const provider = model.startsWith('nai-') ? 'novelai' : 'gemini';
+        let provider: ImageApiProvider;
+        if (model === 'comfy') {
+            provider = 'comfy';
+        } else if (model.startsWith('nai-')) {
+            provider = 'novelai';
+        } else {
+            provider = 'gemini';
+        }
         handleImageModelConfigChange(provider, 'model', model);
     };
 
@@ -276,7 +289,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Key className="w-4 h-4 mr-2" />이미지 생성용 API 키</label>
                         <input
                             type="password"
-                            value={imageConfig.apiKey}
+                            value={imageConfig.apiKey || ''}
                             onChange={e => handleImageModelConfigChange(imageProvider, 'apiKey', e.target.value)}
                             placeholder="이미지 모델 API 키를 입력하세요"
                             className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"

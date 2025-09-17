@@ -3,8 +3,10 @@ import ErrorPage from './ErrorPage';
 import { store } from '../app/store';
 import { persistor, resetAll } from '../app/store';
 import { settingsActions } from '../entities/setting/slice';
-import { initialApiConfigs, initialImageApiConfigs } from '../entities/setting/slice';
-import type { ApiProvider, ImageApiProvider } from '../entities/setting/types';
+import { initialApiConfigs } from '../entities/setting/slice';
+import { initialImageApiConfigs } from '../entities/setting/image/slice';
+import type { ApiProvider } from '../entities/setting/types';
+import type { ImageApiProvider } from '../entities/setting/image/types';
 import { backupStateToFile, restoreStateFromFile } from '../utils/backup';
 
 interface Props {
@@ -57,12 +59,17 @@ class ErrorBoundary extends Component<Props, State> {
             providers.forEach(provider => {
                 store.dispatch(settingsActions.setApiConfig({ provider, config: initialApiConfigs[provider] }));
             });
-            const imageProviders: ImageApiProvider[] = ['gemini', 'novelai'];
+            const imageProviders: ImageApiProvider[] = ['gemini', 'novelai', 'comfy'];
             imageProviders.forEach(provider => {
-                store.dispatch(settingsActions.setImageApiConfig({ provider, config: initialImageApiConfigs[provider] }));
+                store.dispatch(settingsActions.setImageApiConfigForImageSettings({ provider, config: initialImageApiConfigs[provider] }));
             });
             store.dispatch(settingsActions.setApiProvider('gemini'));
-            store.dispatch(settingsActions.setImageApiProvider('gemini'));
+            // Reset image settings with default imageProvider
+            const currentState = store.getState().settings;
+            store.dispatch(settingsActions.setImageSettings({
+                ...currentState.imageSettings,
+                imageProvider: 'gemini'
+            }));
         }
         if (resetOptions.resetPrompts) {
             store.dispatch(settingsActions.resetPrompts());
