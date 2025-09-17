@@ -234,7 +234,7 @@ async function callImageGeneration(imageGenerationSetting: { prompt: string; isS
                 type: string
             } | null = null;
             while (true) {
-                const response = await fetch(`${customCfg!.baseUrl}/history`, {
+                const response = await fetch(`${customCfg!.baseUrl}/history/${promptID}`, {
                     method: 'GET',
                 });
                 const data = (await response.json())[promptID];
