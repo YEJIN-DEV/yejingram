@@ -47,13 +47,15 @@ export const migrations = {
     },
     2: (state: any) => {
         state = applyRules(state, {
-            add: [
-                {
-                    path: 'settings.imageApiConfigs.comfy',
-                    keys: ['*'],
-                    defaults: imageSettingsInitialState.config.gemini
-                }
-            ]
+            add: [{
+                path: 'settings',
+                keys: ['imageSettings'],
+                defaults: { imageSettings: imageSettingsInitialState }
+            }],
+            delete: [{
+                path: 'settings',
+                keys: ['imageApiConfigs', 'imageApiProvider']
+            }]
         });
         return state;
     }

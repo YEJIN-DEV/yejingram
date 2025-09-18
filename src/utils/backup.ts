@@ -82,7 +82,7 @@ export async function restoreStateFromFile(file: File) {
 
   let state = parsed.data;
 
-  for (let v = parsed.version; v <= persistConfig.version; v++) {
+  for (let v = parsed.version + 1; v <= persistConfig.version; v++) {
     if (migrations[v] == null) continue;
     state = migrations[v](state as unknown as any) as unknown as typeof state;
   }
