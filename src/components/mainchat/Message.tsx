@@ -322,7 +322,7 @@ const MessageList: React.FC<MessageListProps> = ({
                             <Trash2 className="w-4 h-4" />
                           </button>
 
-                          {!isMe && msg.type === 'TEXT' && i === messages.length - 1 && !isWaitingForResponse && (
+                          {!isMe && i === messages.length - 1 && !isWaitingForResponse && (
                             <button
                               data-id={msg.id.toString()}
                               onClick={() => {
