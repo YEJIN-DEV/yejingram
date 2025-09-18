@@ -13,6 +13,7 @@ import type { Room } from "../entities/room/types";
 import type { PromptItem } from "../entities/setting/types";
 import type { Lore } from "../entities/lorebook/types";
 import { CountTokens } from "../utils/token";
+import { loadImage } from "../utils/imageStego";
 
 export type GeminiContent = {
     role: string;
@@ -628,11 +629,12 @@ export function buildGeminiImagePayload(positivePrompt: string, isSelfie: boolea
 
 }
 
-export function buildNovelAIImagePayload(positivePrompt: string, negativePrompt: string, model: string) {
+export async function buildNovelAIImagePayload(positivePrompt: string, negativePrompt: string, model: string, isSelfie: boolean, char: Character, styleAware: boolean) {
     function random(min: number, max: number) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
-    return {
+
+    let payload: any = {
         "input": positivePrompt,
         "model": model,
         "action": "generate",
@@ -676,10 +678,6 @@ export function buildNovelAIImagePayload(positivePrompt: string, negativePrompt:
             },
             "reference_image_multiple": [],
             "reference_strength_multiple": [],
-            //add reference image
-            // "image": undefined, 
-            // "strength": undefined,
-            // "noise": undefined,
             "seed": random(0, 2 ** 32 - 1),
             "extra_noise_seed": random(0, 2 ** 32 - 1),
             "prefer_brownian": true,
@@ -687,4 +685,88 @@ export function buildNovelAIImagePayload(positivePrompt: string, negativePrompt:
             "skip_cfg_above_sigma": null
         }
     }
+    if (isSelfie && char.avatar) {
+        const resized = await resizeToNAI(char.avatar, "#ffffff");
+        payload.parameters['director_reference_descriptions'] = [
+            {
+                caption: {
+                    base_caption: `character${styleAware ? '&style' : ''}`,
+                    char_captions: []
+                },
+                legacy_uc: false
+            }
+        ];
+        payload.parameters['director_reference_images'] = [resized.split(',')[1]];
+        payload.parameters['director_reference_information_extracted'] = [1];
+        payload.parameters['director_reference_strength_values'] = [1];
+    }
+
+    return payload;
+}
+
+type FitResult = {
+    targetW: number;
+    targetH: number;
+    drawW: number;
+    drawH: number;
+    offsetX: number;
+    offsetY: number;
+};
+
+function chooseBestFit(srcW: number, srcH: number): FitResult {
+    const targets = [
+        { targetW: 1024, targetH: 1536 },
+        { targetW: 1536, targetH: 1024 },
+        { targetW: 1472, targetH: 1472 },
+    ];
+
+    let best:
+        | (FitResult & { paddingArea: number })
+        | null = null;
+
+    for (const { targetW, targetH } of targets) {
+        const scale = Math.min(targetW / srcW, targetH / srcH);
+        const drawW = Math.round(srcW * scale);
+        const drawH = Math.round(srcH * scale);
+        const offsetX = Math.round((targetW - drawW) / 2);
+        const offsetY = Math.round((targetH - drawH) / 2);
+        const paddingArea = targetW * targetH - drawW * drawH;
+
+        if (!best || paddingArea < best.paddingArea) {
+            best = { targetW, targetH, drawW, drawH, offsetX, offsetY, paddingArea };
+        }
+    }
+    const { paddingArea, ...result } = best!;
+    return result;
+}
+
+export async function resizeToNAI(
+    imageURL: string,
+    background: string
+): Promise<string> {
+    const img = await loadImage(imageURL);
+
+    const fit = chooseBestFit(img.naturalWidth || img.width, img.naturalHeight || img.height);
+    const canvas = document.createElement("canvas");
+    canvas.width = fit.targetW;
+    canvas.height = fit.targetH;
+
+    const ctx = canvas.getContext("2d")!;
+
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+    // 이미지 그리기
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(
+        img,
+        fit.offsetX,
+        fit.offsetY,
+        fit.drawW,
+        fit.drawH
+    );
+
+    return canvas.toDataURL('image/png');
 }

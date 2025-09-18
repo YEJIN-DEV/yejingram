@@ -72,3 +72,8 @@ export const selectArtStyleCount = createSelector(
     [selectArtStyles],
     (artStyles) => artStyles.length
 );
+
+export const selectStyleAware = createSelector(
+    [selectImageSettingsState],
+    (imageSettings) => imageSettings.styleAware
+);

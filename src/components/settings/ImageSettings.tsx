@@ -20,6 +20,7 @@ type CheckResult = {
 const imageModels: string[] = [
   'gemini-2.5-flash-image-preview',
   'gemini-2.0-flash-preview-image-generation',
+  'nai-diffusion-4-5-full',
   'nai-diffusion-4-5-curated',
   'nai-diffusion-4-full',
   'nai-diffusion-4-curated-preview',
@@ -273,6 +274,34 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
             </p>
           </div>
         </>
+      )}
+
+      {/* NovelAI 스타일 인식 토글 - NovelAI가 선택된 경우에만 표시 */}
+      {imageProvider === 'novelai' && (
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex flex-col">
+            <label htmlFor="style-aware-toggle" className="font-medium text-gray-900 cursor-pointer">
+              스타일 인식 모드
+            </label>
+            <p className="text-xs text-gray-500">활성화하면 캐릭터 이미지의 스타일을 인식하여 일관된 그림체로 생성합니다.</p>
+          </div>
+          <label htmlFor="style-aware-toggle" className="relative flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="style-aware-toggle"
+              className="sr-only peer"
+              checked={settings.imageSettings.styleAware}
+              onChange={e => setSettings(prev => ({
+                ...prev,
+                imageSettings: {
+                  ...prev.imageSettings,
+                  styleAware: e.target.checked
+                }
+              }))}
+            />
+            <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+          </label>
+        </div>
       )}
 
       {/* 그림체 설정 (ArtStyleManagerUI 연동) */}

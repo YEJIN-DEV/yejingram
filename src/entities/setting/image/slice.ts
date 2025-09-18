@@ -29,6 +29,7 @@ export const initialState: ImageGenerationSettingsState = {
     imageProvider: 'gemini',
     model: 'gemini-2.5-flash-image-preview',
     selectedArtStyleId: '',
+    styleAware: true,
 };
 
 export const imageSettingsAdapter = createEntityAdapter<ImageGenerationSettingsState, string>({
@@ -93,6 +94,9 @@ const imageSettingsSlice = createSlice({
         },
         resetImageSettings: () => {
             return initialState;
+        },
+        toggleStyleAware: (state) => {
+            state.styleAware = !state.styleAware;
         },
     }
 });

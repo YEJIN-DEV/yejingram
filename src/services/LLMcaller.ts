@@ -9,7 +9,7 @@ import type { ChatResponse, MessagePart } from "./type";
 import { selectMessagesByRoomId } from "../entities/message/selectors";
 import type { Character } from "../entities/character/types";
 import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload, buildGeminiImagePayload, buildNovelAIImagePayload } from "./promptBuilder";
-import { selectCurrentArtStyle, selectCurrentImageApiConfig } from "../entities/setting/image/selectors";
+import { selectCurrentArtStyle, selectCurrentImageApiConfig, selectStyleAware } from "../entities/setting/image/selectors";
 import type { ApiConfig, Persona, SettingsState } from "../entities/setting/types";
 import { calcReactionDelay, sleep } from "../utils/reactionDelay";
 import { nanoid } from "@reduxjs/toolkit";
@@ -142,7 +142,8 @@ async function callImageGeneration(imageGenerationSetting: { prompt: string; isS
         if (!imageConfig.apiKey) throw new Error('NovelAI API Key가 설정되지 않았습니다.');
         url = NAI_DIFFUSION_API_BASE_URL;
         headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
-        payload = buildNovelAIImagePayload(positivePrompt, negativePrompt, model);
+        const styleAware = selectStyleAware(store.getState());
+        payload = await buildNovelAIImagePayload(positivePrompt, negativePrompt, model, imageGenerationSetting.isSelfie, char, styleAware);
     } else if (provider === 'gemini') {
         if (!imageConfig.apiKey) throw new Error('Gemini API Key가 설정되지 않았습니다.');
         url = `${GEMINI_API_BASE_URL}${model}:generateContent?key=${imageConfig.apiKey}`;

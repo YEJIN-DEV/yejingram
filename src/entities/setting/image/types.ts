@@ -24,4 +24,5 @@ export interface ImageGenerationSettingsState {
     imageProvider: ImageApiProvider;
     model: string;
     selectedArtStyleId: string;
+    styleAware: boolean;
 }
