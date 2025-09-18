@@ -96,7 +96,8 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
             content: messagePart.content,
         });
     }
-    else if (messagePart.sticker) {
+
+    if (messagePart.sticker) {
         const foundSticker = char.stickers?.find(s => s.id == messagePart.sticker || s.name === messagePart.sticker);
         if (foundSticker) {
             message.push({
@@ -109,7 +110,8 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
             });
         }
     }
-    else if (messagePart.imageGenerationSetting) {
+
+    if (messagePart.imageGenerationSetting) {
         const imageResponse = await callImageGeneration(messagePart.imageGenerationSetting, char);
         const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
         if (inlineDataBody) {
