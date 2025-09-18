@@ -7,7 +7,7 @@ import { ProviderSettings } from './ProviderSettings';
 import { backupStateToFile, restoreStateFromFile } from '../../utils/backup';
 import { settingsActions } from '../../entities/setting/slice';
 import PersonaManager from './PersonaModal';
-import { ImageSettings } from './ImageSettings';
+import { ImageSettings } from './image/ImageSettings';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;

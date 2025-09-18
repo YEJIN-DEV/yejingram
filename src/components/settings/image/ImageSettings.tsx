@@ -3,9 +3,9 @@ import { Globe, Code, Clock, Key, Image } from 'lucide-react';
 import ArtStyleList from './ArtStyleManagerUI';
 import jsonEditor from 'jsoneditor';
 import 'jsoneditor/dist/jsoneditor.css';
-import type { SettingsState } from '../../entities/setting/types';
-import type { ImageApiProvider } from '../../entities/setting/image/types';
-import { initialImageApiConfigs } from '../../entities/setting/image/slice';
+import type { SettingsState } from '../../../entities/setting/types';
+import type { ImageApiProvider } from '../../../entities/setting/image/types';
+import { initialImageApiConfigs } from '../../../entities/setting/image/slice';
 
 interface ComfySettingsProps {
   settings: SettingsState;

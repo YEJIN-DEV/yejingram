@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Palette, BrainCircuit, X, Plus, Trash2, Edit3, AlertTriangle, Code, Minus } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectArtStyles, selectSelectedArtStyleId } from '../../entities/setting/image/selectors';
-import { settingsActions } from '../../entities/setting/slice';
-import type { ArtStyle } from '../../entities/setting/image/types';
+import { selectArtStyles, selectSelectedArtStyleId } from '../../../entities/setting/image/selectors';
+import { settingsActions } from '../../../entities/setting/slice';
+import type { ArtStyle } from '../../../entities/setting/image/types';
 
 interface ArtStyleModalProps {
     isOpen: boolean;

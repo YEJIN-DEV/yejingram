@@ -9,7 +9,7 @@ import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
 import { Avatar } from '../../utils/Avatar';
-import { SendMessage } from '../../services/LLMcaller';
+import { SendMessage } from '../../services/llm/LLMcaller';
 import type { Room } from '../../entities/room/types';
 import { inviteCharacter } from '../../utils/inviteCharacter';
 import { UrlPreview } from './chatcontents/UrlPreviewProps';
