@@ -75,44 +75,56 @@ async function handleApiResponse(
             if (i > 0) {
                 await sleep(messagePart.delay || 1000);
             }
-            const message = await createMessageFromPart(messagePart, room.id, char);
-            dispatch(messagesActions.upsertOne(message));
+            const messages = await createMessageFromPart(messagePart, room.id, char);
+            for (const message of messages) {
+                dispatch(messagesActions.upsertOne(message));
+            }
         }
     }
 }
 
-async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Promise<Message> {
-    let message = {
-        id: nanoid(),
-        roomId: roomId,
-        authorId: char.id,
-        content: messagePart.content,
-        createdAt: new Date().toISOString(),
-        type: messagePart.imageGenerationSetting ? 'IMAGE' : messagePart.sticker ? 'STICKER' : 'TEXT',
-    } as Message;
+async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Promise<Message[]> {
+    let message: Message[] = [];
 
-    if (messagePart.sticker) {
+    if (messagePart.content) {
+        message.push({
+            id: nanoid(),
+            roomId: roomId,
+            authorId: char.id,
+            createdAt: new Date().toISOString(),
+            type: 'TEXT',
+            content: messagePart.content,
+        });
+    }
+    else if (messagePart.sticker) {
         const foundSticker = char.stickers?.find(s => s.id == messagePart.sticker || s.name === messagePart.sticker);
         if (foundSticker) {
-            message = {
-                ...message,
-                sticker: foundSticker
-            };
+            message.push({
+                id: nanoid(),
+                roomId: roomId,
+                authorId: char.id,
+                createdAt: new Date().toISOString(),
+                type: 'STICKER',
+                sticker: foundSticker,
+            });
         }
     }
-
-    if (messagePart.imageGenerationSetting) {
+    else if (messagePart.imageGenerationSetting) {
         const imageResponse = await callImageGeneration(messagePart.imageGenerationSetting, char);
         const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
         if (inlineDataBody) {
-            message = {
-                ...message,
+            message.push({
+                id: nanoid(),
+                roomId: roomId,
+                authorId: char.id,
+                createdAt: new Date().toISOString(),
+                type: 'IMAGE',
                 file: {
                     dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`,
                     mimeType: inlineDataBody.mimeType,
                     name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
                 }
-            };
+            });
         } else {
             throw new Error('이미지 생성에 실패했습니다:', imageResponse.candidates[0].finishReason ?? '');
         }
@@ -399,7 +411,7 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
             const lines = rawResponseText.split('\n').filter((line: string) => line.trim() !== '');
             const formattedMessages = lines.map((line: string) => ({
                 delay: calcReactionDelay({
-                    inChars: messages[messages.length - 1]?.content.length || 0,
+                    inChars: messages[messages.length - 1]?.content?.length || 0,
                     outChars: line.length,
                     device: "mobile",
                 }, {

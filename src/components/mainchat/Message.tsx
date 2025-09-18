@@ -209,43 +209,16 @@ const MessageList: React.FC<MessageListProps> = ({
 
               const imgSrc = stickerData.data;
               const stickerName = stickerData.name || '스티커';
-              const stickerElement = (
+
+              return (
                 <div className="inline-block cursor-pointer transition-all duration-300 hover:scale-110 transform" onClick={() => toggleStickerSize(msg.id.toString())}>
                   <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`} style={heightStyle} />
                 </div>
               );
-
-              const hasTextMessage = msg.content && msg.content.trim();
-
-              if (hasTextMessage) {
-                return (
-                  <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
-                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-900'
-                      } ${cornerClass}`}>
-                      <div className="break-words">{msg.content}</div>
-                    </div>
-                    {stickerElement}
-                  </div>
-                );
-              } else {
-                return stickerElement;
-              }
             } else if ((msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.type === 'VIDEO' || msg.type === 'FILE') && msg.file?.dataUrl) {
-              const hasTextContent = msg.content && msg.content.trim();
-
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
                   {renderFile(msg.file, false)}
-                  {hasTextContent && (
-                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-900'
-                      } ${cornerClass}`}>
-                      <div className="break-words">{renderTextWithLinks(msg.content || '', isMe)}</div>
-                    </div>
-                  )}
                 </div>
               );
             } else if (msg.type === 'TEXT') {
