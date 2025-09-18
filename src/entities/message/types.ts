@@ -18,7 +18,7 @@ export type Message = {
         | { type: "TEXT"; content: string; sticker?: never; file?: never }
         | { type: "IMAGE"; content?: never; sticker?: never; file: FileToSend }
         | { type: "STICKER"; content?: never; sticker: Sticker; file?: never }
-        | { type: "SYSTEM"; content?: never; sticker?: never; file?: never }
+        | { type: "SYSTEM"; content?: string; sticker?: never; file?: never }
         | { type: "AUDIO"; content?: never; sticker?: never; file: FileToSend }
         | { type: "VIDEO"; content?: never; sticker?: never; file: FileToSend }
         | { type: "FILE"; content?: never; sticker?: never; file: FileToSend }
