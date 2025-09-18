@@ -1,8 +1,8 @@
 import type { ProviderModel } from "../components/settings/ProviderSettings";
 import type { ApiProvider } from "../entities/setting/types";
-import type { OpenAIContent } from "../services/promptBuilder";
+import type { OpenAIContent } from "../services/llm/promptBuilder";
 import { encoding_for_model, type TiktokenModel } from "tiktoken";
-import type { ClaudeApiPayload, GeminiApiPayload } from "../services/type";
+import type { ClaudeApiPayload, GeminiApiPayload } from "../services/llm/type";
 
 export type Prompts =
     | {

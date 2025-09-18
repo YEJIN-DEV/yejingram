@@ -69,8 +69,17 @@ function applyAddRule(root: any, rule: AddRule) {
     targets.forEach(obj => {
         if (obj && typeof obj === 'object') {
             rule.keys.forEach(key => {
-                if (!(key in obj)) {
-                    obj[key] = rule.defaults?.[key];
+                if (key === '*') {
+                    // '*'이면 defaults의 모든 키를 추가
+                    Object.keys(rule.defaults || {}).forEach(defaultKey => {
+                        if (!(defaultKey in obj)) {
+                            obj[defaultKey] = rule.defaults[defaultKey];
+                        }
+                    });
+                } else {
+                    if (!(key in obj)) {
+                        obj[key] = rule.defaults?.[key];
+                    }
                 }
             });
         }

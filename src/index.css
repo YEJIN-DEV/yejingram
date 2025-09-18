@@ -195,3 +195,7 @@ details>summary::-webkit-details-marker {
 details .content-wrapper {
   overflow: hidden;
 }
+
+.jsoneditor * {
+  font-family: "Roboto Mono", SFMono, consolas, moaco, monospace !important;
+}

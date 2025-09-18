@@ -53,21 +53,6 @@ export const selectCurrentApiConfig = createSelector(
     (provider, configs) => configs[provider]
 );
 
-export const selectImageApiProvider = createSelector(
-    [selectSettingsState],
-    (settings) => settings.imageApiProvider
-);
-
-export const selectImageApiConfigs = createSelector(
-    [selectSettingsState],
-    (settings) => settings.imageApiConfigs
-);
-
-export const selectCurrentImageApiConfig = createSelector(
-    [selectImageApiProvider, selectImageApiConfigs],
-    (provider, configs) => configs[provider]
-);
-
 export const selectPersonas = createSelector(
     [selectSettingsState],
     (settings) => settings.personas || []

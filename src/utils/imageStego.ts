@@ -86,7 +86,7 @@ export function imageDataToDataURL(imageData: ImageData, mime: string = "image/p
     return canvas.toDataURL(mime);
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+export function loadImage(src: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const img = new Image();
         // 로컬 업로드 data URL이면 crossOrigin 불필요. 외부 URL이면 필요할 수 있음.

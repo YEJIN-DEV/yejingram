@@ -1,26 +1,20 @@
-import { store, type AppDispatch } from "../app/store";
-import { selectCharacterById, selectAllCharacters } from "../entities/character/selectors";
-import type { Message } from "../entities/message/types";
-import type { Room } from "../entities/room/types";
-import { selectAllSettings, selectCurrentApiConfig, selectCurrentImageApiConfig, selectSelectedPersona } from "../entities/setting/selectors";
-import { messagesActions } from "../entities/message/slice";
-import { roomsActions } from "../entities/room/slice";
+import { store, type AppDispatch } from "../../app/store";
+import { selectCharacterById, selectAllCharacters } from "../../entities/character/selectors";
+import type { Message } from "../../entities/message/types";
+import type { Room } from "../../entities/room/types";
+import { selectAllSettings, selectCurrentApiConfig, selectSelectedPersona } from "../../entities/setting/selectors";
+import { messagesActions } from "../../entities/message/slice";
+import { roomsActions } from "../../entities/room/slice";
 import type { ChatResponse, MessagePart } from "./type";
-import { selectMessagesByRoomId } from "../entities/message/selectors";
-import type { Character } from "../entities/character/types";
-import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload, buildGeminiImagePayload, buildNovelAIImagePayload } from "./promptBuilder";
-import type { ApiConfig, Persona, SettingsState } from "../entities/setting/types";
-import { calcReactionDelay, sleep } from "../utils/reactionDelay";
+import { selectMessagesByRoomId } from "../../entities/message/selectors";
+import type { Character } from "../../entities/character/types";
+import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload } from "./promptBuilder";
+import type { ApiConfig, Persona, SettingsState } from "../../entities/setting/types";
+import { calcReactionDelay, sleep } from "../../utils/reactionDelay";
 import { nanoid } from "@reduxjs/toolkit";
 import toast from 'react-hot-toast';
-import { unzipToDataUrls } from "../utils/zip2png";
-
-const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
-const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
-const CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1/messages";
-const OPENAI_API_BASE_URL = "https://api.openai.com/v1/chat/completions";
-const GROK_API_BASE_URL = "https://api.x.ai/v1/chat/completions";
-const NAI_DIFFUSION_API_BASE_URL = "https://image.novelai.net/ai/generate-image";
+import { callImageGeneration } from "../image/ImageCaller";
+import { CLAUDE_API_BASE_URL, GEMINI_API_BASE_URL, GROK_API_BASE_URL, OPENAI_API_BASE_URL, VERTEX_AI_API_BASE_URL } from "../URLs";
 
 // Remove leading speaker/meta tags like [From: XXX] or [Name: XXX] from model output
 function sanitizeOutputContent(text?: string): string | undefined {
@@ -74,29 +68,39 @@ async function handleApiResponse(
             if (i > 0) {
                 await sleep(messagePart.delay || 1000);
             }
-            const message = await createMessageFromPart(messagePart, room.id, char);
-            dispatch(messagesActions.upsertOne(message));
+            const messages = await createMessageFromPart(messagePart, room.id, char);
+            for (const message of messages) {
+                dispatch(messagesActions.upsertOne(message));
+            }
         }
     }
 }
 
-async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Promise<Message> {
-    let message = {
-        id: nanoid(),
-        roomId: roomId,
-        authorId: char.id,
-        content: messagePart.content,
-        createdAt: new Date().toISOString(),
-        type: messagePart.imageGenerationSetting ? 'IMAGE' : messagePart.sticker ? 'STICKER' : 'TEXT',
-    } as Message;
+async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Promise<Message[]> {
+    let message: Message[] = [];
+
+    if (messagePart.content) {
+        message.push({
+            id: nanoid(),
+            roomId: roomId,
+            authorId: char.id,
+            createdAt: new Date().toISOString(),
+            type: 'TEXT',
+            content: messagePart.content,
+        });
+    }
 
     if (messagePart.sticker) {
         const foundSticker = char.stickers?.find(s => s.id == messagePart.sticker || s.name === messagePart.sticker);
         if (foundSticker) {
-            message = {
-                ...message,
-                sticker: foundSticker
-            };
+            message.push({
+                id: nanoid(),
+                roomId: roomId,
+                authorId: char.id,
+                createdAt: new Date().toISOString(),
+                type: 'STICKER',
+                sticker: foundSticker,
+            });
         }
     }
 
@@ -104,14 +108,18 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
         const imageResponse = await callImageGeneration(messagePart.imageGenerationSetting, char);
         const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
         if (inlineDataBody) {
-            message = {
-                ...message,
+            message.push({
+                id: nanoid(),
+                roomId: roomId,
+                authorId: char.id,
+                createdAt: new Date().toISOString(),
+                type: 'IMAGE',
                 file: {
                     dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`,
                     mimeType: inlineDataBody.mimeType,
                     name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
                 }
-            };
+            });
         } else {
             throw new Error('이미지 생성에 실패했습니다:', imageResponse.candidates[0].finishReason ?? '');
         }
@@ -120,68 +128,6 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
     return message;
 }
 
-async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
-    // 이미지 생성 API 호출
-    const imageConfig = selectCurrentImageApiConfig(store.getState());
-    const imageApiProvider = imageConfig.model.startsWith('nai-') ? 'novelai' : 'gemini';
-    let url: string;
-    let headers: { 'Content-Type': string; 'Authorization'?: string } = { 'Content-Type': 'application/json' };
-    let payload: object = {};
-    if (imageApiProvider === 'novelai') {
-        url = NAI_DIFFUSION_API_BASE_URL;
-        headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
-        payload = buildNovelAIImagePayload(imageGenerationSetting.prompt, imageConfig.model);
-    } else { // gemini
-        url = `${GEMINI_API_BASE_URL}${imageConfig.model}:generateContent?key=${imageConfig.apiKey}`;
-        payload = buildGeminiImagePayload(imageGenerationSetting.prompt, imageGenerationSetting.isSelfie, char);
-    }
-
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(payload)
-        });
-
-        if (imageApiProvider === 'gemini') {
-            const data = await response.json();
-
-            if (!response.ok) {
-                console.error("API Error:", data);
-                const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
-                throw new Error(errorMessage);
-            }
-
-            return data;
-        } else { // novelai
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("NovelAI API Error:", errorData);
-                const errorMessage = errorData?.message || `API 요청 실패: ${response.statusText}`;
-                throw new Error(errorMessage);
-            } else {
-                const imageData = await unzipToDataUrls(await response.arrayBuffer());
-                return {
-                    candidates: [{
-                        content: {
-                            parts: [{
-                                inlineData: {
-                                    mimeType: imageData.mimeType,
-                                    data: imageData.data
-                                }
-                            }]
-                        },
-                        finishReason: 'stop'
-                    }]
-                };
-            }
-        }
-
-    } catch (error: unknown) {
-        console.error(`이미지 생성 API 호출 중 오류 발생:`, error);
-        throw error;
-    }
-}
 
 function handleError(error: unknown, roomId: string, charId: number, dispatch: AppDispatch) {
     console.error("Error in LLMSend:", error);
@@ -300,7 +246,7 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
             const lines = rawResponseText.split('\n').filter((line: string) => line.trim() !== '');
             const formattedMessages = lines.map((line: string) => ({
                 delay: calcReactionDelay({
-                    inChars: messages[messages.length - 1]?.content.length || 0,
+                    inChars: messages[messages.length - 1]?.content?.length || 0,
                     outChars: line.length,
                     device: "mobile",
                 }, {

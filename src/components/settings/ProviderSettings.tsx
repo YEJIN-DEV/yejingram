@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import type { SettingsState, ApiConfig, ImageApiConfig, ImageApiProvider } from '../../entities/setting/types';
-import { Key, Cpu, Link, Plus, X, Briefcase, Globe, Image } from 'lucide-react';
-import { initialApiConfigs, initialImageApiConfigs } from '../../entities/setting/slice';
+import type { SettingsState, ApiConfig } from '../../entities/setting/types';
+import { Key, Cpu, Link, Plus, X, Briefcase, Globe } from 'lucide-react';
+import { initialApiConfigs } from '../../entities/setting/slice';
 
 interface ProviderSettingsProps {
     settings: SettingsState;
@@ -40,20 +40,10 @@ const providerModels: Record<string, string[]> = {
 };
 export type ProviderModel = typeof providerModels[keyof typeof providerModels][number];
 
-const imageModels: string[] = [
-    'gemini-2.5-flash-image-preview',
-    'gemini-2.0-flash-preview-image-generation',
-    'nai-diffusion-4-5-curated',
-    'nai-diffusion-4-full',
-    'nai-diffusion-4-curated-preview',
-];
-
 export function ProviderSettings({ settings, setSettings }: ProviderSettingsProps) {
     const [customModelInput, setCustomModelInput] = useState('');
     const provider = settings.apiProvider;
-    const imageProvider = settings.imageApiProvider;
-    const rawConfig = settings?.apiConfigs?.[provider] ?? initialApiConfigs[provider];
-    const imageConfig = settings?.imageApiConfigs?.[imageProvider] ?? initialImageApiConfigs[imageProvider];
+    const rawConfig = settings?.apiConfigs?.[provider];
     const config = {
         ...rawConfig,
         customModels: rawConfig.customModels || []
@@ -73,27 +63,8 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
         });
     };
 
-    const handleImageModelConfigChange = (provider: ImageApiProvider, key: keyof ImageApiConfig, value: any) => {
-        setSettings(prev => {
-            const currentImageProviderConfig = prev.imageApiConfigs[provider] ?? initialImageApiConfigs[provider]; // Use initial config as fallback
-            return {
-                ...prev,
-                imageApiProvider: provider,
-                imageApiConfigs: {
-                    ...prev.imageApiConfigs,
-                    [provider]: { ...currentImageProviderConfig, [key]: value }
-                }
-            };
-        });
-    };
-
     const handleModelSelect = (model: string) => {
         handleConfigChange('model', model);
-    };
-
-    const handleImageModelSelect = (model: string) => {
-        const provider = model.startsWith('nai-') ? 'novelai' : 'gemini';
-        handleImageModelConfigChange(provider, 'model', model);
     };
 
     const handleAddCustomModel = () => {
@@ -269,45 +240,6 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                     </div>
                 )}
             </div>
-
-            {settings.useImageResponse && (
-                <>
-                    <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Key className="w-4 h-4 mr-2" />이미지 생성용 API 키</label>
-                        <input
-                            type="password"
-                            value={imageConfig.apiKey}
-                            onChange={e => handleImageModelConfigChange(imageProvider, 'apiKey', e.target.value)}
-                            placeholder="이미지 모델 API 키를 입력하세요"
-                            className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Image className="w-4 h-4 mr-2" />이미지 생성 모델</label>
-
-                        {imageModels.length > 0 && (
-                            <div className="grid grid-cols-1 gap-2">
-                                {imageModels.map(model => (
-                                    <button
-                                        key={model}
-                                        type="button"
-                                        onClick={() => handleImageModelSelect(model)}
-                                        className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors border ${imageConfig.model === model ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'}`}>
-                                        {model}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                    {
-                        imageProvider === 'gemini' && (
-                            <div className="mb-3">
-                                <p className="text-xs text-gray-500">참고: Gemini는 이미지 생성이 검열될 수 있습니다.</p>
-                            </div>
-                        )
-                    }
-                </>
-            )}
         </div>
     );
 }
