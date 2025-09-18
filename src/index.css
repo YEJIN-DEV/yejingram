@@ -1,5 +1,113 @@
 @import "tailwindcss";
 
+:root {
+  /* TODO: 기능 기반으로 색상 변수 정리 (예: --color-text-informative-primary, --color-bg-button-primary) */
+  /* bg-white */
+  --color-bg-main: #ffffff;
+  /* bg-gray-50 */
+  --color-bg-secondary: #f9fafb;
+  /* bg-gray-200 */
+  --color-bg-secondary-accent: #e5e7eb;
+  /* bg-black */
+  --color-bg-shadow: #000000;
+  /* hover:bg-gray-100 */
+  --color-bg-hover: #f3f4f6;
+  /* bg-gray-100 */
+  --color-bg-input-primary: #f3f4f6;
+  /* bg-gray-50 */
+  --color-bg-input-secondary: #f9fafb;
+  /* bg-gray-100 */
+  --color-button-secondary: #f3f4f6;
+  /* bg-gray-200 */
+  --color-button-secondary-accent: #e5e7eb;
+  /* bg-gray-800 */
+  --color-button-tertiary: #1e2939;
+  /* bg-red-500 */
+  --color-button-negative: #fb2c36;
+  /* bg-red-600 */
+  --color-button-negative-accent: oklch(57.7% 0.245 27.325);
+  /* border-gray-200 */
+  --color-border: #e5e7eb;
+  /* border-gray-100 */
+  --color-border-secondary: #f3f4f6;
+  /* text-gray-600 */
+  --color-icon-primary: #4a5565;
+  /* text-gray-400 */
+  --color-icon-secondary: #99a1af;
+  /* text-gray-500 */
+  --color-icon-tertiary: #6a7282;
+  /* text-blue-500 */
+  --color-icon-accent: oklch(62.3% 0.214 259.815);
+  /* text-blue-600 */
+  --color-icon-accent-secondary: #155dfc;
+  /* text-gray-900 */
+  --color-text-primary: #101828;
+  /* text-gray-800 */
+  --color-text-title: #1e2939;
+  /* text-gray-700 */
+  --color-text-secondary: #364153;
+  /* text-gray-500 */
+  --color-text-tertiary: #6a7282;
+  /* text-gray-600 */
+  --color-text-quaternary: #4a5565;
+  /* text-white */
+  --color-text-accent: #ffffff;
+  --color-toaster-bg: #1f2937;
+  --color-toaster-text: #f3f4f6;
+  --color-toaster-border: #374151;
+  --color-toaster-icon-primary: #10b981;
+  --color-toaster-icon-secondary: #1f2937;
+  --color-bg-secondary: #f7fafc;
+  --color-bg-accent: #edf2f7;
+  /* text-green-600 */
+  --color-button-positive: oklch(62.7% 0.194 149.214);
+  /* text-green-700 */
+  --color-button-positive-accent: oklch(52.7% 0.154 150.069);
+  /* text-red-600 */
+  --color-textual-button-negative: oklch(57.7% 0.245 27.325);
+  /* text-red-700 */
+  --color-textual-button-negative-accent: oklch(50.5% 0.213 27.518);
+}
+
+.dark {
+  --color-bg-main: #0c0c0c;
+  --color-bg-secondary: #1a1a1a;
+  --color-bg-secondary-accent: #2d2d2d;
+  --color-bg-shadow: #000000;
+  --color-bg-hover: #1f2937;
+  --color-bg-input-primary: #1f2937;
+  --color-bg-input-secondary: #2d2d2d;
+  --color-button-secondary: #546075;
+  --color-button-secondary-accent: #4a5568;
+  --color-button-tertiary: #454951;
+  --color-button-negative: #fb2c36;
+  --color-button-negative-accent: oklch(57.7% 0.245 27.325);
+  --color-border: #4a5568;
+  --color-border-secondary: #374151;
+  --color-icon-primary: #4a5565;
+  --color-icon-secondary: #99a1af;
+  --color-icon-tertiary: #6a7282;
+  --color-icon-accent: oklch(62.3% 0.214 259.815);
+  --color-icon-accent-secondary: #155dfc;
+  --color-text-primary: #f7fafc;
+  --color-text-title: #e2e8f0;
+  --color-text-secondary: #d2d7de;
+  --color-text-tertiary: #aeb2b9;
+  --color-text-quaternary: #c5cad2;
+  --color-text-accent: #ffffff;
+  --color-toaster-bg: #1f2937;
+  --color-toaster-text: #f3f4f6;
+  --color-toaster-border: #374151;
+  --color-toaster-icon-primary: #10b981;
+  --color-toaster-icon-secondary: #1f2937;
+  --color-bg-secondary: #1a1a1a;
+  --color-bg-accent: #2d2d2d;
+  --color-button-positive: oklch(52.7% 0.154 150.069);
+  --color-button-positive-accent: oklch(42.7% 0.114 150.069);
+  --color-textual-button-negative: oklch(50.5% 0.213 27.518);
+  --color-textual-button-negative-accent: oklch(42.7% 0.183 27.518);
+}
+
 /* Instagram 스타일 Inter 폰트 설정 */
 * {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

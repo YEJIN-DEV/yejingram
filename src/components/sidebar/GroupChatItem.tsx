@@ -53,21 +53,21 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
 
     return (
         <div
-            className={`relative group cursor-pointer transition-all duration-200 px-4 py-3 select-none ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
+            className={`relative group cursor-pointer transition-all duration-200 px-4 py-3 select-none ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-[var(--color-bg-secondary)]'
                 }`}
             onDoubleClick={handleRoomSelect}
         >
             <div className="absolute top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
                 <button
                     onClick={handleEdit}
-                    className="p-1 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 hover:text-gray-800 transition-colors"
+                    className="p-1 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] rounded-full text-[var(--color-icon-primary)] hover:text-gray-800 transition-colors"
                     title="수정"
                 >
                     <Edit3 className="w-3 h-3" />
                 </button>
                 <button
                     onClick={handleDelete}
-                    className="p-1 bg-gray-100 hover:bg-red-100 rounded-full text-gray-600 hover:text-red-600 transition-colors"
+                    className="p-1 bg-[var(--color-button-secondary)] hover:bg-red-100 rounded-full text-[var(--color-icon-primary)] hover:text-red-600 transition-colors"
                     title="삭제"
                 >
                     <Trash2 className="w-3 h-3" />
@@ -81,13 +81,13 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
 
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                        <h4 className={`font-semibold truncate text-sm ${isSelected ? 'text-blue-900' : 'text-gray-900'
+                        <h4 className={`font-semibold truncate text-sm ${isSelected ? 'text-blue-900' : 'text-[var(--color-text-primary)]'
                             }`}>
                             {room.name}
                         </h4>
                         <div className="flex items-center space-x-2 ml-2">
                             {lastMessage?.createdAt && (
-                                <span className="text-xs text-gray-500 flex-shrink-0">
+                                <span className="text-xs text-[var(--color-text-tertiary)] flex-shrink-0">
                                     {new Date(lastMessage.createdAt).toLocaleTimeString('ko-KR', {
                                         hour: '2-digit',
                                         minute: '2-digit'
@@ -95,16 +95,16 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
                                 </span>
                             )}
                             {room.unreadCount > 0 && (
-                                <span className="bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium min-w-[18px] text-center">
+                                <span className="bg-blue-500 text-[var(--color-text-accent)] text-xs px-1.5 py-0.5 rounded-full font-medium min-w-[18px] text-center">
                                     {room.unreadCount > 99 ? '99+' : room.unreadCount}
                                 </span>
                             )}
                         </div>
                     </div>
-                    <p className="text-sm text-gray-500 truncate mt-1">
+                    <p className="text-sm text-[var(--color-text-tertiary)] truncate mt-1">
                         {participants.map(p => p?.name).filter(Boolean).join(', ')}
                     </p>
-                    <p className="text-sm text-gray-500 truncate">
+                    <p className="text-sm text-[var(--color-text-tertiary)] truncate">
                         {lastMessageContent}
                     </p>
                 </div>

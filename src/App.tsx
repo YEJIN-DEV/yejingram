@@ -11,6 +11,7 @@ import { MessageCircle, Menu } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { selectEditingCharacterId } from './entities/character/selectors'
+import { selectIsDarkMode } from './entities/setting/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -26,8 +27,17 @@ function App() {
   const [isCharacterPanelOpen, setIsCharacterPanelOpen] = useState(false);
   const [isCreateGroupChatModalOpen, setIsCreateGroupChatModalOpen] = useState(false);
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
+  const isDarkMode = useSelector(selectIsDarkMode);
 
   const editingCharacterId = useSelector(selectEditingCharacterId);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   useEffect(() => {
     setActiveRoomId(roomId);
@@ -53,13 +63,13 @@ function App() {
 
   return (
     <>
-      <div id="app" className="relative flex h-dvh overflow-hidden bg-white">
+      <div id="app" className="relative flex h-dvh overflow-hidden bg-[var(--color-bg-main)]">
         {/* Instagram DM Style Layout */}
         <div className="flex w-full h-full">
           {/* Left Sidebar - Chat List (Instagram DM Style) */}
           <aside id="sidebar"
             className={`${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-              } md:translate-x-0 fixed md:relative inset-y-0 left-0 z-30 w-full md:w-96 lg:w-[400px] bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out`}>
+              } md:translate-x-0 fixed md:relative inset-y-0 left-0 z-30 w-full md:w-96 lg:w-[400px] bg-[var(--color-bg-main)] border-r border-[var(--color-border)] flex flex-col transition-transform duration-300 ease-in-out`}>
 
             <div id="sidebar-content" className="flex h-full flex-col">
               <Sidebar
@@ -77,7 +87,7 @@ function App() {
           {/* Settings Panel - Next to sidebar */}
           {isSettingsPanelOpen && (
             <>
-              <div className="fixed md:relative top-0 bottom-0 z-40 min-w-fit max-w-lg left-0 md:left-auto bg-white border-r border-gray-200">
+              <div className="fixed md:relative top-0 bottom-0 z-40 min-w-fit max-w-lg left-0 md:left-auto bg-[var(--color-bg-main)] border-r border-[var(--color-border)]">
                 <SettingsPanel
                   openPromptModal={() => setIsPromptModalOpen(true)}
                   onClose={() => setIsSettingsPanelOpen(false)}
@@ -86,7 +96,7 @@ function App() {
               {/* Settings Panel Backdrop (mobile only) */}
               <div
                 onClick={() => setIsSettingsPanelOpen(false)}
-                className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm md:hidden"
+                className="fixed inset-0 z-30 bg-[var(--color-bg-shadow)]/20 backdrop-blur-sm md:hidden"
               />
             </>
           )}
@@ -100,23 +110,23 @@ function App() {
 
           {/* Main Chat Area */}
           <main id="main-chat"
-            className={`flex-1 flex flex-col bg-white ${isMobileSidebarOpen ? 'hidden md:flex' : 'flex'}`}>
+            className={`flex-1 flex flex-col bg-[var(--color-bg-main)] ${isMobileSidebarOpen ? 'hidden md:flex' : 'flex'}`}>
             {!room ? (
-              <div className="flex-1 flex items-center justify-center bg-gray-50 relative">
+              <div className="flex-1 flex items-center justify-center bg-[var(--color-bg-secondary)] relative">
                 {/* Mobile: Sidebar toggle button (when no room selected) */}
                 <button
                   id="mobile-sidebar-toggle"
-                  className="absolute top-4 left-4 p-2 rounded-full hover:bg-gray-100 md:hidden"
+                  className="absolute top-4 left-4 p-2 rounded-full hover:bg-[var(--color-bg-hover)] md:hidden"
                   onClick={toggleMobileSidebar}
                 >
-                  <Menu className="h-5 w-5 text-gray-600" />
+                  <Menu className="h-5 w-5 text-[var(--color-icon-primary)]" />
                 </button>
                 <div className="text-center">
-                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MessageCircle className="w-12 h-12 text-gray-400" />
+                  <div className="w-24 h-24 bg-[var(--color-button-secondary-accent)] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MessageCircle className="w-12 h-12 text-[var(--color-icon-secondary)]" />
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">메시지를 보내세요</h2>
-                  <p className="text-gray-500">친구나 그룹과 개인 사진 및 메시지를 공유하세요.</p>
+                  <h2 className="text-xl font-semibold text-[var(--color-text-title)] mb-2">메시지를 보내세요</h2>
+                  <p className="text-[var(--color-text-tertiary)]">친구나 그룹과 개인 사진 및 메시지를 공유하세요.</p>
                 </div>
               </div>
             ) : (
@@ -143,7 +153,7 @@ function App() {
         <div
           id="sidebar-backdrop"
           onClick={() => setIsMobileSidebarOpen(false)}
-          className={`fixed inset-0 z-20 bg-black/50 md:hidden ${isMobileSidebarOpen ? 'block' : 'hidden'}`}
+          className={`fixed inset-0 z-20 bg-[var(--color-bg-shadow)]/50 md:hidden ${isMobileSidebarOpen ? 'block' : 'hidden'}`}
         />
       </div>
       <Toaster
@@ -151,14 +161,14 @@ function App() {
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#1f2937',
-            color: '#f3f4f6',
-            border: '1px solid #374151',
+            background: 'var(--color-bg-main)',
+            color: 'var(--color-toaster-text)',
+            border: '1px solid var(--color-toaster-border)',
           },
           success: {
             iconTheme: {
-              primary: '#10b981',
-              secondary: '#1f2937',
+              primary: 'var(--color-toaster-icon-primary)',
+              secondary: 'var(--color-toaster-icon-secondary)',
             },
           },
         }}

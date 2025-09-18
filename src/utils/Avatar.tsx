@@ -12,7 +12,7 @@ export const Avatar = ({ char, size = 'md' }: { char: Character; size?: 'md' | '
     }
     const initial = char.name[0] || <Bot />;
     return (
-        <div className={`${sizeClasses} aspect-square bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-medium overflow-hidden`}>
+        <div className={`${sizeClasses} aspect-square bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-[var(--color-text-accent)] font-medium overflow-hidden`}>
             {initial}
         </div>
     );
@@ -26,7 +26,7 @@ export const GroupChatAvatar = ({ participants }: { participants: (Character | u
         if (count === 0) {
             return (
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                    <Bot className="w-6 h-6 text-white" />
+                    <Bot className="w-6 h-6 text-[var(--color-text-accent)]" />
                 </div>
             );
         }

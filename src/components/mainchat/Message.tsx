@@ -40,7 +40,7 @@ const renderTextWithLinks = (text: string, isMe: boolean) => {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className={`underline hover:opacity-80 ${isMe ? 'text-blue-200 hover:text-blue-100' : 'text-blue-600 hover:text-blue-800'
+          className={`underline hover:opacity-80 ${isMe ? 'text-blue-200 hover:text-blue-100' : 'text-[var(--color-icon-accent-secondary)] hover:text-blue-800'
             }`}
         >
           {part}
@@ -176,14 +176,14 @@ const MessageList: React.FC<MessageListProps> = ({
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                   <textarea
                     data-id={msg.id.toString()}
-                    className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 focus:scale-105"
+                    className="edit-message-textarea w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 focus:scale-105"
                     rows={5}
                     defaultValue={msg.content || ''}
                   ></textarea>
                   <div className="flex items-center space-x-2 mt-2">
                     <button onClick={() => {
                       setEditingMessageId(null);
-                    }} data-id={msg.id.toString()} className="cancel-edit-btn text-sm text-gray-500 hover:text-gray-700 bg-gray-100 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105 hover:bg-gray-200" >취소</button>
+                    }} data-id={msg.id.toString()} className="cancel-edit-btn text-sm text-[var(--color-icon-tertiary)] hover:text-gray-700 bg-[var(--color-button-secondary)] px-4 py-2 rounded-full transition-all duration-200 hover:scale-105 hover:bg-[var(--color-button-secondary-accent)]" >취소</button>
                     <button onClick={() => {
                       const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
                       if (textarea) {
@@ -194,7 +194,7 @@ const MessageList: React.FC<MessageListProps> = ({
                         }));
                         setEditingMessageId(null);
                       }
-                    }} data-id={msg.id.toString()} className="save-edit-btn text-sm text-white bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105">저장</button>
+                    }} data-id={msg.id.toString()} className="save-edit-btn text-sm text-[var(--color-text-accent)] bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105">저장</button>
                   </div>
                 </div>
               );
@@ -221,8 +221,8 @@ const MessageList: React.FC<MessageListProps> = ({
                 return (
                   <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
                     <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-900'
+                      ? 'bg-blue-500 text-[var(--color-text-accent)]'
+                      : 'bg-[var(--color-bg-secondary-accent)] text-[var(--color-text-primary)]'
                       } ${cornerClass}`}>
                       <div className="break-words">{msg.content}</div>
                     </div>
@@ -240,8 +240,8 @@ const MessageList: React.FC<MessageListProps> = ({
                   {renderFile(msg.file, false)}
                   {hasTextContent && (
                     <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-900'
+                      ? 'bg-blue-500 text-[var(--color-text-accent)]'
+                      : 'bg-[var(--color-bg-secondary-accent)] text-[var(--color-text-primary)]'
                       } ${cornerClass}`}>
                       <div className="break-words">{renderTextWithLinks(msg.content || '', isMe)}</div>
                     </div>
@@ -254,8 +254,8 @@ const MessageList: React.FC<MessageListProps> = ({
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-2`}>
                   <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-900'
+                    ? 'bg-blue-500 text-[var(--color-text-accent)]'
+                    : 'bg-[var(--color-bg-secondary-accent)] text-[var(--color-text-primary)]'
                     } ${cornerClass}`}>
                     <div className="break-words">{renderTextWithLinks(msg.content || '', isMe)}</div>
                   </div>
@@ -277,15 +277,15 @@ const MessageList: React.FC<MessageListProps> = ({
             <React.Fragment key={msg.id}>
               {showDateSeparator && (
                 <div className="flex justify-center my-6">
-                  <div className="flex items-center text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-200 hover:scale-105">
-                    <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                  <div className="flex items-center text-sm text-[var(--color-icon-tertiary)] bg-[var(--color-bg-input-primary)] px-4 py-2 rounded-full transition-all duration-300 hover:bg-[var(--color-bg-secondary-accent)] hover:scale-105">
+                    <Calendar className="w-4 h-4 mr-2 text-[var(--color-icon-secondary)]" />
                     {formatDateSeparator(new Date(msg.createdAt))}
                   </div>
                 </div>
               )}
               {msg.type === 'SYSTEM' && (
                 <div className="flex justify-center my-4">
-                  <div className="flex flex-col items-center text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full animate-fadeIn">
+                  <div className="flex flex-col items-center text-sm text-[var(--color-icon-tertiary)] bg-[var(--color-button-secondary)] px-4 py-2 rounded-full animate-fadeIn">
                     {msg.content}
                     {msg.leaveCharId && (
                       <span className=" text-gray-400 underline items-center" onClick={() => inviteCharacter(msg.leaveCharId ?? null, room, allCharacters.find(c => c.id === msg.leaveCharId)?.name || 'Unknown', dispatch)}>
@@ -314,7 +314,7 @@ const MessageList: React.FC<MessageListProps> = ({
                     <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}>
                       {/* Sender name for group messages */}
                       {showSenderName && !isMe && (
-                        <p className="text-sm text-gray-500 mb-1 px-1 animate-fadeIn">
+                        <p className="text-sm text-[var(--color-icon-tertiary)] mb-1 px-1 animate-fadeIn">
                           <SenderName authorId={msg.authorId} />
                         </p>
                       )}
@@ -331,7 +331,7 @@ const MessageList: React.FC<MessageListProps> = ({
                             <button
                               data-id={msg.id.toString()}
                               onClick={() => { setEditingMessageId(msg.id) }}
-                              className="edit-msg-btn p-2 text-gray-400 hover:text-gray-600 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
+                              className="edit-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-icon-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
                               aria-label="메시지 편집"
                               title="편집"
                             >
@@ -342,7 +342,7 @@ const MessageList: React.FC<MessageListProps> = ({
                           <button
                             data-id={msg.id.toString()}
                             onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
-                            className="delete-msg-btn p-2 text-gray-400 hover:text-red-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
+                            className="delete-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-red-500 bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
                             aria-label="메시지 삭제"
                             title="삭제"
                           >
@@ -361,7 +361,7 @@ const MessageList: React.FC<MessageListProps> = ({
                                     setIsWaitingForResponse(false);
                                   });
                               }}
-                              className="reroll-msg-btn p-2 text-gray-400 hover:text-blue-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
+                              className="reroll-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-icon-accent)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
                               aria-label="다시 생성"
                               title="다시 생성"
                             >
@@ -378,7 +378,7 @@ const MessageList: React.FC<MessageListProps> = ({
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                           {showUnread && (
-                            <span className="text-sm text-blue-500 animate-pulse">전송됨</span>
+                            <span className="text-sm text-[var(--color-icon-accent)] animate-pulse">전송됨</span>
                           )}
                         </div>
                       )}
@@ -398,7 +398,7 @@ const MessageList: React.FC<MessageListProps> = ({
                 return typingChar ? <Avatar char={typingChar} size="sm" /> : null;
               })()}
             </div>
-            <div className="px-4 py-4 rounded-2xl bg-gray-200 rounded-bl-md min-h-[3rem]">
+            <div className="px-4 py-4 rounded-2xl bg-[var(--color-bg-secondary-accent)] rounded-bl-md min-h-[3rem]">
               <div className="flex items-center justify-center gap-2 h-full">
                 <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1.4s' }}></span>
                 <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1.4s' }}></span>

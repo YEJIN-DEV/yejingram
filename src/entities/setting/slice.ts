@@ -19,6 +19,7 @@ export const initialImageApiConfigs: Record<ImageApiProvider, ImageApiConfig> = 
 };
 
 export const initialState: SettingsState = {
+    isDarkMode: false,
     isModalOpen: false,
     isPromptModalOpen: false,
     isCreateGroupChatModalOpen: false,
@@ -80,6 +81,9 @@ const settingsSlice = createSlice({
     name: 'settings',
     initialState,
     reducers: {
+        toggleDarkMode: (state) => {
+            state.isDarkMode = !state.isDarkMode;
+        },
         setEditingRoomId: (state, action: PayloadAction<string>) => {
             state.editingRoomId = action.payload;
         },

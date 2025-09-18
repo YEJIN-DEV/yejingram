@@ -56,7 +56,7 @@ function RoomList({
 
     return (
         <div
-            className={`chat-room-item group relative cursor-pointer transition-all duration-200 select-none ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
+            className={`chat-room-item group relative cursor-pointer transition-all duration-200 select-none ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-[var(--color-bg-secondary)]'
                 }`}
             data-chat-id={room.id}
         >
@@ -66,23 +66,23 @@ function RoomList({
             >
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                        <h4 className={`text-sm font-medium truncate ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
+                        <h4 className={`text-sm font-medium truncate ${isSelected ? 'text-blue-900' : 'text-[var(--color-text-primary)]'}`}>
                             {room.name}
                         </h4>
                         <div className="flex items-center space-x-2 ml-2">
                             {lastMessage?.createdAt && (
-                                <span className="text-xs text-gray-500 flex-shrink-0">
+                                <span className="text-xs text-[var(--color-text-tertiary)] flex-shrink-0">
                                     {formatTime(lastMessage.createdAt)}
                                 </span>
                             )}
                             {unreadCount > 0 && (
-                                <span className="bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium min-w-[18px] text-center">
+                                <span className="bg-blue-500 text-[var(--color-text-accent)] text-xs px-1.5 py-0.5 rounded-full font-medium min-w-[18px] text-center">
                                     {unreadCount > 99 ? '99+' : unreadCount}
                                 </span>
                             )}
                         </div>
                     </div>
-                    <p className="text-sm text-gray-500 truncate mt-1">
+                    <p className="text-sm text-[var(--color-text-tertiary)] truncate mt-1">
                         {getMessageDisplayText(lastMessage)}
                     </p>
                 </div>
@@ -91,7 +91,7 @@ function RoomList({
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
                 <button
                     onClick={duplicateRoom}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-blue-100 hover:bg-blue-200 rounded-full text-[var(--color-icon-accent-secondary)]"
                     title="채팅방 복제"
                 >
                     <Copy className="w-3 h-3" />

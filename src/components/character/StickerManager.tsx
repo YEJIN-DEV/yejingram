@@ -108,7 +108,7 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
         <div className="content-inner pt-4 space-y-4">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                    <button onClick={handleAddStickerClick} className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex flex-col items-center justify-center gap-1">
+                    <button onClick={handleAddStickerClick} className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center justify-center gap-1">
                         <Plus className="w-4 h-4" />
                         <span className="text-xs">스티커<br />추가</span>
                     </button>
@@ -116,17 +116,17 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
                 </div>
                 {stickers.length > 0 && (
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setSelectionMode(!selectionMode)} className="py-2 px-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex flex-col items-center gap-1">
+                        <button onClick={() => setSelectionMode(!selectionMode)} className="py-2 px-3 bg-gray-700 hover:bg-gray-600 text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center gap-1">
                             <CheckSquare className="w-4 h-4" />
                             <span className="text-xs">선택<br />{selectionMode ? '해제' : '모드'}</span>
                         </button>
                         {selectionMode && (
-                            <button onClick={selectAll} className="py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex flex-col items-center gap-1">
+                            <button onClick={selectAll} className="py-2 px-3 bg-blue-600 hover:bg-blue-700 text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center gap-1">
                                 <CheckCircle className="w-4 h-4" />
                                 <span className="text-xs">전체<br />선택</span>
                             </button>
                         )}
-                        <button onClick={handleDeleteSelected} disabled={selectedStickers.length === 0} className="py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm flex flex-col items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button onClick={handleDeleteSelected} disabled={selectedStickers.length === 0} className="py-2 px-3 bg-[var(--color-button-negative)] hover:bg-[var(--color-button-negative-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                             <Trash2 className="w-4 h-4" />
                             <span className="text-xs">삭제<br />(<span id="selected-count">{selectedStickers.length}</span>)</span>
                         </button>
@@ -141,20 +141,20 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
                 {stickers.map(sticker => (
                     <div key={sticker.id} className="relative group aspect-square bg-gray-800 rounded-lg overflow-hidden">
                         <img src={sticker.data} alt={sticker.name} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="absolute inset-0 bg-[var(--color-bg-shadow)]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             {selectionMode ? (
                                 <button onClick={() => toggleSelection(sticker.id)} className="w-full h-full flex items-center justify-center">
                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center ${selectedStickers.includes(sticker.id) ? 'bg-blue-500' : 'bg-gray-900/50'}`}>
-                                        <CheckCircle className="w-4 h-4 text-white" />
+                                        <CheckCircle className="w-4 h-4 text-[var(--color-text-accent)]" />
                                     </div>
                                 </button>
                             ) : (
-                                <button onClick={() => handleEditName(sticker.id, sticker.name)} className="p-2 bg-gray-900/50 rounded-full text-white hover:bg-blue-600">
+                                <button onClick={() => handleEditName(sticker.id, sticker.name)} className="p-2 bg-gray-900/50 rounded-full text-[var(--color-text-accent)] hover:bg-blue-600">
                                     <Edit3 className="w-4 h-4" />
                                 </button>
                             )}
                         </div>
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 truncate">
+                        <div className="absolute bottom-0 left-0 right-0 bg-[var(--color-bg-shadow)]/60 text-[var(--color-text-accent)] text-xs p-1 truncate">
                             {sticker.name}
                         </div>
                     </div>

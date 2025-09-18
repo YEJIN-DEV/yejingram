@@ -50,6 +50,7 @@ export interface Prompts {
 }
 
 export interface SettingsState {
+    isDarkMode: boolean;
     isModalOpen: boolean;
     isPromptModalOpen: boolean;
     isCreateGroupChatModalOpen: boolean;

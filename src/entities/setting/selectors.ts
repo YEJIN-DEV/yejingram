@@ -3,6 +3,11 @@ import { createSelector } from '@reduxjs/toolkit';
 
 const selectSettingsState = (state: RootState) => state.settings;
 
+export const selectIsDarkMode = createSelector(
+    [selectSettingsState],
+    (settings) => settings.isDarkMode || false
+);
+
 export const selectIsSettingsPanelOpen = createSelector(
     [selectSettingsState],
     (settings) => settings.isModalOpen
