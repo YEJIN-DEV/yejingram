@@ -610,11 +610,11 @@ export async function buildOpenAIApiPayload(
     }
 }
 
-export function buildGeminiImagePayload(prompt: string, isSelfie: boolean, char: Character) {
+export function buildGeminiImagePayload(positivePrompt: string, isSelfie: boolean, char: Character) {
     return {
         contents: [{
             parts: [
-                { "text": `${prompt}${isSelfie && char.avatar ? `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` : ''}` },
+                { "text": `${positivePrompt}${isSelfie && char.avatar ? `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` : ''}` },
                 ...(isSelfie && char.avatar ? [{ "inline_data": { "mime_type": char.avatar.split(',')[0].split(':')[1].split(';')[0], "data": char.avatar.split(',')[1] } }] : []),
             ]
         }],
@@ -628,12 +628,12 @@ export function buildGeminiImagePayload(prompt: string, isSelfie: boolean, char:
 
 }
 
-export function buildNovelAIImagePayload(prompt: string, model: string) {
+export function buildNovelAIImagePayload(positivePrompt: string, negativePrompt: string, model: string) {
     function random(min: number, max: number) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
     return {
-        "input": prompt,
+        "input": positivePrompt,
         "model": model,
         "action": "generate",
         "parameters": {
@@ -661,7 +661,7 @@ export function buildNovelAIImagePayload(prompt: string, model: string) {
             "legacy_uc": false,
             "v4_prompt": {
                 "caption": {
-                    "base_caption": prompt,
+                    "base_caption": positivePrompt,
                     "char_captions": []
                 },
                 "use_coords": false,
@@ -669,7 +669,7 @@ export function buildNovelAIImagePayload(prompt: string, model: string) {
             },
             "v4_negative_prompt": {
                 "caption": {
-                    "base_caption": "",
+                    "base_caption": negativePrompt,
                     "char_captions": []
                 },
                 "legacy_uc": false

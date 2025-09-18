@@ -142,7 +142,7 @@ async function callImageGeneration(imageGenerationSetting: { prompt: string; isS
         if (!imageConfig.apiKey) throw new Error('NovelAI API Key가 설정되지 않았습니다.');
         url = NAI_DIFFUSION_API_BASE_URL;
         headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
-        payload = buildNovelAIImagePayload(positivePrompt, model);
+        payload = buildNovelAIImagePayload(positivePrompt, negativePrompt, model);
     } else if (provider === 'gemini') {
         if (!imageConfig.apiKey) throw new Error('Gemini API Key가 설정되지 않았습니다.');
         url = `${GEMINI_API_BASE_URL}${model}:generateContent?key=${imageConfig.apiKey}`;
