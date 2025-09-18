@@ -122,7 +122,6 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
 }
 
 async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
-    // 이미지 생성 API 호출: 상태에서 provider/mode/apiKey 통합 selector 사용
     const imageConfig = selectCurrentImageApiConfig(store.getState());
     const artStyle = selectCurrentArtStyle(store.getState());
 
@@ -149,7 +148,6 @@ async function callImageGeneration(imageGenerationSetting: { prompt: string; isS
         url = `${GEMINI_API_BASE_URL}${model}:generateContent?key=${imageConfig.apiKey}`;
         payload = buildGeminiImagePayload(positivePrompt, imageGenerationSetting.isSelfie, char);
     } else if (provider === 'comfy') {
-        // ComfyUI 커스텀 서버 (추후 구현 placeholder)
         const customCfg = imageConfig.custom;
         if (!customCfg?.baseUrl) {
             throw new Error('Comfy 서버 주소가 설정되지 않았습니다.');
