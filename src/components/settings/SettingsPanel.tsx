@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAllSettings } from '../../entities/setting/selectors';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
 import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Search, Image } from 'lucide-react';
 import { ProviderSettings } from './ProviderSettings';
@@ -17,6 +17,7 @@ interface SettingsPanelProps {
 function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
     const dispatch = useDispatch();
     const settings = useSelector(selectAllSettings);
+    const tabContainerRef = useRef<HTMLDivElement>(null);
 
     const [localSettings, setLocalSettings] = useState<SettingsState>(settings);
     const [activeTab, setActiveTab] = useState<'ai' | 'image' | 'scale' | 'persona' | 'proactive' | 'data'>('ai');
@@ -42,6 +43,54 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
 
         input.click();
     }
+
+    // Scroll horizontally with mouse drag
+    useEffect(() => {
+        const container = tabContainerRef.current;
+        if (!container) return;
+
+        let isDown = false;
+        let startX: number;
+        let scrollLeft: number;
+
+        const handleMouseDown = (e: MouseEvent) => {
+            isDown = true;
+            container.style.cursor = 'grabbing';
+            startX = e.pageX - container.offsetLeft;
+            scrollLeft = container.scrollLeft;
+        };
+
+        const handleMouseLeave = () => {
+            isDown = false;
+            container.style.cursor = 'grab';
+        };
+
+        const handleMouseUp = () => {
+            isDown = false;
+            container.style.cursor = 'grab';
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const walk = (x - startX);
+            container.scrollLeft = scrollLeft - walk;
+        };
+
+        container.style.cursor = 'grab';
+        container.addEventListener('mousedown', handleMouseDown);
+        container.addEventListener('mouseleave', handleMouseLeave);
+        container.addEventListener('mouseup', handleMouseUp);
+        container.addEventListener('mousemove', handleMouseMove);
+
+        return () => {
+            container.removeEventListener('mousedown', handleMouseDown);
+            container.removeEventListener('mouseleave', handleMouseLeave);
+            container.removeEventListener('mouseup', handleMouseUp);
+            container.removeEventListener('mousemove', handleMouseMove);
+        };
+    }, []);
 
     useEffect(() => {
         setLocalSettings(settings);
@@ -71,10 +120,13 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto flex-1">
                     {/* Tab Navigation */}
-                    <div className="flex border-b border-gray-200 -mx-6 px-6 whitespace-nowrap">
+                    <div
+                        ref={tabContainerRef}
+                        className="flex border-b border-gray-200 -mx-6  whitespace-nowrap overflow-x-scroll scrollbar-hide touch-pan-x select-none"
+                    >
                         <button
                             onClick={() => setActiveTab('ai')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'ai'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'ai'
                                 ? 'border-blue-500 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
@@ -84,7 +136,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         </button>
                         {localSettings.useImageResponse && (<button
                             onClick={() => setActiveTab('image')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'image'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'image'
                                 ? 'border-blue-500 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
@@ -94,7 +146,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         </button>)}
                         <button
                             onClick={() => setActiveTab('scale')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'scale'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'scale'
                                 ? 'border-blue-500 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
@@ -104,7 +156,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         </button>
                         <button
                             onClick={() => setActiveTab('persona')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'persona'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'persona'
                                 ? 'border-blue-500 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
@@ -114,7 +166,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         </button>
                         <button
                             onClick={() => setActiveTab('proactive')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'proactive'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'proactive'
                                 ? 'border-blue-500 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
@@ -124,7 +176,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         </button>
                         <button
                             onClick={() => setActiveTab('data')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'data'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'data'
                                 ? 'border-blue-500 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}

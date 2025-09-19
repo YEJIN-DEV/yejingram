@@ -199,3 +199,16 @@ details .content-wrapper {
 .jsoneditor * {
   font-family: "Roboto Mono", SFMono, consolas, moaco, monospace !important;
 }
+
+/* 스크롤 바 숨기기 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
