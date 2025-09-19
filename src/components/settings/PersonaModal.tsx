@@ -58,7 +58,7 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
                             <User className="w-4 h-4 mr-2" />
                             이름
                         </label>
@@ -67,13 +67,13 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="페르소나 이름을 입력하세요"
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
                             <BrainCircuit className="w-4 h-4 mr-2" />
                             설명
                         </label>
@@ -82,7 +82,7 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="이 페르소나는 어떤 사람인지 설명해주세요"
                             rows={4}
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
                         />
                     </div>
 
@@ -90,13 +90,13 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="flex-1 py-2.5 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-secondary)] rounded-lg transition-colors"
+                            className="flex-1 py-2.5 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors"
                         >
                             취소
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 py-2.5 px-4 bg-blue-500 hover:bg-blue-600 text-[var(--color-text-accent)] rounded-lg transition-colors"
+                            className="flex-1 py-2.5 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors"
                         >
                             {editingPersona?.id ? '수정' : '추가'}
                         </button>
@@ -163,7 +163,7 @@ function PersonaManager({ }: PersonaManagerProps) {
             />
             <div className="space-y-4">
                 {selectedPersonaId == null && (
-                    <div className="flex items-start gap-3 p-3 rounded-lg border border-yellow-300 bg-yellow-50 text-yellow-800">
+                    <div className="flex items-start gap-3 p-3 rounded-lg border border-[var(--color-alert-border)] bg-[var(--color-alert-bg)] text-[var(--color-alert-text)]">
                         <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                         <div className="text-sm leading-5">
                             선택된 페르소나가 없습니다. 하나를 선택하거나 새로 추가해주세요.
@@ -171,10 +171,10 @@ function PersonaManager({ }: PersonaManagerProps) {
                     </div>
                 )}
                 <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-sm font-medium text-[var(--color-text-secondary)]">페르소나 관리</h4>
+                    <h4 className="text-sm font-medium text-[var(--color-text-interface)]">페르소나 관리</h4>
                     <button
                         onClick={handleAddPersona}
-                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-[var(--color-text-accent)] rounded-lg text-xs flex items-center gap-1 transition-colors"
+                        className="px-3 py-1.5 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg text-xs flex items-center gap-1 transition-colors"
                     >
                         <Plus className="w-3 h-3" /> 추가
                     </button>
@@ -185,7 +185,7 @@ function PersonaManager({ }: PersonaManagerProps) {
                         <div
                             key={persona.id}
                             className={`p-3 rounded-lg border transition-colors cursor-pointer ${selectedPersonaId === persona.id
-                                ? 'border-blue-500 bg-blue-50'
+                                ? 'border-[var(--color-focus-border)] bg-[var(--color-focus-border)]/10'
                                 : 'border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)]'
                                 }`}
                             onClick={() => handleSelectPersona(persona.id)}
@@ -197,13 +197,13 @@ function PersonaManager({ }: PersonaManagerProps) {
                                             {persona.name || '이름 없음'}
                                         </h5>
                                         {selectedPersonaId === persona.id && (
-                                            <span className="px-2 py-0.5 bg-blue-200 text-blue-700 text-xs rounded-full">
+                                            <span className="px-2 py-0.5 bg-[var(--color-persona-selected)]/20 text-[var(--color-persona-selected)] text-xs rounded-full">
                                                 선택됨
                                             </span>
                                         )}
                                     </div>
                                     {persona.description && (
-                                        <p className="text-xs text-[var(--color-text-tertiary)] mt-1 line-clamp-2">
+                                        <p className="text-xs text-[var(--color-text-secondary)] mt-1 line-clamp-2">
                                             {persona.description}
                                         </p>
                                     )}
@@ -223,9 +223,9 @@ function PersonaManager({ }: PersonaManagerProps) {
                                             e.stopPropagation();
                                             handleDeletePersona(persona.id);
                                         }}
-                                        className="p-1 hover:bg-red-100 rounded transition-colors"
+                                        className="p-1 hover:bg-[var(--color-button-negative)]/20 rounded transition-colors"
                                     >
-                                        <Trash2 className="w-3 h-3 text-red-500" />
+                                        <Trash2 className="w-3 h-3 text-[var(--color-button-negative)]" />
                                     </button>
                                 </div>
                             </div>

@@ -70,7 +70,7 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
             <div className="p-4 border-b border-[var(--color-border-secondary)] flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">페르소나 스티커</h3>
                 <div className="flex gap-2">
-                    <button onClick={handleAddStickerClick} className="p-2 bg-blue-500 hover:bg-blue-600 text-[var(--color-text-accent)] rounded-full transition-colors shadow-sm" title="스티커 추가">
+                    <button onClick={handleAddStickerClick} className="p-2 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-full transition-colors shadow-sm" title="스티커 추가">
                         <Plus className="w-4 h-4" />
                     </button>
                     <button onClick={onClose} className="p-2 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-icon-primary)] rounded-full transition-colors" title="닫기">
@@ -79,18 +79,18 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
                 </div>
             </div>
             <div className="p-4">
-                <div className="flex items-center justify-between text-xs text-[var(--color-text-tertiary)] mb-4">
+                <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] mb-4">
                     <span>jpg, gif, png, bmp, webp 지원</span>
                     <span className="bg-[var(--color-bg-input-primary)] px-2 py-1 rounded-full">스티커: {stickers.length}개</span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-[var(--color-text-tertiary)] mb-4">
+                <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] mb-4">
                     <span>총 용량: {formatBytes(totalSize)}</span>
                 </div>
                 {stickers.length === 0 ? (
                     <div className="text-center text-[var(--color-icon-tertiary)] py-8">
-                        <Smile className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <Smile className="w-12 h-12 mx-auto mb-3 text-[var(--color-icon-primary)]/50" />
                         <p className="text-sm font-medium mb-2">스티커를 추가해보세요</p>
-                        <button onClick={handleAddStickerClick} className="text-sm text-[var(--color-icon-accent)] hover:text-[var(--color-icon-accent-secondary)] font-medium">스티커 추가하기</button>
+                        <button onClick={handleAddStickerClick} className="text-sm text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)] font-medium">스티커 추가하기</button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto">
@@ -114,7 +114,7 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
                                     </button>
                                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                         <button onClick={(e) => { e.stopPropagation(); handleEditStickerName(sticker.id, sticker.name); }}
-                                            className="w-6 h-6 bg-blue-500 hover:bg-blue-600 text-[var(--color-text-accent)] rounded-full flex items-center justify-center transition-colors shadow-lg" title="이름 변경">
+                                            className="w-6 h-6 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-full flex items-center justify-center transition-colors shadow-lg" title="이름 변경">
                                             <Edit3 className="w-3 h-3" />
                                         </button>
                                         <button onClick={(e) => { e.stopPropagation(); handleDeleteSticker(sticker.id); }}
@@ -122,7 +122,7 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
                                             <X className="w-3 h-3" />
                                         </button>
                                     </div>
-                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent text-[var(--color-text-accent)] text-xs p-2 truncate rounded-b-xl">
+                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[var(--color-bg-shadow)]/60 to-transparent text-[var(--color-text-accent)] text-xs p-2 truncate rounded-b-xl">
                                         {sticker.name}
                                     </div>
                                 </div>

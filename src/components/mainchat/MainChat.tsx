@@ -305,10 +305,10 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
           <div className="w-24 h-24 bg-[var(--color-button-secondary-accent)] rounded-full flex items-center justify-center mx-auto mb-6">
             <MessageCircle className="w-12 h-12 text-[var(--color-icon-secondary)]" />
           </div>
-          <h3 className="text-xl md:text-2xl font-semibold text-[var(--color-text-title)] mb-3">
+          <h3 className="text-xl md:text-2xl font-semibold text-[var(--color-text-primary)] mb-3">
             메시지를 보내세요
           </h3>
-          <p className="text-sm md:text-base text-[var(--color-text-tertiary)] leading-relaxed">
+          <p className="text-sm md:text-base text-[var(--color-text-secondary)] leading-relaxed">
             친구나 그룹과 개인 사진 및 메시지를 공유하세요.
           </p>
         </div>
@@ -452,7 +452,7 @@ function ChatHeader({
       return (
         <>
           <Avatar char={character} size="md" />
-          <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${useCharacterOnlineStatus(character.id) ? 'bg-green-500' : 'bg-gray-500'} border-2 border-white rounded-full`}></div>
+          <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${useCharacterOnlineStatus(character.id) ? 'bg-[var(--color-indicator-online)]' : 'bg-[var(--color-indicator-offline)]'} border-2 border-[var(--color-bg-main)] rounded-full`}></div>
         </>
       );
     }
@@ -480,9 +480,9 @@ function ChatHeader({
 
   const getRoomNameEditSize = () => {
     if (room.type === 'Direct') {
-      return "bg-[var(--color-bg-input-primary)] text-[var(--color-text-primary)] text-sm rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500";
+      return "bg-[var(--color-bg-input-primary)] text-[var(--color-text-primary)] text-sm rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-focus-border)]";
     }
-    return "bg-[var(--color-bg-input-primary)] text-[var(--color-text-primary)] text-lg font-semibold rounded-lg px-3 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500";
+    return "bg-[var(--color-bg-input-primary)] text-[var(--color-text-primary)] text-lg font-semibold rounded-lg px-3 py-1 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-focus-border)]";
   };
 
   const getEditButtonSize = () => {
@@ -562,7 +562,7 @@ function ChatHeader({
                       <Edit2 className={getEditButtonSize()} />
                     </button>
                   </div>
-                  <p className="text-sm text-[var(--color-text-tertiary)] flex items-center mt-1">
+                  <p className="text-sm text-[var(--color-text-secondary)] flex items-center mt-1">
                     {getHeaderSubtitle()}
                   </p>
                 </>
@@ -705,7 +705,7 @@ function InputArea({
               onOpenFileUpload?.();
               setInputOptions((prev) => !prev);
             }}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl hover:bg-[var(--color-bg-secondary)] text-gray-700"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
           >
             <Paperclip className="w-4 h-4" /> 파일
           </button>
@@ -734,7 +734,7 @@ function InputArea({
               id="new-message-input"
               ref={inputRef}
               placeholder={placeholder}
-              className="flex-1 bg-transparent text-[var(--color-text-primary)] resize-none border-none outline-none text-sm placeholder-[var(--color-text-placeholder)] max-h-20"
+              className="flex-1 bg-transparent text-[var(--color-text-primary)] resize-none border-none outline-none text-sm placeholder-[var(--color-text-secondary)] max-h-20"
               rows={1}
               disabled={isWaitingForResponse}
               value={text}
@@ -763,7 +763,7 @@ function InputArea({
                 id="sticker-btn"
                 type="button"
                 onClick={onToggleUserStickerPanel}
-                className="p-1 text-[var(--color-icon-tertiary)] hover:text-gray-700 transition-all duration-200"
+                className="p-1 text-[var(--color-icon-tertiary)] hover:[var(--color-button-primary-accent)] transition-all duration-200"
                 disabled={isWaitingForResponse}
               >
                 <Smile className="w-5 h-5" />
@@ -774,7 +774,7 @@ function InputArea({
                   id="send-message-btn"
                   type="button"
                   onClick={handleSend}
-                  className="p-1 text-[var(--color-icon-accent)] hover:text-[var(--color-icon-accent-secondary)] transition-all duration-200 font-semibold text-sm"
+                  className="p-1 text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)] transition-all duration-200 font-semibold text-sm"
                   disabled={isWaitingForResponse}
                   title="전송"
                 >
@@ -799,21 +799,21 @@ function AuthorNoteModal({ open, onClose, value, onChange, onSave }: { open: boo
       <div className="w-full max-w-lg mx-4 bg-[var(--color-bg-main)] rounded-2xl border border-[var(--color-border)] shadow-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-[var(--color-text-primary)] font-semibold">
-            <StickyNote className="w-5 h-5 text-[var(--color-icon-accent)]" /> 작가의 노트
+            <StickyNote className="w-5 h-5 text-[var(--color-button-primary)]" /> 작가의 노트
           </div>
           <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-tertiary)] transition-colors" onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
         <textarea
-          className="w-full h-48 p-4 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 resize-none"
+          className="w-full h-48 p-4 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] resize-none"
           placeholder="방 전체에 적용될 메타 지침을 적어주세요. (예: 톤, 금지사항, 세계관 규칙, 줄거리 방향 등)"
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
         <div className="mt-4 flex justify-end gap-3">
           <button className="px-4 py-2 rounded-xl bg-[var(--color-button-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-button-secondary-accent)] transition-colors font-medium" onClick={onClose}>취소</button>
-          <button className="px-4 py-2 rounded-xl bg-blue-500 text-[var(--color-text-accent)] hover:bg-blue-600 transition-colors font-medium" onClick={onSave}>저장</button>
+          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-primary)] text-[var(--color-text-accent)] hover:bg-[var(--color-button-primary-accent)] transition-colors font-medium" onClick={onSave}>저장</button>
         </div>
       </div>
     </div>
@@ -827,16 +827,16 @@ function RoomMemoryModal({ open, onClose, roomId }: { open: boolean; onClose: ()
       <div className="w-full max-w-2xl mx-4 bg-[var(--color-bg-main)] rounded-2xl border border-[var(--color-border)] shadow-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-[var(--color-text-primary)] font-semibold">
-            <Brain className="w-5 h-5 text-[var(--color-icon-accent)]" /> 방 메모리
+            <Brain className="w-5 h-5 text-[var(--color-button-primary)]" /> 방 메모리
           </div>
           <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-tertiary)] transition-colors" onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-sm text-[var(--color-text-tertiary)] mb-3">이 방에만 적용되는 기억을 관리합니다. 모델은 여기의 메모리를 우선적으로 참고합니다.</p>
+        <p className="text-sm text-[var(--color-text-secondary)] mb-3">이 방에만 적용되는 기억을 관리합니다. 모델은 여기의 메모리를 우선적으로 참고합니다.</p>
         <MemoryManager roomId={roomId} />
         <div className="mt-4 flex justify-end">
-          <button className="px-4 py-2 rounded-xl bg-blue-500 text-[var(--color-text-accent)] hover:bg-blue-600 transition-colors font-medium" onClick={onClose}>닫기</button>
+          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-primary)] text-[var(--color-text-accent)] hover:bg-[var(--color-button-primary-accent)] transition-colors font-medium" onClick={onClose}>닫기</button>
         </div>
       </div>
     </div>
@@ -851,16 +851,16 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
       <div className="w-full max-w-4xl mx-4 bg-[var(--color-bg-main)] rounded-2xl border border-[var(--color-border)] shadow-xl p-6 max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-[var(--color-text-primary)] font-semibold">
-            <BookOpen className="w-5 h-5 text-[var(--color-icon-accent)]" /> 로어북 편집기
+            <BookOpen className="w-5 h-5 text-[var(--color-button-primary)]" /> 로어북 편집기
           </div>
           <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-tertiary)] transition-colors" onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-sm text-[var(--color-text-tertiary)] mb-3">캐릭터의 로어북을 편집합니다. 로어북은 채팅에서 특정 키워드가 등장할 때 자동으로 적용됩니다.</p>
+        <p className="text-sm text-[var(--color-text-secondary)] mb-3">캐릭터의 로어북을 편집합니다. 로어북은 채팅에서 특정 키워드가 등장할 때 자동으로 적용됩니다.</p>
         {(roomType === 'Group') && roomLorebook && (
           <details className="mb-6">
-            <summary className="flex items-center justify-between text-lg font-semibold text-[var(--color-text-title)] mb-2 cursor-pointer hover:text-[var(--color-icon-primary)] transition-colors">
+            <summary className="flex items-center justify-between text-lg font-semibold text-[var(--color-text-primary)] mb-2 cursor-pointer hover:text-[var(--color-icon-primary)] transition-colors">
               <span>그룹 채팅 로어북</span>
               <ChevronDown className="w-5 h-5 text-[var(--color-icon-tertiary)]" />
             </summary>
@@ -870,7 +870,7 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
         {memberChars && memberChars.length > 0 ? (
           memberChars.map(char => (
             <details key={char.id} className="mb-6">
-              <summary className="flex items-center justify-between text-lg font-semibold text-[var(--color-text-title)] mb-2 cursor-pointer hover:text-[var(--color-icon-primary)] transition-colors">
+              <summary className="flex items-center justify-between text-lg font-semibold text-[var(--color-text-primary)] mb-2 cursor-pointer hover:text-[var(--color-icon-primary)] transition-colors">
                 <span>{char.name}의 로어북</span>
                 <ChevronDown className="w-5 h-5 text-[var(--color-icon-tertiary)]" />
               </summary>
@@ -883,7 +883,7 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
           )
         )}
         <div className="mt-4 flex justify-end">
-          <button className="px-4 py-2 rounded-xl bg-blue-500 text-[var(--color-text-accent)] hover:bg-blue-600 transition-colors font-medium" onClick={onClose}>닫기</button>
+          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-primary)] text-[var(--color-text-accent)] hover:bg-[var(--color-button-primary-accent)] transition-colors font-medium" onClick={onClose}>닫기</button>
         </div>
       </div>
     </div>

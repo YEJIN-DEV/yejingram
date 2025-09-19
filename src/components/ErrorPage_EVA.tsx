@@ -22,7 +22,7 @@ interface ErrorPageProps {
     showBgmControls?: boolean;
 }
 
-const PANEL = 'border-2 border-amber-600 bg-[var(--color-bg-shadow)]/80 p-2';
+const PANEL = 'border-2 border-amber-600 bg-black/80 p-2';
 const LABEL = 'text-amber-500 text-xs';
 const HEADER = 'text-amber-400 font-bold mb-2';
 
@@ -229,11 +229,11 @@ const ErrorPage_EVA: React.FC<ErrorPageProps> = ({
     );
 
     return (
-        <div className="h-dvh bg-[var(--color-bg-shadow)] text-amber-500 font-mono overflow-hidden">
+        <div className="h-dvh bg-black text-amber-500 font-mono overflow-hidden">
             <div className="h-dvh flex flex-col p-1">
                 {/* Header */}
-                <div className="border-2 border-red-700 bg-[var(--color-bg-shadow)] mb-1">
-                    <div className="bg-red-700 text-[var(--color-text-accent)] p-1 text-center text-xl font-bold tracking-widest">
+                <div className="border-2 border-red-700 bg-black mb-1">
+                    <div className="bg-red-700 text-white p-1 text-center text-xl font-bold tracking-widest">
                         緊急事態宣言 EMERGENCY
                     </div>
                     <div className="p-1 flex justify-between items-center gap-2">
@@ -256,7 +256,7 @@ const ErrorPage_EVA: React.FC<ErrorPageProps> = ({
                         {/* Error box */}
                         <div className={`${PANEL} relative overflow-hidden flex-1`}>
                             <div className="text-red-500 font-bold mb-2">▼ CRITICAL ERROR DETECTED</div>
-                            <div className="bg-[var(--color-bg-shadow)] border border-red-800 p-1 mb-1">
+                            <div className="bg-black border border-red-800 p-1 mb-1">
                                 <div className="text-red-400 text-xs mb-1">EXCEPTION TRACE:</div>
                                 <pre className="text-amber-300 text-xs overflow-auto max-h-16 leading-tight">
                                     {error?.message ||
@@ -344,7 +344,7 @@ const ErrorPage_EVA: React.FC<ErrorPageProps> = ({
                 <div className="flex gap-1 py-2">
                     <button
                         onClick={onBackup}
-                        className="flex-1 border-2 border-green-700 bg-[var(--color-bg-shadow)]/80 text-green-500 p-2 hover:bg-green-900/30 hover:border-green-500 transition-all"
+                        className="flex-1 border-2 border-green-700 bg-black/80 text-green-500 p-2 hover:bg-green-900/30 hover:border-green-500 transition-all"
                     >
                         <div className="text-xs mb-1">◄ BACKUP PROTOCOL ►</div>
                         <div className="font-bold">データバックアップ</div>
@@ -352,7 +352,7 @@ const ErrorPage_EVA: React.FC<ErrorPageProps> = ({
 
                     <button
                         onClick={onRestore}
-                        className="flex-1 border-2 border-yellow-700 bg-[var(--color-bg-shadow)]/80 text-yellow-500 p-2 hover:bg-yellow-900/30 hover:border-yellow-500 transition-all"
+                        className="flex-1 border-2 border-yellow-700 bg-black/80 text-yellow-500 p-2 hover:bg-yellow-900/30 hover:border-yellow-500 transition-all"
                     >
                         <div className="text-xs mb-1">◄ RESTORE SYSTEM ►</div>
                         <div className="font-bold">システム復旧</div>

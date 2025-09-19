@@ -100,7 +100,7 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
                         placeholder="검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-input-primary)] text-[var(--color-text-primary)] rounded-full border-0 focus:bg-[var(--color-bg-input-secondary)] focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 text-sm placeholder-[var(--color-text-placeholder)]"
+                        className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-input-primary)] text-[var(--color-text-primary)] rounded-full border-0 focus:bg-[var(--color-bg-input-secondary)] focus:ring-2 focus:ring-[var(--color-focus-border)]/20 transition-all duration-200 text-sm placeholder-[var(--color-text-secondary)]"
                     />
                 </div>
             </header>
@@ -112,7 +112,7 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
                     <div className="flex space-x-4">
                         <button
                             onClick={openCreateGroupChatModal}
-                            className="flex items-center text-sm text-[var(--color-icon-accent)] hover:text-[var(--color-icon-accent-secondary)] font-medium"
+                            className="flex items-center text-sm text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)] font-medium"
                         >
                             그룹 채팅 만들기
                         </button>
@@ -131,8 +131,8 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
                     <div className="group flex items-center justify-between px-4 py-2 bg-[var(--color-bg-secondary)]">
                         <div className="flex items-center space-x-2">
                             <User className="w-4 h-4 text-[var(--color-icon-tertiary)]" />
-                            <h3 className="text-sm font-semibold text-[var(--color-text-secondary)]">연락처</h3>
-                            <span className="text-xs bg-[var(--color-bg-secondary-accent)] text-[var(--color-text-quaternary)] px-2 py-0.5 rounded-full">
+                            <h3 className="text-sm font-semibold text-[var(--color-text-interface)]">연락처</h3>
+                            <span className="text-xs bg-[var(--color-bg-secondary-accent)] text-[var(--color-text-tertiary)] px-2 py-0.5 rounded-full">
                                 {filteredCharacters.length}
                             </span>
                         </div>

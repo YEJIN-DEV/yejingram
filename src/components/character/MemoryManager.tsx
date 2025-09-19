@@ -31,7 +31,7 @@ export function MemoryManager({ roomId }: MemoryManagerProps) {
                 {memories.map((mem, index) => (
                     <div key={index} className="memory-item flex items-start gap-3 p-3 bg-[var(--color-bg-input-secondary)] rounded-lg border border-[var(--color-border)]">
                         <textarea
-                            className="memory-input flex-1 px-3 py-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm leading-relaxed resize-y min-h-[44px] max-h-[300px] whitespace-pre-wrap"
+                            className="memory-input flex-1 px-3 py-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm leading-relaxed resize-y min-h-[44px] max-h-[300px] whitespace-pre-wrap"
                             value={mem}
                             rows={2}
                             ref={(el) => {
@@ -48,14 +48,14 @@ export function MemoryManager({ roomId }: MemoryManagerProps) {
                             placeholder="기억할 내용을 입력하세요... (여러 줄 입력 가능)"
                             aria-label={`메모리 ${index + 1}`}
                         />
-                        <button onClick={() => deleteMemory(index)} className="p-2 mt-1 text-[var(--color-icon-secondary)] hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
+                        <button onClick={() => deleteMemory(index)} className="p-2 mt-1 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-negative)] rounded-full hover:bg-[var(--color-button-negative)]/10 transition-colors">
                             <Trash2 className="w-4 h-4 pointer-events-none" />
                         </button>
                     </div>
                 ))}
             </div>
             <div className="flex-shrink-0 pt-2 border-t border-[var(--color-border)]">
-                <button onClick={addMemory} id="add-memory-btn" className="text-sm text-[var(--color-icon-accent)] hover:text-[var(--color-icon-accent-secondary)] flex items-center gap-2 py-2 px-3 hover:bg-blue-50 rounded-lg transition-colors">
+                <button onClick={addMemory} id="add-memory-btn" className="text-sm text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)] flex items-center gap-2 py-2 px-3 hover:bg-[var(--color-button-primary)]/10 rounded-lg transition-colors">
                     <PlusCircle className="w-4 h-4" /> 메모리 추가
                 </button>
             </div>

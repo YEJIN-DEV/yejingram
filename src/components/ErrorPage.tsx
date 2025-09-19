@@ -81,20 +81,20 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
     };
 
     const CheckboxItem: React.FC<{ checked: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; children: React.ReactNode; icon: React.ReactNode }> = ({ checked, onChange, children, icon }) => (
-        <label className="group flex items-center space-x-3 p-3 rounded-xl border border-[var(--color-border)] hover:border-blue-300 hover:bg-blue-50/30 transition-all duration-200 cursor-pointer">
+        <label className="group flex items-center space-x-3 p-3 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all duration-200 cursor-pointer">
             <div className="relative">
                 <input
                     type="checkbox"
                     checked={checked}
                     onChange={onChange}
-                    className="w-5 h-5 rounded border-2 border-gray-300 text-[var(--color-icon-accent-secondary)] focus:ring-blue-500 focus:ring-2 focus:ring-offset-2 transition-colors"
+                    className="w-5 h-5 rounded border-2 border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 focus:ring-offset-2 transition-colors"
                 />
             </div>
             <div className="flex items-center space-x-3 flex-1">
-                <div className="text-[var(--color-icon-accent-secondary)] group-hover:text-blue-700 transition-colors">
+                <div className="text-blue-600 group-hover:text-blue-700 transition-colors">
                     {icon}
                 </div>
-                <span className="text-[var(--color-text-secondary)] font-medium group-hover:text-gray-800 transition-colors">
+                <span className="text-gray-700 font-medium group-hover:text-gray-800 transition-colors">
                     {children}
                 </span>
             </div>
@@ -114,7 +114,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
 
                 <div className="relative max-w-lg w-full">
                     {/* Main card */}
-                    <div className="bg-[var(--color-bg-main)]/80 backdrop-blur-xl shadow-2xl rounded-3xl border border-white/20 overflow-hidden relative">
+                    <div className="bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl border border-white/20 overflow-hidden relative">
                         {/* Hidden button */}
                         <div
                             ref={hiddenButtonRef}
@@ -128,14 +128,14 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                         {/* Header */}
                         <div className="relative px-8 pt-8 pb-6 bg-gradient-to-r from-red-500/5 to-orange-500/5">
                             <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-[var(--color-button-negative)]/10 rounded-2xl">
+                                <div className="p-3 bg-red-500/10 rounded-2xl">
                                     <AlertTriangle className="w-8 h-8 text-red-500" />
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold text-[var(--color-text-title)] mb-1">
+                                    <h1 className="text-2xl font-bold text-gray-800 mb-1">
                                         오류가 발생했습니다
                                     </h1>
-                                    <p className="text-[var(--color-text-quaternary)] text-sm">
+                                    <p className="text-gray-600 text-sm">
                                         복구 옵션을 선택해주세요
                                     </p>
                                 </div>
@@ -154,7 +154,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                         </div>
 
                         <div className="px-8 py-6">
-                            <p className="text-[var(--color-text-quaternary)] mb-6 leading-relaxed">
+                            <p className="text-gray-600 mb-6 leading-relaxed">
                                 애플리케이션에서 예기치 않은 오류가 발생했습니다.
                                 아래에서 초기화할 설정을 선택하고 복구를 진행하세요.
                             </p>
@@ -164,7 +164,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                 <div className="mb-6">
                                     <button
                                         onClick={() => setIsExpanded(!isExpanded)}
-                                        className="flex items-center space-x-2 text-sm text-[var(--color-text-tertiary)] hover:text-gray-700 transition-colors"
+                                        className="flex items-center space-x-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
                                     >
                                         <span>오류 세부 정보</span>
                                         <div className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
@@ -172,8 +172,8 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                         </div>
                                     </button>
                                     {isExpanded && (
-                                        <div className="mt-3 p-4 bg-[var(--color-bg-secondary)] rounded-xl border border-[var(--color-border-secondary)]">
-                                            <pre className="text-xs text-[var(--color-text-secondary)] overflow-auto max-h-32">
+                                        <div className="mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <pre className="text-xs text-gray-700 overflow-auto max-h-32">
                                                 {error.message}
                                             </pre>
                                         </div>
@@ -183,8 +183,8 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
 
                             {/* Reset options */}
                             <div className="mb-6">
-                                <h3 className="text-lg font-semibold text-[var(--color-text-title)] mb-4 flex items-center">
-                                    <Settings className="w-5 h-5 mr-2 text-[var(--color-icon-accent)]" />
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <Settings className="w-5 h-5 mr-2 text-blue-500" />
                                     초기화 옵션
                                 </h3>
                                 <div className="space-y-3">
@@ -223,7 +223,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                     <CheckboxItem
                                         checked={resetDatabase}
                                         onChange={(e) => setResetDatabase(e.target.checked)}
-                                        icon={<div className="w-4 h-4 bg-[var(--color-button-negative)] rounded"></div>}
+                                        icon={<div className="w-4 h-4 bg-red-500 rounded"></div>}
                                     >
                                         저장된 데이터베이스 초기화
                                     </CheckboxItem>
@@ -235,7 +235,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
                                         onClick={onBackup}
-                                        className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-[var(--color-text-accent)] font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                                        className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                                     >
                                         <Download className="w-4 h-4" />
                                         <span>백업</span>
@@ -243,7 +243,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
 
                                     <button
                                         onClick={onRestore}
-                                        className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-[var(--color-text-accent)] font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                                        className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                                     >
                                         <Upload className="w-4 h-4" />
                                         <span>복구</span>
@@ -252,7 +252,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
 
                                 <button
                                     onClick={onReset}
-                                    className="w-full flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-[var(--color-text-accent)] font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                                    className="w-full flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                     <RefreshCw className="w-5 h-5" />
                                     <span>선택 초기화 및 새로고침</span>

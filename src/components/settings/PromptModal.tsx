@@ -202,7 +202,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                     <div className="flex items-center gap-2">
                         <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">프롬프트 수정</h3>
                         {missingTypes.length > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-900 border border-amber-200" title={`미설정 타입 ${missingTypes.length}개`}>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[var(--color-alert-bg)] text-[var(--color-alert-text)] border border-[var(--color-alert-border)]" title={`미설정 타입 ${missingTypes.length}개`}>
                                 <AlertTriangle className="w-3.5 h-3.5" /> {missingTypes.length}
                             </span>
                         )}
@@ -211,21 +211,21 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto">
                     {missingTypes.length > 0 && (
-                        <div className="flex items-start gap-2 p-3 rounded-lg border text-amber-800 bg-amber-50 border-amber-200">
+                        <div className="flex items-start gap-2 p-3 rounded-lg border text-[var(--color-alert-text)] bg-[var(--color-alert-bg)]/30 border-[var(--color-alert-border)]">
                             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                             <div className="text-sm">
                                 <div className="font-medium">설정되지 않은 타입이 있습니다</div>
-                                <div className="mt-1 text-amber-900/90">다음 타입이 어떤 프롬프트에도 지정되지 않았습니다:</div>
+                                <div className="mt-1 text-[var(--color-alert-text)]/90">다음 타입이 어떤 프롬프트에도 지정되지 않았습니다:</div>
                                 <div className="mt-2 flex flex-wrap gap-1.5">
                                     {missingTypes.map((t) => (
-                                        <span key={t} className="px-2 py-0.5 rounded border border-amber-200 bg-amber-100/70 text-amber-900 text-xs">{getTypeLabel(t)}</span>
+                                        <span key={t} className="px-2 py-0.5 rounded border border-[var(--color-alert-border)] bg-[var(--color-alert-bg)]/70 text-[var(--color-alert-text)] text-xs">{getTypeLabel(t)}</span>
                                     ))}
                                 </div>
                             </div>
                         </div>
                     )}
-                    <div className="flex items-center justify-between border-b border-blue-100 pb-2">
-                        <h4 className="text-base font-semibold text-[var(--color-icon-accent-secondary)]">메인 채팅 프롬프트</h4>
+                    <div className="flex items-center justify-between border-b border-[var(--color-mainprompt)]/50 pb-2">
+                        <h4 className="text-base font-semibold text-[var(--color-mainprompt)]">메인 채팅 프롬프트</h4>
                         <div className="flex items-center gap-2">
                             <button type="button" onClick={resetOrder} className="py-1 px-2 text-xs bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] border border-[var(--color-border)] rounded">초기화</button>
                         </div>
@@ -240,7 +240,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                             >
                                 <summary className="flex items-center justify-between cursor-pointer list-none p-4">
                                     <div className="flex items-center">
-                                        <span className="text-gray-400 w-6 text-center mr-2">{index + 1}.</span>
+                                        <span className="text-[var(--color-text-informative-primary)] w-6 text-center mr-2">{index + 1}.</span>
                                         <span className="text-base font-medium text-[var(--color-text-primary)]">{title}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
@@ -262,26 +262,26 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                         >
                                             <ArrowDown className="w-4 h-4" />
                                         </button>
-                                        <button type="button" onClick={(e) => { e.preventDefault(); removeIndex(index); }} className="text-xs px-2 py-1 border rounded text-red-600">삭제</button>
+                                        <button type="button" onClick={(e) => { e.preventDefault(); removeIndex(index); }} className="text-xs px-2 py-1 border rounded text-[var(--color-textual-button-negative)]">삭제</button>
                                         <ChevronDown className="w-5 h-5 text-[var(--color-icon-secondary)] transition-transform duration-300 group-open:rotate-180" />
                                     </div>
                                 </summary>
                                 <div className="content-wrapper">
                                     <div className="content-inner p-4 border-t border-[var(--color-border)]">
                                         <div className="flex items-center gap-2 mb-3">
-                                            <button onClick={() => setPromptToDefault(index)} className="py-1 px-3 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-secondary)] rounded text-xs flex items-center gap-1 border border-[var(--color-border)]">
+                                            <button onClick={() => setPromptToDefault(index)} className="py-1 px-3 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded text-xs flex items-center gap-1 border border-[var(--color-border)]">
                                                 <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                             </button>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                                             <div className="flex flex-col">
-                                                <label className="text-xs font-medium text-[var(--color-text-quaternary)] mb-1">이름</label>
+                                                <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">이름</label>
                                                 <input value={item.name}
                                                     onChange={e => handleMainPromptChange(index, { name: e.target.value })}
                                                     className="w-full p-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm" placeholder="이름" />
                                             </div>
                                             <div className="flex flex-col">
-                                                <label className="text-xs font-medium text-[var(--color-text-quaternary)] mb-1">타입</label>
+                                                <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">타입</label>
                                                 <select
                                                     value={item.type}
                                                     onChange={e => handleMainPromptChange(index, { type: e.target.value as PromptType })}
@@ -297,7 +297,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                             </div>
                                             {item.type !== 'chat' && item.type !== 'extraSystemInstruction' && (
                                                 <div className="flex flex-col">
-                                                    <label className="text-xs font-medium text-[var(--color-text-quaternary)] mb-1">역할</label>
+                                                    <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">역할</label>
                                                     <select value={item.role}
                                                         onChange={e => handleMainPromptChange(index, { role: e.target.value as PromptRole })}
                                                         className="w-full p-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm">
@@ -310,11 +310,11 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                         </div>
                                         {item.type !== 'chat' && item.type !== 'lorebook' && item.type !== 'authornote' && item.type !== 'memory' && item.type !== 'extraSystemInstruction' && item.type !== 'userDescription' && item.type !== 'characterPrompt' && (
                                             <div>
-                                                <label className="text-xs font-medium text-[var(--color-text-quaternary)] mb-1 block">프롬프트 내용</label>
+                                                <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1 block">프롬프트 내용</label>
                                                 <textarea
                                                     value={item.content}
                                                     onChange={e => handleMainPromptChange(index, { content: e.target.value })}
-                                                    className="w-full h-64 p-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg text-sm font-mono border border-[var(--color-border)] focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500" />
+                                                    className="w-full h-64 p-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg text-sm font-mono border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)]" />
                                             </div>
                                         )}
                                     </div>
@@ -324,10 +324,10 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                     })}
 
                     <div className="flex justify-center mt-4">
-                        <button type="button" onClick={addNewPrompt} className="py-2 px-4 text-sm bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-lg">+ 새 프롬프트 추가</button>
+                        <button type="button" onClick={addNewPrompt} className="py-2 px-4 text-sm bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] rounded-lg text-[var(--color-text-accent)]">+ 새 프롬프트 추가</button>
                     </div>
 
-                    <h4 className="text-base font-semibold text-green-600 border-b border-green-100 pb-2 mt-6">이미지 응답 생성 프롬프트</h4>
+                    <h4 className="text-base font-semibold text-[var(--color-image-response)] border-b border-[var(--color-image-response)]/50 pb-2 mt-6">이미지 응답 생성 프롬프트</h4>
                     <details className="group bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border)]">
                         <summary className="flex items-center justify-between cursor-pointer list-none p-4">
                             <span className="text-base font-medium text-[var(--color-text-primary)]">{localPrompts.image_response_generation.name || '# 이미지 응답 생성 규칙 (Image Response Generation Rules)'}</span>
@@ -336,30 +336,30 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         <div className="content-wrapper">
                             <div className="content-inner p-4 border-t border-[var(--color-border)]">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <button onClick={() => setPromptToDefault('image_response_generation')} className="py-1 px-3 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-secondary)] rounded text-xs flex items-center gap-1 border border-[var(--color-border)]">
+                                    <button onClick={() => setPromptToDefault('image_response_generation')} className="py-1 px-3 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded text-xs flex items-center gap-1 border border-[var(--color-border)]">
                                         <RotateCcw className="w-3 h-3" /> 기본값으로 되돌리기
                                     </button>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                                     <div className="flex flex-col">
-                                        <label className="text-xs font-medium text-[var(--color-text-quaternary)] mb-1">이름</label>
+                                        <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">이름</label>
                                         <input value={localPrompts.image_response_generation.name}
                                             onChange={e => setLocalPrompts(prev => ({ ...prev, image_response_generation: { ...prev.image_response_generation, name: e.target.value } }))}
                                             className="w-full p-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm" placeholder="이름" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <label className="text-xs font-medium text-[var(--color-text-quaternary)] mb-1">타입 <span className="text-[11px] text-gray-400">(고정)</span></label>
+                                        <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">타입 <span className="text-[11px] text-[var(--color-text-informative-secondary)]">(고정)</span></label>
                                         <select
                                             value={localPrompts.image_response_generation.type}
                                             disabled
                                             aria-disabled
-                                            className="w-full p-2 bg-[var(--color-bg-input-primary)] text-[var(--color-text-secondary)] rounded border border-[var(--color-border)] text-sm cursor-not-allowed"
+                                            className="w-full p-2 bg-[var(--color-bg-input-primary)] text-[var(--color-text-interface)] rounded border border-[var(--color-border)] text-sm cursor-not-allowed"
                                         >
                                             <option value={localPrompts.image_response_generation.type}>{getTypeLabel(localPrompts.image_response_generation.type)}</option>
                                         </select>
                                     </div>
                                     <div className="flex flex-col">
-                                        <label className="text-xs font-medium text-[var(--color-text-quaternary)] mb-1">역할</label>
+                                        <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">역할</label>
                                         <select value={localPrompts.image_response_generation.role}
                                             onChange={e => setLocalPrompts(prev => ({ ...prev, image_response_generation: { ...prev.image_response_generation, role: e.target.value as PromptRole } }))}
                                             className="w-full p-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm">
@@ -370,11 +370,11 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-medium text-[var(--color-text-quaternary)] mb-1 block">프롬프트 내용</label>
+                                    <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1 block">프롬프트 내용</label>
                                     <textarea
                                         value={localPrompts.image_response_generation.content}
                                         onChange={e => setLocalPrompts(prev => ({ ...prev, image_response_generation: { ...prev.image_response_generation, content: e.target.value } }))}
-                                        className="w-full h-64 p-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg text-sm font-mono border border-[var(--color-border)] focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500" />
+                                        className="w-full h-64 p-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg text-sm font-mono border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)]" />
                                 </div>
                             </div>
                         </div>
@@ -390,15 +390,15 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         className="hidden"
                         onChange={handleFileChange}
                     />
-                    <button onClick={handleBackup} className="py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-secondary)] rounded-lg transition-colors text-sm flex items-center gap-2 border border-[var(--color-border)]">
+                    <button onClick={handleBackup} className="py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center gap-2 border border-[var(--color-border)]">
                         <Download className="w-4 h-4" /> 프롬프트 백업
                     </button>
-                    <button onClick={handleImportClick} className="py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-secondary)] rounded-lg transition-colors text-sm flex items-center gap-2 border border-[var(--color-border)]">
+                    <button onClick={handleImportClick} className="py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center gap-2 border border-[var(--color-border)]">
                         <Upload className="w-4 h-4" /> 프롬프트 불러오기
                     </button>
                     <div className="flex-grow"></div>
-                    <button onClick={onClose} className="py-2.5 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-secondary)] rounded-lg transition-colors">취소</button>
-                    <button onClick={handleSave} className="py-2.5 px-4 bg-blue-500 hover:bg-blue-600 text-[var(--color-text-accent)] rounded-lg transition-colors">저장</button>
+                    <button onClick={onClose} className="py-2.5 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors">취소</button>
+                    <button onClick={handleSave} className="py-2.5 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors">저장</button>
                 </div>
             </div>
         </div>

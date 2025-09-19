@@ -45,7 +45,7 @@ export const UrlPreview: React.FC<UrlPreviewProps> = ({ url }) => {
     const siteUrl = ogData.og?.requestUrl || ogData.fetch?.url || url;
 
     return (
-        <div className="mt-2 p-3 border border-gray-300 rounded-lg bg-[var(--color-bg-main)] hover:bg-[var(--color-bg-secondary)] transition-colors max-w-md cursor-pointer" onClick={() => window.open(siteUrl, '_blank')}>
+        <div className="mt-2 p-3 border border-[var(--color-border-strong)] rounded-lg bg-[var(--color-bg-main)] hover:bg-[var(--color-bg-secondary)] transition-colors max-w-md cursor-pointer" onClick={() => window.open(siteUrl, '_blank')}>
             {image && !imageError && (
                 <img
                     src={image.startsWith('//') ? `https:${image}` : image}
@@ -56,8 +56,8 @@ export const UrlPreview: React.FC<UrlPreviewProps> = ({ url }) => {
             )}
             <div className="text-sm">
                 {title && <div className="font-semibold text-[var(--color-text-primary)] mb-1">{title}</div>}
-                {description && <div className="text-[var(--color-text-quaternary)] line-clamp-2">{description}</div>}
-                <div className="text-[var(--color-text-tertiary)] text-xs mt-1 truncate">{siteUrl}</div>
+                {description && <div className="text-[var(--color-text-tertiary)] line-clamp-2">{description}</div>}
+                <div className="text-[var(--color-text-secondary)] text-xs mt-1 truncate">{siteUrl}</div>
             </div>
         </div>
     );

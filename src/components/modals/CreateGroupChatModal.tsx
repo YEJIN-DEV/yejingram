@@ -77,17 +77,17 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 120px)' }}>
                     <div>
-                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">그룹 채팅 이름</label>
+                        <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">그룹 채팅 이름</label>
                         <input
                             type="text"
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
                             placeholder="그룹 채팅 이름을 입력하세요"
-                            className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
+                            className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:border-[var(--color-focus-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:outline-none"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">캐릭터 초대</label>
+                        <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">캐릭터 초대</label>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
                             {characters.map((char: Character) => (
                                 <label key={char.id} className="flex items-center p-3 bg-[var(--color-bg-input-secondary)] rounded-xl hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors border border-[var(--color-border-secondary)]">
@@ -96,7 +96,7 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                                         value={char.id}
                                         checked={selectedParticipantIds.includes(char.id)}
                                         onChange={() => handleParticipantSelect(char.id)}
-                                        className="group-chat-participant mr-3 text-[var(--color-icon-accent-secondary)] bg-[var(--color-bg-main)] border-gray-300 rounded focus:ring-blue-500"
+                                        className="group-chat-participant mr-3 text-[var(--color-button-primary-accent)] bg-[var(--color-bg-main)] border-[var(--color-border-strong)] rounded focus:ring-[var(--color-focus-border)]"
                                     />
                                     <div className="flex items-center gap-3 flex-1">
                                         <Avatar char={char} size="md" />
@@ -114,10 +114,10 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                     <button onClick={() => {
                         initializeState();
                         onClose();
-                    }} className="flex-1 py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-secondary)] rounded-xl transition-colors font-medium">
+                    }} className="flex-1 py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-xl transition-colors font-medium">
                         취소
                     </button>
-                    <button onClick={handleCreateGroupChat} className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-[var(--color-text-accent)] rounded-xl transition-colors disabled:bg-gray-300 disabled:text-[var(--color-icon-tertiary)] font-medium" disabled={!groupName.trim() || selectedParticipantIds.length < 1}>
+                    <button onClick={handleCreateGroupChat} className="flex-1 py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-xl transition-colors disabled:bg-[var(--color-button-disabled)] disabled:text-[var(--color-icon-tertiary)] font-medium" disabled={!groupName.trim() || selectedParticipantIds.length < 1}>
                         만들기
                     </button>
                 </div>

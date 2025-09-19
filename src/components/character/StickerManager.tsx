@@ -22,7 +22,7 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
     const character = draft && draft.id === characterId ? draft : characterFromStore;
     if (!character) {
         return (
-            <div className="content-inner pt-4 space-y-4 text-sm text-gray-400">
+            <div className="content-inner pt-4 space-y-4 text-sm text-[var(--color-text-informative-secondary)]">
                 선택된 캐릭터가 없습니다.
             </div>
         );
@@ -108,7 +108,7 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
         <div className="content-inner pt-4 space-y-4">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                    <button onClick={handleAddStickerClick} className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center justify-center gap-1">
+                    <button onClick={handleAddStickerClick} className="py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center justify-center gap-1">
                         <Plus className="w-4 h-4" />
                         <span className="text-xs">스티커<br />추가</span>
                     </button>
@@ -116,12 +116,12 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
                 </div>
                 {stickers.length > 0 && (
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setSelectionMode(!selectionMode)} className="py-2 px-3 bg-gray-700 hover:bg-gray-600 text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center gap-1">
+                        <button onClick={() => setSelectionMode(!selectionMode)} className="py-2 px-3 bg-[var(--color-button-neutral)] hover:bg-[var(--color-button-neutral-hover)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center gap-1">
                             <CheckSquare className="w-4 h-4" />
                             <span className="text-xs">선택<br />{selectionMode ? '해제' : '모드'}</span>
                         </button>
                         {selectionMode && (
-                            <button onClick={selectAll} className="py-2 px-3 bg-blue-600 hover:bg-blue-700 text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center gap-1">
+                            <button onClick={selectAll} className="py-2 px-3 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center gap-1">
                                 <CheckCircle className="w-4 h-4" />
                                 <span className="text-xs">전체<br />선택</span>
                             </button>
@@ -133,23 +133,23 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
                     </div>
                 )}
             </div>
-            <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+            <div className="flex items-center justify-between text-xs text-[var(--color-text-informative-secondary)] mb-3">
                 <span>jpg, gif, png, bmp, webp 지원</span>
                 <span>스티커 개수: {stickers.length}개</span>
             </div>
             <div id="sticker-container" className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2">
                 {stickers.map(sticker => (
-                    <div key={sticker.id} className="relative group aspect-square bg-gray-800 rounded-lg overflow-hidden">
+                    <div key={sticker.id} className="relative group aspect-square bg-[var(--color-bg-shadow)]/20 rounded-lg overflow-hidden">
                         <img src={sticker.data} alt={sticker.name} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-[var(--color-bg-shadow)]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             {selectionMode ? (
                                 <button onClick={() => toggleSelection(sticker.id)} className="w-full h-full flex items-center justify-center">
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${selectedStickers.includes(sticker.id) ? 'bg-blue-500' : 'bg-gray-900/50'}`}>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${selectedStickers.includes(sticker.id) ? 'bg-[var(--color-button-primary)]' : 'bg-[var(--color-button-tertiary)]/50'}`}>
                                         <CheckCircle className="w-4 h-4 text-[var(--color-text-accent)]" />
                                     </div>
                                 </button>
                             ) : (
-                                <button onClick={() => handleEditName(sticker.id, sticker.name)} className="p-2 bg-gray-900/50 rounded-full text-[var(--color-text-accent)] hover:bg-blue-600">
+                                <button onClick={() => handleEditName(sticker.id, sticker.name)} className="p-2 bg-[var(--color-button-tertiary)]/50 rounded-full text-[var(--color-text-accent)] hover:bg-[var(--color-button-primary-accent)]">
                                     <Edit3 className="w-4 h-4" />
                                 </button>
                             )}
@@ -160,7 +160,7 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
                     </div>
                 ))}
                 {stickers.length === 0 && (
-                    <div className="col-span-full text-center text-gray-400 text-sm py-8">
+                    <div className="col-span-full text-center text-[var(--color-text-informative-secondary)] text-sm py-8">
                         <p>아직 스티커가 없습니다.</p>
                         <p className="text-xs mt-1">스티커 추가 버튼을 눌러 추가해보세요.</p>
                     </div>

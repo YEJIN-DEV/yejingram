@@ -125,8 +125,8 @@ function App() {
                   <div className="w-24 h-24 bg-[var(--color-button-secondary-accent)] rounded-full flex items-center justify-center mx-auto mb-4">
                     <MessageCircle className="w-12 h-12 text-[var(--color-icon-secondary)]" />
                   </div>
-                  <h2 className="text-xl font-semibold text-[var(--color-text-title)] mb-2">메시지를 보내세요</h2>
-                  <p className="text-[var(--color-text-tertiary)]">친구나 그룹과 개인 사진 및 메시지를 공유하세요.</p>
+                  <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">메시지를 보내세요</h2>
+                  <p className="text-[var(--color-text-secondary)]">친구나 그룹과 개인 사진 및 메시지를 공유하세요.</p>
                 </div>
               </div>
             ) : (
