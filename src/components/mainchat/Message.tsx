@@ -168,33 +168,56 @@ const MessageList: React.FC<MessageListProps> = ({
             animatedMessageIds.current.add(msg.id.toString());
           }
 
-          // Placeholder for message content rendering
           const renderMessageContent = () => {
             if (editingMessageId === msg.id) { // Use msg.id for editing
-              // Editing state - Instagram DM Style
+              // Editing state - Enhanced Instagram DM Style
               return (
-                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  <textarea
-                    data-id={msg.id.toString()}
-                    className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 focus:scale-105"
-                    rows={5}
-                    defaultValue={msg.content || ''}
-                  ></textarea>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <button onClick={() => {
-                      setEditingMessageId(null);
-                    }} data-id={msg.id.toString()} className="cancel-edit-btn text-sm text-gray-500 hover:text-gray-700 bg-gray-100 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105 hover:bg-gray-200" >취소</button>
-                    <button onClick={() => {
-                      const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
-                      if (textarea) {
-                        const newContent = textarea.value;
-                        dispatch(messagesActions.updateOne({
-                          id: msg.id,
-                          changes: { content: newContent }
-                        }));
-                        setEditingMessageId(null);
-                      }
-                    }} data-id={msg.id.toString()} className="save-edit-btn text-sm text-white bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105">저장</button>
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-3`}>
+                  <div className="relative w-full">
+                    <textarea
+                      data-id={msg.id.toString()}
+                      className="edit-message-textarea w-full px-5 py-4 bg-white text-gray-900 rounded-3xl border-2 border-gray-200 focus:ring-0 focus:border-blue-400 text-base resize-none min-h-32 md:min-h-36 transition-all duration-300 shadow-lg hover:shadow-xl placeholder-gray-400"
+                      rows={4}
+                      defaultValue={msg.content || ''}
+                      placeholder="메시지를 입력하세요..."
+                      autoFocus
+                    ></textarea>
+                    <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                      Enter로 줄바꿈
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="text-xs text-gray-500">
+                      메시지 편집 중...
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => {
+                          setEditingMessageId(null);
+                        }}
+                        data-id={msg.id.toString()}
+                        className="cancel-edit-btn text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-5 py-2.5 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 border border-gray-200"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={() => {
+                          const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
+                          if (textarea) {
+                            const newContent = textarea.value;
+                            dispatch(messagesActions.updateOne({
+                              id: msg.id,
+                              changes: { content: newContent }
+                            }));
+                            setEditingMessageId(null);
+                          }
+                        }}
+                        data-id={msg.id.toString()}
+                        className="save-edit-btn text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-6 py-2.5 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                      >
+                        저장
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -299,83 +322,85 @@ const MessageList: React.FC<MessageListProps> = ({
                         </div>
 
                         {/* Message controls - Instagram DM style */}
-                        <div className={`absolute ${isMe ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex items-center space-x-1 opacity-0 group-hover/message:opacity-100 transition-all duration-300 transform ${isMe ? 'translate-x-2' : '-translate-x-2'} group-hover/message:translate-x-0`}>
-                          {msg.type === 'TEXT' && (
+                        {editingMessageId !== msg.id && (
+                          <div className={`absolute ${isMe ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex items-center space-x-1 opacity-0 group-hover/message:opacity-100 transition-all duration-300 transform ${isMe ? 'translate-x-2' : '-translate-x-2'} group-hover/message:translate-x-0`}>
+                            {msg.type === 'TEXT' && (
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={() => { setEditingMessageId(msg.id) }}
+                                className="edit-msg-btn p-2 text-gray-400 hover:text-gray-600 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
+                                aria-label="메시지 편집"
+                                title="편집"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            )}
+
                             <button
                               data-id={msg.id.toString()}
-                              onClick={() => { setEditingMessageId(msg.id) }}
-                              className="edit-msg-btn p-2 text-gray-400 hover:text-gray-600 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
-                              aria-label="메시지 편집"
-                              title="편집"
+                              onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
+                              className="delete-msg-btn p-2 text-gray-400 hover:text-red-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
+                              aria-label="메시지 삭제"
+                              title="삭제"
                             >
-                              <Edit3 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
-                          )}
 
-                          <button
-                            data-id={msg.id.toString()}
-                            onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
-                            className="delete-msg-btn p-2 text-gray-400 hover:text-red-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
-                            aria-label="메시지 삭제"
-                            title="삭제"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                            {!isMe && i === messages.length - 1 && !isWaitingForResponse && (
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={() => {
+                                  console.log('Reroll message', msg.id)
+                                  dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
+                                  setIsWaitingForResponse(true);
+                                  SendMessage(room, setTypingCharacterId)
+                                    .finally(() => {
+                                      setIsWaitingForResponse(false);
+                                    });
+                                }}
+                                className="reroll-msg-btn p-2 text-gray-400 hover:text-blue-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
+                                aria-label="다시 생성"
+                                title="다시 생성"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </button>
+                            )}
 
-                          {!isMe && i === messages.length - 1 && !isWaitingForResponse && (
-                            <button
-                              data-id={msg.id.toString()}
-                              onClick={() => {
-                                console.log('Reroll message', msg.id)
-                                dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
-                                setIsWaitingForResponse(true);
-                                SendMessage(room, setTypingCharacterId)
-                                  .finally(() => {
-                                    setIsWaitingForResponse(false);
-                                  });
-                              }}
-                              className="reroll-msg-btn p-2 text-gray-400 hover:text-blue-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
-                              aria-label="다시 생성"
-                              title="다시 생성"
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                            </button>
-                          )}
-
-                          {!isMe && msg.type === 'IMAGE' && msg.imageGenerationSetting && (
-                            <button
-                              data-id={msg.id.toString()}
-                              onClick={async () => {
-                                const char = allCharacters.find(c => c.id === msg.authorId);
-                                if (!char) return;
-                                try {
-                                  const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
-                                  const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
-                                  if (inlineDataBody) {
-                                    const newDataUrl = `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`;
-                                    dispatch(messagesActions.updateOne({
-                                      id: msg.id,
-                                      changes: {
-                                        file: {
-                                          ...msg.file,
-                                          dataUrl: newDataUrl,
-                                          mimeType: inlineDataBody.mimeType
+                            {!isMe && msg.type === 'IMAGE' && msg.imageGenerationSetting && (
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={async () => {
+                                  const char = allCharacters.find(c => c.id === msg.authorId);
+                                  if (!char) return;
+                                  try {
+                                    const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
+                                    const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+                                    if (inlineDataBody) {
+                                      const newDataUrl = `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`;
+                                      dispatch(messagesActions.updateOne({
+                                        id: msg.id,
+                                        changes: {
+                                          file: {
+                                            ...msg.file,
+                                            dataUrl: newDataUrl,
+                                            mimeType: inlineDataBody.mimeType
+                                          }
                                         }
-                                      }
-                                    }));
+                                      }));
+                                    }
+                                  } catch (error) {
+                                    console.error('Image reroll failed:', error);
                                   }
-                                } catch (error) {
-                                  console.error('Image reroll failed:', error);
-                                }
-                              }}
-                              className="reroll-image-btn p-2 text-gray-400 hover:text-green-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
-                              aria-label="이미지 다시 생성"
-                              title="이미지 다시 생성"
-                            >
-                              <RotateCwSquare className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
+                                }}
+                                className="reroll-image-btn p-2 text-gray-400 hover:text-green-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
+                                aria-label="이미지 다시 생성"
+                                title="이미지 다시 생성"
+                              >
+                                <RotateCwSquare className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Timestamp and read status */}
