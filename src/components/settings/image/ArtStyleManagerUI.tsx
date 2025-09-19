@@ -235,7 +235,7 @@ export default function ArtStyleList() {
                         artStyles.map((artStyle) => (
                             <div
                                 key={artStyle.id}
-                                className={`p-3 rounded-lg border transition-colors cursor-pointer ${selectedId === artStyle.id
+                                className={`p-3 rounded-lg border transition-colors cursor-pointer max-h-32 overflow-hidden ${selectedId === artStyle.id
                                     ? 'border-blue-500 bg-blue-50'
                                     : 'border-gray-200 hover:bg-gray-50'
                                     }`}
@@ -259,12 +259,12 @@ export default function ArtStyleList() {
                                             </p>
                                         )}
                                         {artStyle.positivePrompt && (
-                                            <p className="text-xs mt-1 font-mono truncate text-gray-400">
+                                            <p className="text-xs mt-1 line-clamp-1 text-gray-400">
                                                 {artStyle.positivePrompt}
                                             </p>
                                         )}
                                         {artStyle.negativePrompt && (
-                                            <p className="text-xs mt-1 font-mono truncate text-red-400">
+                                            <p className="text-xs mt-1 line-clamp-1 text-red-400">
                                                 Neg: {artStyle.negativePrompt}
                                             </p>
                                         )}
