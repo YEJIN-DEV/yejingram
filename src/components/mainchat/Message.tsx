@@ -104,6 +104,8 @@ const MessageList: React.FC<MessageListProps> = ({
   const animatedMessageIds = useRef(new Set<string>());
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [expandedStickers, setExpandedStickers] = useState<Set<string>>(new Set());
+  const [imageModalOpen, setImageModalOpen] = useState<boolean>(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
   const innerRef = useRef<HTMLDivElement>(null);
 
   const toggleStickerSize = useCallback((messageId: string) => {
@@ -123,6 +125,23 @@ const MessageList: React.FC<MessageListProps> = ({
     // This effect might be more complex if actual animation triggers are needed
     // For now, just ensuring the ref is cleared or managed
   }, [messages]);
+
+  // Effect to handle ESC key for image modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && imageModalOpen) {
+        setImageModalOpen(false);
+      }
+    };
+
+    if (imageModalOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [imageModalOpen]);
 
 
   return (
@@ -241,7 +260,17 @@ const MessageList: React.FC<MessageListProps> = ({
             } else if ((msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.type === 'VIDEO' || msg.type === 'FILE') && msg.file?.dataUrl) {
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
-                  {renderFile(msg.file, false)}
+                  <div
+                    onClick={() => {
+                      if (msg.type === 'IMAGE' && msg.file?.dataUrl) {
+                        setSelectedImageUrl(msg.file.dataUrl);
+                        setImageModalOpen(true);
+                      }
+                    }}
+                    className={msg.type === 'IMAGE' ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}
+                  >
+                    {renderFile(msg.file, false)}
+                  </div>
                 </div>
               );
             } else if (msg.type === 'TEXT') {
@@ -440,6 +469,32 @@ const MessageList: React.FC<MessageListProps> = ({
           </div>
         )}
       </div>
+
+      {/* Image Modal */}
+      {imageModalOpen && selectedImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black animate-fadeIn"
+          onClick={() => setImageModalOpen(false)}
+        >
+          <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center">
+            <img
+              src={selectedImageUrl}
+              alt="확대된 이미지"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-scaleIn"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setImageModalOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-black opacity-50 text-white rounded-full hover:opacity-70 transition-all duration-200"
+              aria-label="이미지 닫기"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };

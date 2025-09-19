@@ -212,3 +212,19 @@ details .content-wrapper {
   display: none;
   /* Chrome, Safari and Opera */
 }
+
+/* 이미지 모달 애니메이션 */
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
