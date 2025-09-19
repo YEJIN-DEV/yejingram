@@ -3,8 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
 import type { Message as MessageType } from '../../entities/message/types';
-// Lucide Icons
-import { Calendar, Edit3, Trash2, RefreshCw } from 'lucide-react';
+import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare } from 'lucide-react';
 import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
@@ -14,6 +13,7 @@ import type { Room } from '../../entities/room/types';
 import { inviteCharacter } from '../../utils/inviteCharacter';
 import { UrlPreview } from './chatcontents/UrlPreviewProps';
 import { renderFile } from './FilePreview';
+import { callImageGeneration } from '../../services/image/ImageCaller';
 
 // Helper function for date formatting
 const formatDateSeparator = (date: Date): string => {
@@ -339,6 +339,40 @@ const MessageList: React.FC<MessageListProps> = ({
                               title="다시 생성"
                             >
                               <RefreshCw className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {!isMe && msg.type === 'IMAGE' && msg.imageGenerationSetting && (
+                            <button
+                              data-id={msg.id.toString()}
+                              onClick={async () => {
+                                const char = allCharacters.find(c => c.id === msg.authorId);
+                                if (!char) return;
+                                try {
+                                  const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
+                                  const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+                                  if (inlineDataBody) {
+                                    const newDataUrl = `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`;
+                                    dispatch(messagesActions.updateOne({
+                                      id: msg.id,
+                                      changes: {
+                                        file: {
+                                          ...msg.file,
+                                          dataUrl: newDataUrl,
+                                          mimeType: inlineDataBody.mimeType
+                                        }
+                                      }
+                                    }));
+                                  }
+                                } catch (error) {
+                                  console.error('Image reroll failed:', error);
+                                }
+                              }}
+                              className="reroll-image-btn p-2 text-gray-400 hover:text-green-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
+                              aria-label="이미지 다시 생성"
+                              title="이미지 다시 생성"
+                            >
+                              <RotateCwSquare className="w-4 h-4" />
                             </button>
                           )}
                         </div>

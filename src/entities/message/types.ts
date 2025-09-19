@@ -16,7 +16,7 @@ export type Message = {
     leaveCharId?: number;
 } & (
         | { type: "TEXT"; content: string; sticker?: never; file?: never }
-        | { type: "IMAGE"; content?: never; sticker?: never; file: FileToSend }
+        | { type: "IMAGE"; content?: never; sticker?: never; file: FileToSend; imageGenerationSetting?: { prompt: string; isSelfie: boolean } }
         | { type: "STICKER"; content?: never; sticker: Sticker; file?: never }
         | { type: "SYSTEM"; content?: string; sticker?: never; file?: never }
         | { type: "AUDIO"; content?: never; sticker?: never; file: FileToSend }

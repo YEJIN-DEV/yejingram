@@ -118,7 +118,8 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
                     dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`,
                     mimeType: inlineDataBody.mimeType,
                     name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
-                }
+                },
+                imageGenerationSetting: messagePart.imageGenerationSetting
             });
         } else {
             throw new Error('이미지 생성에 실패했습니다:', imageResponse.candidates[0].finishReason ?? '');
