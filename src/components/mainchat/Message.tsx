@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
 import type { Message as MessageType } from '../../entities/message/types';
-import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare } from 'lucide-react';
+import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare, Loader2 } from 'lucide-react';
 import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
@@ -106,6 +106,7 @@ const MessageList: React.FC<MessageListProps> = ({
   const [expandedStickers, setExpandedStickers] = useState<Set<string>>(new Set());
   const [imageModalOpen, setImageModalOpen] = useState<boolean>(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  const [regeneratingImageIds, setRegeneratingImageIds] = useState<Set<string>>(new Set());
   const innerRef = useRef<HTMLDivElement>(null);
 
   const toggleStickerSize = useCallback((messageId: string) => {
@@ -258,18 +259,27 @@ const MessageList: React.FC<MessageListProps> = ({
                 </div>
               );
             } else if ((msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.type === 'VIDEO' || msg.type === 'FILE') && msg.file?.dataUrl) {
+              const isRegenerating = regeneratingImageIds.has(msg.id.toString());
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
                   <div
                     onClick={() => {
-                      if (msg.type === 'IMAGE' && msg.file?.dataUrl) {
+                      if (msg.type === 'IMAGE' && msg.file?.dataUrl && !isRegenerating) {
                         setSelectedImageUrl(msg.file.dataUrl);
                         setImageModalOpen(true);
                       }
                     }}
-                    className={msg.type === 'IMAGE' ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}
+                    className={`relative ${msg.type === 'IMAGE' && !isRegenerating ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
                   >
                     {renderFile(msg.file, false)}
+                    {isRegenerating && (
+                      <div className="absolute inset-0 bg-black opacity-50 flex items-center justify-center rounded-lg">
+                        <div className="flex flex-col items-center text-white">
+                          <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                          <span className="text-sm font-medium">이미지 재생성 중...</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -401,6 +411,10 @@ const MessageList: React.FC<MessageListProps> = ({
                                 onClick={async () => {
                                   const char = allCharacters.find(c => c.id === msg.authorId);
                                   if (!char) return;
+
+                                  const messageId = msg.id.toString();
+                                  setRegeneratingImageIds(prev => new Set([...prev, messageId]));
+
                                   try {
                                     const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
                                     const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
@@ -419,13 +433,27 @@ const MessageList: React.FC<MessageListProps> = ({
                                     }
                                   } catch (error) {
                                     console.error('Image reroll failed:', error);
+                                  } finally {
+                                    setRegeneratingImageIds(prev => {
+                                      const newSet = new Set(prev);
+                                      newSet.delete(messageId);
+                                      return newSet;
+                                    });
                                   }
                                 }}
-                                className="reroll-image-btn p-2 text-gray-400 hover:text-green-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
+                                disabled={regeneratingImageIds.has(msg.id.toString())}
+                                className={`reroll-image-btn p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180 ${regeneratingImageIds.has(msg.id.toString())
+                                  ? 'text-gray-300 cursor-not-allowed'
+                                  : 'text-gray-400 hover:text-green-500'
+                                  }`}
                                 aria-label="이미지 다시 생성"
-                                title="이미지 다시 생성"
+                                title={regeneratingImageIds.has(msg.id.toString()) ? "이미지 재생성 중..." : "이미지 다시 생성"}
                               >
-                                <RotateCwSquare className="w-4 h-4" />
+                                {regeneratingImageIds.has(msg.id.toString()) ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <RotateCwSquare className="w-4 h-4" />
+                                )}
                               </button>
                             )}
                           </div>
