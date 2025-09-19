@@ -7,7 +7,6 @@ import PromptModal from './components/settings/PromptModal'
 import CharacterPanel from './components/character/CharacterPanel'
 import CreateGroupChatModal from './components/modals/CreateGroupChatModal'
 import EditGroupChatModal from './components/modals/EditGroupChatModal'
-import { MessageCircle, Menu } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { selectEditingCharacterId } from './entities/character/selectors'
@@ -51,79 +50,46 @@ function App() {
     setIsCharacterPanelOpen(!isCharacterPanelOpen);
   };
 
+  const Backdrop = ({ onClick, className }: { onClick: () => void; className?: string; }) => (
+    <div onClick={onClick} className={`fixed inset-0 ${className}`} />
+  );
+
+
   return (
     <>
-      <div id="app" className="relative flex h-dvh overflow-hidden bg-white">
-        {/* Instagram DM Style Layout */}
-        <div className="flex w-full h-full">
-          {/* Left Sidebar - Chat List (Instagram DM Style) */}
-          <aside id="sidebar"
-            className={`${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-              } md:translate-x-0 fixed md:relative inset-y-0 left-0 z-30 w-full md:w-96 lg:w-[400px] bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out`}>
+      <div id="app" className="relative flex overflow-hidden bg-white w-full h-dvh">
+        {/* Left Sidebar */}
 
-            <div id="sidebar-content" className="flex h-full flex-col">
-              <Sidebar
-                setRoomId={(id) => { setRoomId(id); setIsMobileSidebarOpen(false); }}
-                roomId={roomId}
-                openSettingsModal={() => setIsSettingsPanelOpen(true)}
-                toggleCharacterPanel={toggleCharacterPanel}
-                openCreateGroupChatModal={() => setIsCreateGroupChatModalOpen(true)}
-                openEditGroupChatModal={() => setIsEditGroupChatModalOpen(true)}
-                onCloseMobile={() => setIsMobileSidebarOpen(false)}
-              />
-            </div>
-          </aside>
+        <Sidebar
+          roomId={roomId}
+          isMobileSidebarOpen={isMobileSidebarOpen}
+          setRoomId={(id) => { setRoomId(id); setIsMobileSidebarOpen(false); }}
+          openSettingsModal={() => setIsSettingsPanelOpen(true)}
+          toggleCharacterPanel={toggleCharacterPanel}
+          openCreateGroupChatModal={() => setIsCreateGroupChatModalOpen(true)}
+          openEditGroupChatModal={() => setIsEditGroupChatModalOpen(true)}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        />
 
-          {/* Settings Panel - Next to sidebar */}
-          {isSettingsPanelOpen && (
-            <>
-              <div className="fixed md:relative top-0 bottom-0 z-40 min-w-fit max-w-lg left-0 md:left-auto bg-white border-r border-gray-200">
-                <SettingsPanel
-                  openPromptModal={() => setIsPromptModalOpen(true)}
-                  onClose={() => setIsSettingsPanelOpen(false)}
-                />
-              </div>
-              {/* Settings Panel Backdrop (mobile only) */}
-              <div
-                onClick={() => setIsSettingsPanelOpen(false)}
-                className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm md:hidden"
-              />
-            </>
-          )}
+        {/* Settings Panel - Next to sidebar */}
+        {isSettingsPanelOpen && (
+          <>
+            <SettingsPanel
+              openPromptModal={() => setIsPromptModalOpen(true)}
+              onClose={() => setIsSettingsPanelOpen(false)}
+            />
+            {/* Settings Panel Backdrop (mobile only) */}
+            <Backdrop onClick={() => setIsSettingsPanelOpen(false)} className="z-30 bg-black/20 backdrop-blur-sm md:hidden" />
+          </>
+        )}
 
-          {/* Character Panel - Floating on right side */}
-          {isCharacterPanelOpen && (
-            <div className="fixed right-0 top-0 bottom-0 z-40 w-96">
-              <CharacterPanel onClose={() => setIsCharacterPanelOpen(false)} />
-            </div>
-          )}
+        {/* Character Panel - Floating on right side */}
+        {isCharacterPanelOpen && (
+          <CharacterPanel onClose={() => setIsCharacterPanelOpen(false)} />
+        )}
 
-          {/* Main Chat Area */}
-          <main id="main-chat"
-            className={`flex-1 flex flex-col bg-white ${isMobileSidebarOpen ? 'hidden md:flex' : 'flex'}`}>
-            {!room ? (
-              <div className="flex-1 flex items-center justify-center bg-gray-50 relative">
-                {/* Mobile: Sidebar toggle button (when no room selected) */}
-                <button
-                  id="mobile-sidebar-toggle"
-                  className="absolute top-4 left-4 p-2 rounded-full hover:bg-gray-100 md:hidden"
-                  onClick={toggleMobileSidebar}
-                >
-                  <Menu className="h-5 w-5 text-gray-600" />
-                </button>
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MessageCircle className="w-12 h-12 text-gray-400" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">메시지를 보내세요</h2>
-                  <p className="text-gray-500">친구나 그룹과 개인 사진 및 메시지를 공유하세요.</p>
-                </div>
-              </div>
-            ) : (
-              <MainChat room={room} onToggleMobileSidebar={toggleMobileSidebar} onToggleCharacterPanel={toggleCharacterPanel} onToggleGroupchatSettings={() => setIsEditGroupChatModalOpen(true)} />
-            )}
-          </main>
-        </div>
+        {/* Main Chat Area */}
+        <MainChat room={room} isMobileSidebarOpen={isMobileSidebarOpen} onToggleMobileSidebar={toggleMobileSidebar} onToggleCharacterPanel={toggleCharacterPanel} onToggleGroupchatSettings={() => setIsEditGroupChatModalOpen(true)} />
 
         {/* Global Modals (rendered above sidebar/main) */}
         <PromptModal
@@ -140,11 +106,9 @@ function App() {
         />
 
         {/* Mobile Sidebar Backdrop */}
-        <div
-          id="sidebar-backdrop"
-          onClick={() => setIsMobileSidebarOpen(false)}
-          className={`fixed inset-0 z-20 bg-black/50 md:hidden ${isMobileSidebarOpen ? 'block' : 'hidden'}`}
-        />
+        {isMobileSidebarOpen && (
+          <Backdrop onClick={() => setIsMobileSidebarOpen(false)} className="z-20 bg-black/50 md:hidden" />
+        )}
       </div>
       <Toaster
         position="top-right"

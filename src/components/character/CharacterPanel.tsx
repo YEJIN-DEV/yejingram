@@ -187,7 +187,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
     };
 
     return (
-        <div className="fixed inset-y-0 right-0 z-40 w-96 max-w-full bg-white border-l border-gray-200 shadow-xl flex flex-col">
+        <div className="fixed right-0 top-0 bottom-0 z-40 w-96 max-w-full bg-white border-l border-gray-200 shadow-xl flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 shrink-0">
                 <h3 className="text-xl font-semibold text-gray-900">{isNew ? '연락처 추가' : '연락처 수정'}</h3>
             </div>

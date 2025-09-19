@@ -9,8 +9,9 @@ import GroupChatList from './GroupChatList';
 import type { Room } from '../../entities/room/types';
 
 interface SidebarProps {
-    setRoomId: (id: string | null) => void;
     roomId: string | null;
+    isMobileSidebarOpen: boolean;
+    setRoomId: (id: string | null) => void;
     openSettingsModal: () => void;
     toggleCharacterPanel: () => void;
     openCreateGroupChatModal: () => void;
@@ -18,7 +19,7 @@ interface SidebarProps {
     onCloseMobile?: () => void;
 }
 
-function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, openCreateGroupChatModal, openEditGroupChatModal, onCloseMobile }: SidebarProps) {
+function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, toggleCharacterPanel, openCreateGroupChatModal, openEditGroupChatModal, onCloseMobile }: SidebarProps) {
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const rooms = useSelector(selectAllRooms);
@@ -36,7 +37,7 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
     }
 
     return (
-        <>
+        <div className={`flex h-full flex-col ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative inset-y-0 left-0 z-30 w-full md:w-96 lg:w-[400px] bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out`}>
             {/* Instagram DM Style Header */}
             <header className="p-4 border-b border-gray-100 bg-white">
                 <div className="flex items-center justify-between mb-4">
@@ -129,7 +130,7 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
                     ))}
                 </div>
             </div>
-        </>
+        </div>
     );
 }
 

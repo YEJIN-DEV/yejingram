@@ -26,12 +26,13 @@ import { renderFile } from './FilePreview';
 
 interface MainChatProps {
   room: Room | null;
+  isMobileSidebarOpen: boolean;
   onToggleMobileSidebar: () => void;
   onToggleCharacterPanel: () => void;
   onToggleGroupchatSettings: () => void;
 }
 
-function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggleGroupchatSettings }: MainChatProps) {
+function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCharacterPanel, onToggleGroupchatSettings }: MainChatProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [typingCharacterId, setTypingCharacterId] = useState<number | null>(null);
@@ -325,7 +326,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
   }
   else {
     return (
-      <>
+      <div className={`flex-1 flex flex-col bg-white ${isMobileSidebarOpen ? 'hidden md:flex' : 'flex'}`}>
         <AuthorNoteModal
           open={isAuthorNoteOpen}
           onClose={() => setIsAuthorNoteOpen(false)}
@@ -407,7 +408,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
             }
           />
         </div>
-      </>
+      </div>
     );
   }
 }
