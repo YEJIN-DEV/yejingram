@@ -13,7 +13,7 @@ import { Avatar, GroupChatAvatar } from '../../utils/Avatar';
 import { SendMessage, SendGroupChatMessage } from '../../services/llm/LLMcaller';
 import type { Sticker } from '../../entities/character/types';
 import { StickerPanel } from './StickerPanel';
-import type { FileToSend } from '../../entities/message/types';
+import type { FileToSend, Message } from '../../entities/message/types';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import { replacePlaceholders } from '../../utils/placeholder';
 import { nanoid } from '@reduxjs/toolkit';
@@ -238,26 +238,30 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
     const processedText = text ? replacePlaceholders(text, { user: currentUserName, char: currentCharName }) : null;
 
     // Construct userMessage to match the Message type's discriminated union
-    const userMessage: any = {
+    const userMessage: Message[] = [{
       id: nanoid(),
       roomId: room.id,
       authorId: 0, // Assuming current user ID is '0'
       createdAt: new Date().toISOString(),
-      type: messageType,
-    };
+    } as Message];
 
     if (messageType === 'TEXT') {
-      userMessage.content = processedText || ''; // Ensure content is a string for TEXT type
+      userMessage[0] = { ...userMessage[0], type: 'TEXT', content: processedText || '' } as Message; // Ensure content is a string for TEXT type
     } else if (messageType === 'STICKER') {
-      userMessage.content = processedText; // Optional for STICKER
-      userMessage.sticker = stickerToSend;
+      if (!stickerToSend) { console.error('No sticker to send'); return; }
+      userMessage.push(userMessage[0]);
+      userMessage[0] = { ...userMessage[0], type: 'STICKER', sticker: stickerToSend } as Message;
+      userMessage[1] = { ...userMessage[1], id: nanoid(), type: 'TEXT', content: processedText || '' } as Message;
     } else if (['IMAGE', 'AUDIO', 'VIDEO', 'FILE'].includes(messageType)) {
-      userMessage.content = processedText; // Optional for file types
-      userMessage.file = fileToSend ? { dataUrl: fileToSend.dataUrl, mimeType: fileToSend.mimeType, name: fileToSend.name || '' } : undefined; // Ensure name is a string
+      userMessage.push(userMessage[0]);
+      userMessage[0] = { ...userMessage[0], type: messageType as Message['type'], file: fileToSend! } as Message;
+      userMessage[1] = { ...userMessage[1], id: nanoid(), type: 'TEXT', content: processedText || '' } as Message;
     }
 
     // Immediately show user's message
-    dispatch(messagesActions.upsertOne(userMessage));
+    for (const msg of userMessage) {
+      dispatch(messagesActions.upsertOne(msg));
+    }
 
     // clear UI selection
     setStickerToSend(null);

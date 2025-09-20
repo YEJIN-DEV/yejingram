@@ -240,40 +240,72 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
 
     const contents: GeminiContent[] = [];
 
-    // Add messages
-    const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
-        const baseText = msg.content ? `${header}${msg.content}` : (header ? header : '');
-        const parts: ({ text: string; } | { inline_data: { mime_type: string; data: string; }; } | { file_data: { file_uri: string; }; })[] = [{ text: baseText }];
-        if (msg.file) {
-            const mimeType = msg.file.mimeType;
-            const dataUrl = msg.file.dataUrl;
-            const base64Data = dataUrl.split(',')[1];
-            if (mimeType && base64Data) {
-                parts.push({
-                    inline_data: {
-                        mime_type: mimeType,
-                        data: base64Data
-                    }
+    // Add messages with lookahead merge for next user TEXT message
+    const buildGeminiMessageContentsWithMerge = (
+        msgs: Message[],
+        personaLocal: Persona | null | undefined,
+        roomLocal: Room | null | undefined
+    ): GeminiContent[] => {
+        const result: GeminiContent[] = [];
+        const useSpeakerTag = roomLocal?.type !== 'Direct';
+
+        for (let i = 0; i < msgs.length; i++) {
+            const msg = msgs[i];
+            const role = msg.authorId === 0 ? 'user' : 'assistant';
+            const speaker = msg.authorId === 0
+                ? (personaLocal?.name || 'User')
+                : (selectCharacterById(store.getState(), msg.authorId)?.name || `Char#${msg.authorId}`);
+            const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
+
+            const baseText = msg.content ? `${header}${msg.content}` : (header ? header : '');
+            const parts: ({ text: string } | { inline_data: { mime_type: string; data: string } } | { file_data: { file_uri: string } })[] = [{ text: baseText }];
+
+            if (msg.file) {
+                const mimeType = msg.file.mimeType;
+                const dataUrl = msg.file.dataUrl;
+                const base64Data = dataUrl.split(',')[1];
+                if (mimeType && base64Data) {
+                    parts.push({
+                        inline_data: {
+                            mime_type: mimeType,
+                            data: base64Data,
+                        },
+                    });
+                }
+            }
+
+            // Check for YouTube links in content
+            const youtubeRegex = /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]+)/g;
+            const matches = msg.content?.match(youtubeRegex);
+            if (matches) {
+                matches.forEach((url) => {
+                    parts.push({
+                        file_data: {
+                            file_uri: url,
+                        },
+                    });
                 });
             }
+
+            if (msg.sticker) {
+                parts.push({ text: `${header}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
+            }
+
+            // Lookahead: if next message is from user(authorId=0) and TEXT, merge its content and skip it
+            const next = msgs[i + 1];
+            if (next && next.authorId === 0 && next.type === 'TEXT') {
+                if (next.content) {
+                    parts[0] = { text: next.content };
+                }
+                i++; // Skip the next message by advancing the loop index one extra time
+            }
+
+            result.push({ role: role === 'assistant' ? 'model' : 'user', parts });
         }
-        // Check for YouTube links in content
-        const youtubeRegex = /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]+)/g;
-        const matches = msg.content?.match(youtubeRegex);
-        if (matches) {
-            matches.forEach(url => {
-                parts.push({
-                    file_data: {
-                        file_uri: url
-                    }
-                });
-            });
-        }
-        if (msg.sticker) {
-            parts.push({ text: `${header}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
-        }
-        return { role: role === 'assistant' ? 'model' : 'user', parts };
-    });
+        return result;
+    };
+
+    const messageContents = buildGeminiMessageContentsWithMerge(messages, persona, currentRoom);
 
     for (const item of main) {
         if (item && item.role !== 'system' && item.content && item.content.trim().length > 0) {
