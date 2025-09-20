@@ -31,11 +31,28 @@ function App() {
 
   const editingCharacterId = useSelector(selectEditingCharacterId);
 
+  const [prefersDark, setPrefersDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && 'matchMedia' in window) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    return false
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('matchMedia' in window)) return
+    const mql = window.matchMedia('(prefers-color-scheme: dark)')
+
+    const listener = (e: MediaQueryListEvent) => setPrefersDark(e.matches)
+
+    mql.addEventListener('change', listener)
+    return () => mql.removeEventListener('change', listener)
+  }, [])
+
   useEffect(() => {
     document.documentElement.classList.remove('light', 'dark', 'custom-theme');
-    if (colorTheme === 'dark' || (colorTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (colorTheme === 'dark' || (colorTheme === 'system' && prefersDark)) {
       document.documentElement.classList.add('dark');
-    } else if (colorTheme === 'light' || (colorTheme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    } else if (colorTheme === 'light' || (colorTheme === 'system' && !prefersDark)) {
       document.documentElement.classList.add('light');
     } else if (colorTheme === 'custom') {
       // Apply base class as well for fallback variables
@@ -48,7 +65,7 @@ function App() {
     } else {
       document.documentElement.classList.add('light');
     }
-  }, [colorTheme, settings.customThemeBase]);
+  }, [colorTheme, settings.customThemeBase, prefersDark]);
 
   // Apply custom variable overrides when using custom theme
   const appliedCustomKeysRef = useRef<string[]>([]);
@@ -62,8 +79,8 @@ function App() {
     if (colorTheme !== 'custom') {
       return;
     }
-  const baseKey = settings.customThemeBase === 'light' ? 'light' : 'dark';
-  const overrides = settings.customTheme ? settings.customTheme[baseKey] : {};
+    const baseKey = settings.customThemeBase === 'light' ? 'light' : 'dark';
+    const overrides = settings.customTheme ? settings.customTheme[baseKey] : {};
     for (const [name, value] of Object.entries(overrides)) {
       if (name.startsWith('--color-') && value) {
         document.documentElement.style.setProperty(name, value);
