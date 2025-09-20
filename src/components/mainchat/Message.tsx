@@ -280,7 +280,7 @@ const MessageList: React.FC<MessageListProps> = ({
               const hasUrls = urls.length > 0;
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-2`}>
-                  <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
+                  <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-transform duration-200 hover:scale-[1.02] ${isMe
                     ? 'bg-[var(--color-message-self)] text-[var(--color-text-accent)]'
                     : 'bg-[var(--color-message-other)] text-[var(--color-text-primary)]'
                     } ${cornerClass}`}>
