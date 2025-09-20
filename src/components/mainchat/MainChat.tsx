@@ -215,9 +215,9 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
 
     let responsePromise;
     if (targetRoom.type === 'Group') {
-      responsePromise = SendGroupChatMessage(targetRoom, setTypingCharacterId);
+      responsePromise = SendGroupChatMessage(targetRoom, setTypingCharacterId, t);
     } else {
-      responsePromise = SendMessage(targetRoom, setTypingCharacterId);
+      responsePromise = SendMessage(targetRoom, setTypingCharacterId, t);
     }
 
     responsePromise.then(() => {

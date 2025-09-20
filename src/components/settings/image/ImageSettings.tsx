@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, type JSX } from 'react';
+import { useRef, useState, useEffect, type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, Code, Clock, Key, Image } from 'lucide-react';
 import ArtStyleList from './ArtStyleManagerUI';
