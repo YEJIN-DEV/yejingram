@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import type { SettingsState, ApiConfig, ImageApiConfig, ImageApiProvider } from '../../entities/setting/types';
-import { Key, Cpu, Link, Plus, X, Briefcase, Globe, Thermometer, Hash, Percent, ArrowUpToLine, Image } from 'lucide-react';
-import { initialApiConfigs, initialImageApiConfigs } from '../../entities/setting/slice';
+import type { SettingsState, ApiConfig } from '../../entities/setting/types';
+import { Key, Cpu, Link, Plus, X, Briefcase, Globe } from 'lucide-react';
+import { initialApiConfigs } from '../../entities/setting/slice';
 
 interface ProviderSettingsProps {
     settings: SettingsState;
@@ -38,29 +38,17 @@ const providerModels: Record<string, string[]> = {
     // openrouter: [],
     customOpenAI: []
 };
-
-const imageModels: string[] = [
-    'gemini-2.5-flash-image-preview',
-    'gemini-2.0-flash-preview-image-generation',
-    'nai-diffusion-4-5-curated',
-    'nai-diffusion-4-full',
-    'nai-diffusion-4-curated-preview',
-];
+export type ProviderModel = typeof providerModels[keyof typeof providerModels][number];
 
 export function ProviderSettings({ settings, setSettings }: ProviderSettingsProps) {
     const [customModelInput, setCustomModelInput] = useState('');
     const provider = settings.apiProvider;
-    const imageProvider = settings.imageApiProvider;
-    const rawConfig = settings?.apiConfigs?.[provider] ?? initialApiConfigs[provider];
-    const imageConfig = settings?.imageApiConfigs?.[imageProvider] ?? initialImageApiConfigs[imageProvider];
+    const rawConfig = settings?.apiConfigs?.[provider];
     const config = {
         ...rawConfig,
         customModels: rawConfig.customModels || []
     };
     const models = providerModels[provider] || [];
-
-    const minTemp = 0;
-    const maxTemp = (provider !== 'claude') ? 2 : 1;
 
     const handleConfigChange = (key: keyof ApiConfig, value: any) => {
         setSettings(prev => {
@@ -75,27 +63,8 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
         });
     };
 
-    const handleImageModelConfigChange = (provider: ImageApiProvider, key: keyof ImageApiConfig, value: any) => {
-        setSettings(prev => {
-            const currentImageProviderConfig = prev.imageApiConfigs[provider] ?? initialImageApiConfigs[provider]; // Use initial config as fallback
-            return {
-                ...prev,
-                imageApiProvider: provider,
-                imageApiConfigs: {
-                    ...prev.imageApiConfigs,
-                    [provider]: { ...currentImageProviderConfig, [key]: value }
-                }
-            };
-        });
-    };
-
     const handleModelSelect = (model: string) => {
         handleConfigChange('model', model);
-    };
-
-    const handleImageModelSelect = (model: string) => {
-        const provider = model.startsWith('nai-') ? 'novelai' : 'gemini';
-        handleImageModelConfigChange(provider, 'model', model);
     };
 
     const handleAddCustomModel = () => {
@@ -268,88 +237,6 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                                 </button>
                             </div>
                         ))}
-                    </div>
-                )}
-            </div>
-
-            {settings.useImageResponse && (
-                <>
-                    <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Key className="w-4 h-4 mr-2" />이미지 생성용 API 키</label>
-                        <input
-                            type="password"
-                            value={imageConfig.apiKey}
-                            onChange={e => handleImageModelConfigChange(imageProvider, 'apiKey', e.target.value)}
-                            placeholder="이미지 모델 API 키를 입력하세요"
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Image className="w-4 h-4 mr-2" />이미지 생성 모델</label>
-
-                        {imageModels.length > 0 && (
-                            <div className="grid grid-cols-1 gap-2">
-                                {imageModels.map(model => (
-                                    <button
-                                        key={model}
-                                        type="button"
-                                        onClick={() => handleImageModelSelect(model)}
-                                        className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors border ${imageConfig.model === model ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-focus-border)]' : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-interface)] hover:bg-[var(--color-bg-hover)] border-[var(--color-border)]'}`}>
-                                        {model}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                    {
-                        imageProvider === 'gemini' && (
-                            <div className="mb-3">
-                                <p className="text-xs text-[var(--color-text-secondary)]">참고: Gemini는 이미지 생성이 검열될 수 있습니다.</p>
-                            </div>
-                        )
-                    }
-                </>
-            )}
-
-            <div className="content-inner pt-4 space-y-4">
-                <div>
-                    <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
-                        <span className="flex items-center"><Thermometer className="w-4 h-4 mr-2" />온도</span>
-                        <span className="text-[var(--color-button-primary)] font-semibold">{config.temperature || (provider !== 'claude' ? 1.25 : 1)}</span>
-                    </label>
-                    <input id="settings-temperature" type="range" min={minTemp} max={maxTemp} step="0.01" value={config.temperature || (provider !== 'claude' ? 1.25 : 1)} onChange={e => handleConfigChange('temperature', +e.target.value)} className="w-full accent-[var(--color-button-primary)]" />
-                    <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mt-1"><span>{minTemp}</span><span>{maxTemp}</span></div>
-                </div>
-                <div>
-                    <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
-                        <span className="flex items-center"><Percent className="w-4 h-4 mr-2" />Top-p</span>
-                        <span className="text-[var(--color-button-primary)] font-semibold">{config.topP || 1}</span>
-                    </label>
-                    <input id="settings-topk" type="range" min="0" max="1" step="0.01" value={config.topP || 1} onChange={e => handleConfigChange('topP', +e.target.value)} className="w-full accent-[var(--color-button-primary)]" />
-                    <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mt-1"><span>0</span><span>1</span></div>
-                </div>
-                {provider !== 'openai' && (
-                    <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Hash className="w-4 h-4 mr-2" />Top-k</label>
-                        <input
-                            type="number"
-                            value={config.topK ?? undefined}
-                            onChange={e => handleConfigChange('topK', e.target.value === '' ? null : +e.target.value)}
-                            placeholder={provider !== 'claude' ? '비워둘 경우 비활성화됩니다. (초기값: 40)' : '기본값: 40'}
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
-                        />
-                    </div>
-                )}
-                {provider === 'claude' && (
-                    <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><ArrowUpToLine className="w-4 h-4 mr-2" />Max Tokens</label>
-                        <input
-                            type="number"
-                            value={config.maxTokens ?? 8192}
-                            onChange={e => handleConfigChange('maxTokens', e.target.value)}
-                            placeholder="기본값: 8192"
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
-                        />
                     </div>
                 )}
             </div>

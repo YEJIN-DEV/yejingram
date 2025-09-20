@@ -1,21 +1,18 @@
 import { createEntityAdapter, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona, ImageApiConfig, ImageApiProvider } from './types';
+import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona } from './types';
+import type { ImageApiConfig, ImageApiProvider, ArtStyle } from './image/types';
+import { initialState as imageSettingsInitialState, initialImageApiConfigs } from './image/slice';
 import { nanoid } from '@reduxjs/toolkit';
 
 export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
-    gemini: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], temperature: 1.25, topK: 40, topP: 0.95 },
-    vertexai: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], projectId: '', location: 'global', accessToken: '', temperature: 1.25, topK: 40, topP: 0.95 },
-    claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [], temperature: 1, topK: 40, topP: 0.95, maxTokens: 8192 },
-    openai: { apiKey: '', model: 'gpt-5', customModels: [], temperature: 1.25, topP: 0.95, maxTokens: 8192 },
-    grok: { apiKey: '', model: 'grok-4-0709', customModels: [], temperature: 1.25, topP: 0.95, maxTokens: 8192 },
+    gemini: { apiKey: '', model: 'gemini-2.5-pro', customModels: [] },
+    vertexai: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], projectId: '', location: 'global', accessToken: '' },
+    claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [] },
+    openai: { apiKey: '', model: 'gpt-5', customModels: [] },
+    grok: { apiKey: '', model: 'grok-4-0709', customModels: [] },
     openrouter: { apiKey: '', model: '', customModels: [] },
     customOpenAI: { apiKey: '', baseUrl: '', model: '', customModels: [] },
-};
-
-export const initialImageApiConfigs: Record<ImageApiProvider, ImageApiConfig> = {
-    gemini: { apiKey: '', model: 'gemini-2.5-flash-image-preview' },
-    novelai: { apiKey: '', model: 'nai-diffusion-2-1' },
 };
 
 export const initialState: SettingsState = {
@@ -54,11 +51,15 @@ export const initialState: SettingsState = {
             { name: '채팅 기록', type: 'chat' }
         ],
         image_response_generation: { name: '이미지 응답 생성', type: 'image-generation', role: 'assistant', content: `- **imageGenerationSetting** refers to the setting of image generation. **prompt** refers to the prompt that will be used as input to generate an image with this content. Use the conversation that triggered the current image generation, as well as previous contexts, to create an appropriate prompt for image generation. The more details you can include in the prompt, the better (i.e., the current time, the name of the {{char}}, the name of <user>, the background(location, environment, weather, etc.), the mood, any objects mentioned during the conversation or their placement, any text that should appear in the image, or any detailed appearance (clothing, accessories, etc.) that the conversation calls for). The prompt MUST include the angle (POV) of the photo that was taken. Mostly it will be the 'photo taken by {{char}} self (which is, FPV through {{char}}'s handheld device)', but not limited to. The prompt MUST start with “Create a picture...". **isSelfie** refers to that the image will include {{char}}'s selfie, or reflected appearance. Return this ONLY when you need to generate this kind of picture. IMPORTANT: This cannot be used together with 'sticker'.` },
+        maxContextTokens: 8192,
+        maxResponseTokens: 2048,
+        temperature: 1.25,
+        topP: 0.95,
+        topK: 40,
     },
     apiProvider: 'gemini',
-    imageApiProvider: 'gemini',
     apiConfigs: initialApiConfigs,
-    imageApiConfigs: initialImageApiConfigs,
+    imageSettings: imageSettingsInitialState,
     fontScale: 1.0,
     userName: '',
     userDescription: '',
@@ -96,22 +97,9 @@ const settingsSlice = createSlice({
         setApiProvider: (state, action: PayloadAction<ApiProvider>) => {
             state.apiProvider = action.payload;
         },
-        setImageApiProvider: (state, action: PayloadAction<ImageApiProvider>) => {
-            state.imageApiProvider = action.payload;
-        },
         setApiConfig: (state, action: PayloadAction<{ provider: ApiProvider; config: Partial<ApiConfig> }>) => {
             const { provider, config } = action.payload;
             state.apiConfigs[provider] = { ...state.apiConfigs[provider], ...config };
-        },
-        setImageApiConfig: (state, action: PayloadAction<{ provider: ImageApiProvider; config: Partial<ImageApiConfig> }>) => {
-            const { provider, config } = action.payload;
-            if (!state.imageApiConfigs) {
-                state.imageApiConfigs = { ...initialImageApiConfigs };
-            }
-            if (!state.imageApiConfigs[provider]) {
-                state.imageApiConfigs[provider] = { ...initialImageApiConfigs[provider] };
-            }
-            state.imageApiConfigs[provider] = { ...state.imageApiConfigs[provider], ...config };
         },
         setUseStructuredOutput: (state, action: PayloadAction<boolean>) => {
             state.useStructuredOutput = action.payload;
@@ -183,6 +171,57 @@ const settingsSlice = createSlice({
             const personaExists = state.personas.some(p => p.id === action.payload);
             if (personaExists) {
                 state.selectedPersonaId = action.payload;
+            }
+        },
+        // Image settings actions
+        setImageSettings: (state, action: PayloadAction<typeof imageSettingsInitialState>) => {
+            state.imageSettings = action.payload;
+        },
+        setImageApiConfigForImageSettings: (state, action: PayloadAction<{ provider: ImageApiProvider; config: Partial<ImageApiConfig> }>) => {
+            const { provider, config } = action.payload;
+            const typedProvider = provider as keyof typeof state.imageSettings.config;
+            if (!state.imageSettings.config[typedProvider]) {
+                state.imageSettings.config[typedProvider] = { ...initialImageApiConfigs[provider as keyof typeof initialImageApiConfigs] };
+            }
+            state.imageSettings.config[typedProvider] = { ...state.imageSettings.config[typedProvider], ...config };
+        },
+        addArtStyleToImageSettings: (state, action: PayloadAction<Omit<ArtStyle, 'id'>>) => {
+            const newArtStyle = {
+                ...action.payload,
+                id: nanoid(),
+            };
+            state.imageSettings.artStyles.push(newArtStyle);
+            // If it's the only art style now, auto-select it
+            if (state.imageSettings.artStyles.length === 1) {
+                state.imageSettings.selectedArtStyleId = newArtStyle.id;
+            }
+        },
+        updateArtStyleInImageSettings: (state, action: PayloadAction<{ id: string; name?: string; prompt?: string; negativePrompt?: string; description?: string }>) => {
+            const { id, ...updates } = action.payload;
+            const index = state.imageSettings.artStyles.findIndex(style => style.id === id);
+            if (index !== -1) {
+                state.imageSettings.artStyles[index] = { ...state.imageSettings.artStyles[index], ...updates };
+            }
+        },
+        deleteArtStyleFromImageSettings: (state, action: PayloadAction<string>) => {
+            const index = state.imageSettings.artStyles.findIndex(style => style.id === action.payload);
+            if (index !== -1) {
+                state.imageSettings.artStyles.splice(index, 1);
+                // 선택값 보정
+                const remaining = state.imageSettings.artStyles;
+                const hasOnlyOne = remaining.length === 1;
+                const exists = state.imageSettings.selectedArtStyleId ? remaining.some(style => style.id === state.imageSettings.selectedArtStyleId) : false;
+                if (hasOnlyOne && (!state.imageSettings.selectedArtStyleId || !exists)) {
+                    state.imageSettings.selectedArtStyleId = remaining[0].id;
+                } else if (!exists) {
+                    state.imageSettings.selectedArtStyleId = remaining[0]?.id ?? '';
+                }
+            }
+        },
+        selectArtStyleInImageSettings: (state, action: PayloadAction<string>) => {
+            const styleExists = state.imageSettings.artStyles.some(style => style.id === action.payload);
+            if (styleExists) {
+                state.imageSettings.selectedArtStyleId = action.payload;
             }
         },
     }

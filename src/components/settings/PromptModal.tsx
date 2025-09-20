@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { X, ChevronDown, RotateCcw, Download, Upload, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
-import { selectPrompts } from '../../entities/setting/selectors';
+import { X, ChevronDown, RotateCcw, Download, Upload, ArrowUp, ArrowDown, AlertTriangle, Thermometer, Percent, ArrowUpToLine } from 'lucide-react';
+import { selectAllSettings, selectPrompts } from '../../entities/setting/selectors';
 import { settingsActions, initialState } from '../../entities/setting/slice';
 import type { Prompts, PromptItem, PromptRole, PromptType } from '../../entities/setting/types';
 
@@ -12,8 +12,10 @@ interface PromptModalProps {
 
 function PromptModal({ isOpen, onClose }: PromptModalProps) {
     const dispatch = useDispatch();
+    const settings = useSelector(selectAllSettings);
     const prompts = useSelector(selectPrompts);
 
+    const currentApiProvider = settings.apiProvider;
     const [localPrompts, setLocalPrompts] = useState<Prompts>(prompts);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -148,8 +150,8 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
     type AnyRecord = Record<string, unknown>;
 
     const isPromptItem = (obj: any): obj is PromptItem => {
-        return obj && typeof obj.name === 'string' && typeof obj.type === 'string' && typeof obj.role === 'string' && typeof obj.content === 'string';
-    };
+        return obj && typeof obj.name === 'string' && typeof obj.type === 'string';
+    }
 
     const extractPrompts = (data: unknown): Prompts | null => {
         const obj = data as AnyRecord | null;
@@ -164,8 +166,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
         // Merge new fields with defaults if missing
         const withDefaults = {
             ...initialState.prompts,
-            ...p,
-            main: p.main,
+            ...p
         } as Prompts;
         return withDefaults;
     };
@@ -379,8 +380,91 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                             </div>
                         </div>
                     </details>
+                    <h4 className="text-base font-semibold text-[var(--color-preview-accent-from)] border-b border-[var(--color-preview-border)]/40 pb-2 mt-6">토큰 설정</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div className="flex flex-col">
+                            <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">최대 컨텍스트 토큰</label>
+                            <input
+                                type="number"
+                                value={localPrompts.maxContextTokens}
+                                onChange={e => setLocalPrompts(prev => ({ ...prev, maxContextTokens: parseInt(e.target.value) || -1 }))}
+                                className="w-full p-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm"
+                                placeholder="최대 컨텍스트 토큰"
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">최대 응답 토큰</label>
+                            <input
+                                type="number"
+                                value={localPrompts.maxResponseTokens}
+                                onChange={e => setLocalPrompts(prev => ({ ...prev, maxResponseTokens: parseInt(e.target.value) || -1 }))}
+                                className="w-full p-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm"
+                                placeholder="최대 응답 토큰"
+                            />
+                        </div>
+                    </div>
 
-                    {/* information_template UI removed; conversation/output format are handled in the main list like others */}
+                    <h4 className="text-base font-semibold text-[var(--color-preview-accent-to)] border-b border-[var(--color-preview-border)]/40 pb-2 mt-6">생성 설정</h4>
+                    <div className="space-y-4 mt-4">
+                        <div className="flex flex-col">
+                            <label className="flex items-center justify-between text-xs font-medium text-[var(--color-text-tertiary)] mb-2">
+                                <span className="flex items-center gap-1"><Thermometer className="w-4 h-4" /> 온도</span>
+                                <span className="text-[var(--color-preview-accent-to)] font-semibold">{localPrompts.temperature?.toFixed(2) ?? 'N/A'}</span>
+                            </label>
+                            <input
+                                type="range"
+                                min="0"
+                                max={currentApiProvider === 'claude' ? 1 : 2}
+                                step="0.01"
+                                value={localPrompts.temperature || 1.25}
+                                onChange={e => setLocalPrompts(prev => ({ ...prev, temperature: parseFloat(parseFloat(e.target.value).toFixed(2)) ?? -1 }))}
+
+                                className="w-full accent-[var(--color-button-primary)]"
+                            />
+                            <div className="flex justify-between text-xs text-[var(--color-text-informative-primary)] mt-1">
+                                <span>0</span>
+                                <span>{currentApiProvider === 'claude' ? 1 : 2}</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="flex items-center justify-between text-xs font-medium text-[var(--color-text-tertiary)] mb-2">
+                                <span className="flex items-center gap-1"><Percent className="w-4 h-4" /> Top-P</span>
+                                <span className="text-[var(--color-preview-accent-to)] font-semibold">{localPrompts.topP?.toFixed(2) ?? 'N/A'}</span>
+                            </label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                value={localPrompts.topP || 0.95}
+                                onChange={e => setLocalPrompts(prev => ({ ...prev, topP: parseFloat(parseFloat(e.target.value).toFixed(2)) ?? -1 }))}
+                                className="w-full accent-[var(--color-button-primary)]"
+                            />
+                            <div className="flex justify-between text-xs text-[var(--color-text-informative-primary)] mt-1">
+                                <span>0</span>
+                                <span>1</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="flex items-center justify-between text-xs font-medium text-[var(--color-text-tertiary)] mb-2">
+                                <span className="flex items-center gap-1"><ArrowUpToLine className="w-4 h-4" /> Top-K</span>
+                                <span className="text-[var(--color-preview-accent-to)] font-semibold">{localPrompts.topK ?? 'N/A'}</span>
+                            </label>
+                            <input
+                                type="range"
+                                min="1"
+                                max="100"
+                                step="1"
+                                value={localPrompts.topK || 40}
+                                onChange={e => setLocalPrompts(prev => ({ ...prev, topK: parseInt(e.target.value) ?? -1 }))}
+                                className="w-full accent-[var(--color-button-primary)]"
+                            />
+                            <div className="flex justify-between text-xs text-[var(--color-text-informative-primary)] mt-1">
+                                <span>1</span>
+                                <span>100</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div className="p-6 mt-auto border-t border-[var(--color-border)] shrink-0 flex flex-wrap justify-end gap-3">
                     <input

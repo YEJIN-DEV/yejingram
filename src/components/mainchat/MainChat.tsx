@@ -10,7 +10,7 @@ import MessageList from './Message';
 import { messagesActions } from '../../entities/message/slice';
 import { roomsActions } from '../../entities/room/slice';
 import { Avatar, GroupChatAvatar } from '../../utils/Avatar';
-import { SendMessage, SendGroupChatMessage } from '../../services/LLMcaller';
+import { SendMessage, SendGroupChatMessage } from '../../services/llm/LLMcaller';
 import type { Sticker } from '../../entities/character/types';
 import { StickerPanel } from './StickerPanel';
 import type { FileToSend } from '../../entities/message/types';
@@ -26,12 +26,13 @@ import { renderFile } from './FilePreview';
 
 interface MainChatProps {
   room: Room | null;
+  isMobileSidebarOpen: boolean;
   onToggleMobileSidebar: () => void;
   onToggleCharacterPanel: () => void;
   onToggleGroupchatSettings: () => void;
 }
 
-function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggleGroupchatSettings }: MainChatProps) {
+function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCharacterPanel, onToggleGroupchatSettings }: MainChatProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [typingCharacterId, setTypingCharacterId] = useState<number | null>(null);
@@ -234,18 +235,26 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
 
     const currentCharName = room.type === 'Direct' ? (character?.name || undefined) : undefined;
     const currentUserName = settings.userName?.trim();
-    const processedText = text ? replacePlaceholders(text, { user: currentUserName, char: currentCharName }) : '';
+    const processedText = text ? replacePlaceholders(text, { user: currentUserName, char: currentCharName }) : null;
 
-    const userMessage = {
+    // Construct userMessage to match the Message type's discriminated union
+    const userMessage: any = {
       id: nanoid(),
       roomId: room.id,
       authorId: 0, // Assuming current user ID is '0'
-      content: processedText,
       createdAt: new Date().toISOString(),
-      type: messageType as 'TEXT' | 'STICKER' | 'IMAGE' | 'AUDIO' | 'VIDEO' | 'FILE',
-      sticker: stickerToSend || undefined,
-      file: fileToSend ? { dataUrl: fileToSend.dataUrl, mimeType: fileToSend.mimeType, name: fileToSend.name } : undefined,
+      type: messageType,
     };
+
+    if (messageType === 'TEXT') {
+      userMessage.content = processedText || ''; // Ensure content is a string for TEXT type
+    } else if (messageType === 'STICKER') {
+      userMessage.content = processedText; // Optional for STICKER
+      userMessage.sticker = stickerToSend;
+    } else if (['IMAGE', 'AUDIO', 'VIDEO', 'FILE'].includes(messageType)) {
+      userMessage.content = processedText; // Optional for file types
+      userMessage.file = fileToSend ? { dataUrl: fileToSend.dataUrl, mimeType: fileToSend.mimeType, name: fileToSend.name || '' } : undefined; // Ensure name is a string
+    }
 
     // Immediately show user's message
     dispatch(messagesActions.upsertOne(userMessage));
@@ -317,7 +326,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
   }
   else {
     return (
-      <>
+      <div className={`flex-1 flex flex-col bg-[var(--color-bg-main)] ${isMobileSidebarOpen ? 'hidden md:flex' : 'flex'}`}>
         <AuthorNoteModal
           open={isAuthorNoteOpen}
           onClose={() => setIsAuthorNoteOpen(false)}
@@ -399,7 +408,7 @@ function MainChat({ room, onToggleMobileSidebar, onToggleCharacterPanel, onToggl
             }
           />
         </div>
-      </>
+      </div>
     );
   }
 }

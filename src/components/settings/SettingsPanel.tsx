@@ -1,12 +1,13 @@
+import { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAllSettings } from '../../entities/setting/selectors';
-import { useEffect, useState } from 'react';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
-import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Search } from 'lucide-react';
+import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Search, Image } from 'lucide-react';
 import { ProviderSettings } from './ProviderSettings';
 import { backupStateToFile, restoreStateFromFile } from '../../utils/backup';
 import { settingsActions } from '../../entities/setting/slice';
 import PersonaManager from './PersonaModal';
+import { ImageSettings } from './image/ImageSettings';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;
@@ -16,9 +17,10 @@ interface SettingsPanelProps {
 function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
     const dispatch = useDispatch();
     const settings = useSelector(selectAllSettings);
+    const tabContainerRef = useRef<HTMLDivElement>(null);
 
     const [localSettings, setLocalSettings] = useState<SettingsState>(settings);
-    const [activeTab, setActiveTab] = useState<'ai' | 'scale' | 'persona' | 'proactive' | 'data'>('ai');
+    const [activeTab, setActiveTab] = useState<'ai' | 'image' | 'scale' | 'persona' | 'proactive' | 'data'>('ai');
 
     const importBackup = () => {
         const input = document.createElement("input");
@@ -42,6 +44,54 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
         input.click();
     }
 
+    // Scroll horizontally with mouse drag
+    useEffect(() => {
+        const container = tabContainerRef.current;
+        if (!container) return;
+
+        let isDown = false;
+        let startX: number;
+        let scrollLeft: number;
+
+        const handleMouseDown = (e: MouseEvent) => {
+            isDown = true;
+            container.style.cursor = 'grabbing';
+            startX = e.pageX - container.offsetLeft;
+            scrollLeft = container.scrollLeft;
+        };
+
+        const handleMouseLeave = () => {
+            isDown = false;
+            container.style.cursor = 'grab';
+        };
+
+        const handleMouseUp = () => {
+            isDown = false;
+            container.style.cursor = 'grab';
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const walk = (x - startX);
+            container.scrollLeft = scrollLeft - walk;
+        };
+
+        container.style.cursor = 'grab';
+        container.addEventListener('mousedown', handleMouseDown);
+        container.addEventListener('mouseleave', handleMouseLeave);
+        container.addEventListener('mouseup', handleMouseUp);
+        container.addEventListener('mousemove', handleMouseMove);
+
+        return () => {
+            container.removeEventListener('mousedown', handleMouseDown);
+            container.removeEventListener('mouseleave', handleMouseLeave);
+            container.removeEventListener('mouseup', handleMouseUp);
+            container.removeEventListener('mousemove', handleMouseMove);
+        };
+    }, []);
+
     useEffect(() => {
         setLocalSettings(settings);
     }, [settings]);
@@ -51,6 +101,11 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
         onClose();
     };
 
+    const handlePromptModalOpen = () => {
+        dispatch(settingsActions.setSettings(localSettings));
+        openPromptModal();
+    }
+
     const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const provider = e.target.value as ApiProvider;
         setLocalSettings(prev => ({ ...prev, apiProvider: provider }));
@@ -58,17 +113,20 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
 
     return (
         <>
-            <div className="bg-[var(--color-bg-main)] h-full flex flex-col border-r border-[var(--color-border)]">
+            <div className="fixed md:relative top-0 bottom-0 z-40 w-full max-w-sm md:max-w-lg left-0 md:left-auto bg-[var(--color-bg-main)] h-full flex flex-col border-r border-[var(--color-border)]">
                 <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)] shrink-0">
                     <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">설정</h3>
                     <button onClick={onClose} className="p-1 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors"><X className="w-5 h-5 text-[var(--color-icon-tertiary)]" /></button>
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto flex-1">
                     {/* Tab Navigation */}
-                    <div className="flex border-b border-[var(--color-border)] -mx-6 px-6 whitespace-nowrap">
+                    <div
+                        ref={tabContainerRef}
+                        className="flex border-b border-[var(--color-border)] -mx-6 whitespace-nowrap overflow-x-scroll scrollbar-hide touch-pan-x select-none"
+                    >
                         <button
                             onClick={() => setActiveTab('ai')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'ai'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'ai'
                                 ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
                                 : 'border-transparent text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'
                                 }`}
@@ -76,9 +134,21 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             <Globe className="w-4 h-4 inline mr-2" />
                             AI
                         </button>
+                        {localSettings.useImageResponse && (
+                            <button
+                                onClick={() => setActiveTab('image')}
+                                className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'image'
+                                    ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
+                                    : 'border-transparent text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'
+                                    }`}
+                            >
+                                <Image className="w-4 h-4 inline mr-2" />
+                                이미지
+                            </button>
+                        )}
                         <button
                             onClick={() => setActiveTab('scale')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'scale'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'scale'
                                 ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
                                 : 'border-transparent text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'
                                 }`}
@@ -88,7 +158,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         </button>
                         <button
                             onClick={() => setActiveTab('persona')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'persona'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'persona'
                                 ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
                                 : 'border-transparent text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'
                                 }`}
@@ -98,7 +168,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         </button>
                         <button
                             onClick={() => setActiveTab('proactive')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'proactive'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'proactive'
                                 ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
                                 : 'border-transparent text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'
                                 }`}
@@ -108,7 +178,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         </button>
                         <button
                             onClick={() => setActiveTab('data')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'data'
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'data'
                                 ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
                                 : 'border-transparent text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'
                                 }`}
@@ -136,13 +206,14 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 </div>
                                 <ProviderSettings settings={localSettings} setSettings={setLocalSettings} />
                                 <div>
-                                    <button id="open-prompt-modal" onClick={openPromptModal} className="w-full mt-2 py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                                    <button id="open-prompt-modal" onClick={handlePromptModalOpen} className="w-full mt-2 py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
                                         <FilePenLine className="w-4 h-4" /> 프롬프트 수정
                                     </button>
                                 </div>
                             </div>
                         )}
 
+                        {activeTab === 'image' && <ImageSettings settings={localSettings} setSettings={setLocalSettings} />}
                         {activeTab === 'scale' && (
                             <div className="space-y-4">
                                 <div>

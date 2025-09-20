@@ -33,7 +33,7 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
             lastMessageContent = '이미지를 보냈습니다';
         } else if (lastMessage.type === 'STICKER') {
             lastMessageContent = '스티커를 보냈습니다';
-        } else {
+        } else if (lastMessage.type === 'TEXT') {
             lastMessageContent = lastMessage.content;
         }
     }

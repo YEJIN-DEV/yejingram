@@ -3,17 +3,17 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
 import type { Message as MessageType } from '../../entities/message/types';
-// Lucide Icons
-import { Calendar, Edit3, Trash2, RefreshCw } from 'lucide-react';
+import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare, Loader2 } from 'lucide-react';
 import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
 import { Avatar } from '../../utils/Avatar';
-import { SendMessage } from '../../services/LLMcaller';
+import { SendMessage } from '../../services/llm/LLMcaller';
 import type { Room } from '../../entities/room/types';
 import { inviteCharacter } from '../../utils/inviteCharacter';
 import { UrlPreview } from './chatcontents/UrlPreviewProps';
 import { renderFile } from './FilePreview';
+import { callImageGeneration } from '../../services/image/ImageCaller';
 
 // Helper function for date formatting
 const formatDateSeparator = (date: Date): string => {
@@ -104,6 +104,9 @@ const MessageList: React.FC<MessageListProps> = ({
   const animatedMessageIds = useRef(new Set<string>());
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [expandedStickers, setExpandedStickers] = useState<Set<string>>(new Set());
+  const [imageModalOpen, setImageModalOpen] = useState<boolean>(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  const [regeneratingImageIds, setRegeneratingImageIds] = useState<Set<string>>(new Set());
   const innerRef = useRef<HTMLDivElement>(null);
 
   const toggleStickerSize = useCallback((messageId: string) => {
@@ -123,6 +126,23 @@ const MessageList: React.FC<MessageListProps> = ({
     // This effect might be more complex if actual animation triggers are needed
     // For now, just ensuring the ref is cleared or managed
   }, [messages]);
+
+  // Effect to handle ESC key for image modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && imageModalOpen) {
+        setImageModalOpen(false);
+      }
+    };
+
+    if (imageModalOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [imageModalOpen]);
 
 
   return (
@@ -168,33 +188,48 @@ const MessageList: React.FC<MessageListProps> = ({
             animatedMessageIds.current.add(msg.id.toString());
           }
 
-          // Placeholder for message content rendering
           const renderMessageContent = () => {
             if (editingMessageId === msg.id) { // Use msg.id for editing
-              // Editing state - Instagram DM Style
+              // Editing state - Enhanced style with CSS variables for dark mode
               return (
-                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  <textarea
-                    data-id={msg.id.toString()}
-                    className="edit-message-textarea w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-2xl border border-[var(--color-border-strong)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 focus:scale-105"
-                    rows={5}
-                    defaultValue={msg.content || ''}
-                  ></textarea>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <button onClick={() => {
-                      setEditingMessageId(null);
-                    }} data-id={msg.id.toString()} className="cancel-edit-btn text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-interface)] bg-[var(--color-button-secondary)] px-4 py-2 rounded-full transition-all duration-200 hover:scale-105 hover:bg-[var(--color-button-secondary-accent)]" >취소</button>
-                    <button onClick={() => {
-                      const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
-                      if (textarea) {
-                        const newContent = textarea.value;
-                        dispatch(messagesActions.updateOne({
-                          id: msg.id,
-                          changes: { content: newContent }
-                        }));
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-3`}>
+                  <div className="relative w-full">
+                    <textarea
+                      data-id={msg.id.toString()}
+                      className="edit-message-textarea w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-2xl border border-[var(--color-border-strong)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 shadow-lg hover:shadow-xl placeholder-[var(--color-text-informative-secondary)]"
+                      rows={5}
+                      defaultValue={msg.content || ''}
+                      placeholder="메시지를 입력하세요..."
+                      autoFocus
+                    ></textarea>
+                    <div className="absolute bottom-3 right-3 text-xs text-[var(--color-text-informative-secondary)]">
+                      Enter로 줄바꿈
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="text-xs text-[var(--color-text-informative-secondary)]">
+                      메시지 편집 중...
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button onClick={() => {
                         setEditingMessageId(null);
-                      }
-                    }} data-id={msg.id.toString()} className="save-edit-btn text-sm text-[var(--color-text-accent)] bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] px-4 py-2 rounded-full transition-all duration-200 hover:scale-105">저장</button>
+                      }} data-id={msg.id.toString()} className="cancel-edit-btn text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-interface)] bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] px-5 py-2.5 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 border border-[var(--color-border)]">
+                        취소
+                      </button>
+                      <button onClick={() => {
+                        const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
+                        if (textarea) {
+                          const newContent = textarea.value;
+                          dispatch(messagesActions.updateOne({
+                            id: msg.id,
+                            changes: { content: newContent }
+                          }));
+                          setEditingMessageId(null);
+                        }
+                      }} data-id={msg.id.toString()} className="save-edit-btn text-sm text-[var(--color-text-accent)] bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] px-6 py-2.5 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg">
+                        저장
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -209,43 +244,35 @@ const MessageList: React.FC<MessageListProps> = ({
 
               const imgSrc = stickerData.data;
               const stickerName = stickerData.name || '스티커';
-              const stickerElement = (
+
+              return (
                 <div className="inline-block cursor-pointer transition-all duration-300 hover:scale-110 transform" onClick={() => toggleStickerSize(msg.id.toString())}>
                   <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`} style={heightStyle} />
                 </div>
               );
-
-              const hasTextMessage = msg.content && msg.content.trim();
-
-              if (hasTextMessage) {
-                return (
-                  <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
-                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                      ? 'bg-[var(--color-message-self)] text-[var(--color-text-accent)]'
-                      : 'bg-[var(--color-message-other)] text-[var(--color-text-primary)]'
-                      } ${cornerClass}`}>
-                      <div className="break-words">{msg.content}</div>
-                    </div>
-                    {stickerElement}
-                  </div>
-                );
-              } else {
-                return stickerElement;
-              }
             } else if ((msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.type === 'VIDEO' || msg.type === 'FILE') && msg.file?.dataUrl) {
-              const hasTextContent = msg.content && msg.content.trim();
-
+              const isRegenerating = regeneratingImageIds.has(msg.id.toString());
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
-                  {renderFile(msg.file, false)}
-                  {hasTextContent && (
-                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                      ? 'bg-[var(--color-message-self)] text-[var(--color-text-accent)]'
-                      : 'bg-[var(--color-message-other)] text-[var(--color-text-primary)]'
-                      } ${cornerClass}`}>
-                      <div className="break-words">{renderTextWithLinks(msg.content || '', isMe)}</div>
-                    </div>
-                  )}
+                  <div
+                    onClick={() => {
+                      if (msg.type === 'IMAGE' && msg.file?.dataUrl && !isRegenerating) {
+                        setSelectedImageUrl(msg.file.dataUrl);
+                        setImageModalOpen(true);
+                      }
+                    }}
+                    className={`relative ${msg.type === 'IMAGE' && !isRegenerating ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+                  >
+                    {renderFile(msg.file, false)}
+                    {isRegenerating && (
+                      <div className="absolute inset-0 bg-[var(--color-bg-shadow)]/50 flex items-center justify-center rounded-lg">
+                        <div className="flex flex-col items-center text-[var(--color-text-accent)]">
+                          <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                          <span className="text-sm font-medium">이미지 재생성 중...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             } else if (msg.type === 'TEXT') {
@@ -326,49 +353,103 @@ const MessageList: React.FC<MessageListProps> = ({
                         </div>
 
                         {/* Message controls - Instagram DM style */}
-                        <div className={`absolute ${isMe ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex items-center space-x-1 opacity-0 group-hover/message:opacity-100 transition-all duration-300 transform ${isMe ? 'translate-x-2' : '-translate-x-2'} group-hover/message:translate-x-0`}>
-                          {msg.type === 'TEXT' && (
+                        {editingMessageId !== msg.id && (
+                          <div className={`absolute ${isMe ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex items-center space-x-1 opacity-0 group-hover/message:opacity-100 transition-all duration-300 transform ${isMe ? 'translate-x-2' : '-translate-x-2'} group-hover/message:translate-x-0`}>
+                            {msg.type === 'TEXT' && (
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={() => { setEditingMessageId(msg.id) }}
+                                className="edit-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-icon-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
+                                aria-label="메시지 편집"
+                                title="편집"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            )}
+
                             <button
                               data-id={msg.id.toString()}
-                              onClick={() => { setEditingMessageId(msg.id) }}
-                              className="edit-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-icon-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
-                              aria-label="메시지 편집"
-                              title="편집"
+                              onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
+                              className="delete-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-negative)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
+                              aria-label="메시지 삭제"
+                              title="삭제"
                             >
-                              <Edit3 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
-                          )}
 
-                          <button
-                            data-id={msg.id.toString()}
-                            onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
-                            className="delete-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-negative)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
-                            aria-label="메시지 삭제"
-                            title="삭제"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                            {!isMe && i === messages.length - 1 && !isWaitingForResponse && (
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={() => {
+                                  console.log('Reroll message', msg.id)
+                                  dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
+                                  setIsWaitingForResponse(true);
+                                  SendMessage(room, setTypingCharacterId)
+                                    .finally(() => {
+                                      setIsWaitingForResponse(false);
+                                    });
+                                }}
+                                className="reroll-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
+                                aria-label="다시 생성"
+                                title="다시 생성"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </button>
+                            )}
 
-                          {!isMe && msg.type === 'TEXT' && i === messages.length - 1 && !isWaitingForResponse && (
-                            <button
-                              data-id={msg.id.toString()}
-                              onClick={() => {
-                                console.log('Reroll message', msg.id)
-                                dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
-                                setIsWaitingForResponse(true);
-                                SendMessage(room, setTypingCharacterId)
-                                  .finally(() => {
-                                    setIsWaitingForResponse(false);
-                                  });
-                              }}
-                              className="reroll-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
-                              aria-label="다시 생성"
-                              title="다시 생성"
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
+                            {!isMe && msg.type === 'IMAGE' && msg.imageGenerationSetting && (
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={async () => {
+                                  const char = allCharacters.find(c => c.id === msg.authorId);
+                                  if (!char) return;
+
+                                  const messageId = msg.id.toString();
+                                  setRegeneratingImageIds(prev => new Set([...prev, messageId]));
+
+                                  try {
+                                    const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
+                                    const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+                                    if (inlineDataBody) {
+                                      const newDataUrl = `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`;
+                                      dispatch(messagesActions.updateOne({
+                                        id: msg.id,
+                                        changes: {
+                                          file: {
+                                            ...msg.file,
+                                            dataUrl: newDataUrl,
+                                            mimeType: inlineDataBody.mimeType
+                                          }
+                                        }
+                                      }));
+                                    }
+                                  } catch (error) {
+                                    console.error('Image reroll failed:', error);
+                                  } finally {
+                                    setRegeneratingImageIds(prev => {
+                                      const newSet = new Set(prev);
+                                      newSet.delete(messageId);
+                                      return newSet;
+                                    });
+                                  }
+                                }}
+                                disabled={regeneratingImageIds.has(msg.id.toString())}
+                                className={`reroll-image-btn p-2 bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180 ${regeneratingImageIds.has(msg.id.toString())
+                                  ? 'opacity-60 cursor-not-allowed text-[var(--color-icon-tertiary)]'
+                                  : 'text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)]'
+                                  }`}
+                                aria-label="이미지 다시 생성"
+                                title={regeneratingImageIds.has(msg.id.toString()) ? "이미지 재생성 중..." : "이미지 다시 생성"}
+                              >
+                                {regeneratingImageIds.has(msg.id.toString()) ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <RotateCwSquare className="w-4 h-4" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Timestamp and read status */}
@@ -408,6 +489,32 @@ const MessageList: React.FC<MessageListProps> = ({
           </div>
         )}
       </div>
+
+      {/* Image Modal */}
+      {imageModalOpen && selectedImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-bg-shadow)]/80 animate-fadeIn"
+          onClick={() => setImageModalOpen(false)}
+        >
+          <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center">
+            <img
+              src={selectedImageUrl}
+              alt="확대된 이미지"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-scaleIn"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setImageModalOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-[var(--color-bg-shadow)]/60 text-[var(--color-text-accent)] rounded-full hover:bg-[var(--color-bg-shadow)]/70 transition-all duration-200"
+              aria-label="이미지 닫기"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };
