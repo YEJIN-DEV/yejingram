@@ -40,7 +40,8 @@ async function handleApiResponse(
     room: Room,
     char: Character,
     dispatch: AppDispatch,
-    setTypingCharacterId: (id: number | null) => void
+    setTypingCharacterId: (id: number | null) => void,
+    t: (key: string) => string
 ) {
     // If structured output included a newMemory field, append it to the character
     if (res && 'newMemory' in res) {
@@ -52,7 +53,7 @@ async function handleApiResponse(
                 if (!exists) {
                     dispatch(roomsActions.addRoomMemory({ roomId: room.id, value: trimmed }));
                     // Toast 알림으로 새로운 메모리 추가를 알림
-                    toast.success(`새로운 기억이 추가되었습니다:\n"${trimmed}"`, {
+                    toast.success(`${t('main.newMemory')}:\n"${trimmed}"`, {
                         duration: 5000,
                     });
                 }
@@ -122,7 +123,7 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
                 imageGenerationSetting: messagePart.imageGenerationSetting
             });
         } else {
-            throw new Error('이미지 생성에 실패했습니다:', imageResponse.candidates[0].finishReason ?? '');
+            throw new Error('Failed to generate image:', imageResponse.candidates[0].finishReason ?? '');
         }
     }
 
@@ -132,7 +133,7 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
 
 function handleError(error: unknown, roomId: string, charId: number, dispatch: AppDispatch) {
     console.error("Error in LLMSend:", error);
-    const errorMessage = `답변이 생성되지 않았습니다. (이유: ${error instanceof Error ? error.message : String(error)})`;
+    const errorMessage = `Failed to generate response. (Reason: ${error instanceof Error ? error.message : String(error)})`;
     const errorResponse: Message = {
         id: nanoid(),
         roomId: roomId,
@@ -222,14 +223,14 @@ async function callApi(
 
         if (!response.ok) {
             console.error("API Error:", data);
-            const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
+            const errorMessage = (data as any)?.error?.message || `API request failed: ${response.statusText}`;
             throw new Error(errorMessage);
         }
 
         return parseApiResponse(data, settings, messages);
 
     } catch (error: unknown) {
-        console.error(`${apiProvider} API 호출 중 오류 발생:`, error);
+        console.error(`${apiProvider} error occured while requesting:`, error);
         throw error;
     }
 }
@@ -263,19 +264,19 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
         if (data.candidates && data.candidates.length > 0 && data.candidates[0].content?.parts[0]?.text) {
             return processApiMessage(data.candidates[0].content?.parts[0]?.text);
         } else {
-            throw new Error(data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || '알 수 없는 이유');
+            throw new Error(data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || 'Unknown reason');
         }
     } else if (apiProvider === 'claude') { // Claude
         if (data.content && data.content.length > 0 && data.content[0]?.text) {
             return processApiMessage(data.content[0]?.text);
         } else {
-            throw new Error(data.stop_reason || '알 수 없는 이유');
+            throw new Error(data.stop_reason || 'Unknown reason');
         }
     } else { // OpenAI-compatible
         const text = data?.choices?.[0]?.message?.content;
         if (!text) {
             const t2 = data?.choices?.[0]?.delta?.content; // for stream chunks if ever used
-            if (!t2) throw new Error('응답 본문이 비어있습니다.');
+            if (!t2) throw new Error('Empty response body');
             return processApiMessage(t2);
         }
         return processApiMessage(text);
@@ -288,6 +289,7 @@ async function LLMSend(
     persona: Persona | null,
     char: Character,
     setTypingCharacterId: (id: number | null) => void,
+    t: (key: string) => string
 ) {
     const state = store.getState();
     const dispatch = store.dispatch;
@@ -376,7 +378,7 @@ async function LLMSend(
             };
         }
 
-        await handleApiResponse(finalRes, room, char, dispatch, setTypingCharacterId);
+        await handleApiResponse(finalRes, room, char, dispatch, setTypingCharacterId, t);
     } catch (error) {
         handleError(error, room.id, char.id, dispatch);
     } finally {
@@ -385,19 +387,19 @@ async function LLMSend(
 }
 
 
-export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
+export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void, t: (key: string) => string) {
     const state = store.getState();
     const persona = selectSelectedPersona(state);
     const memberChars = room.memberIds.map(id => selectCharacterById(state, id));
 
     for (const char of memberChars) {
         if (char) {
-            await LLMSend(room, persona, char, setTypingCharacterId);
+            await LLMSend(room, persona, char, setTypingCharacterId, t);
         }
     }
 }
 
-export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
+export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void, t: (key: string) => string) {
     const state = store.getState();
     const persona = selectSelectedPersona(state);
     const allCharacters = selectAllCharacters(state);
@@ -433,6 +435,6 @@ export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id
         if (i > 0) {
             await sleep(responseDelay + (Math.random() * 300 - 150));
         }
-        await LLMSend(room, persona, character, setTypingCharacterId);
+        await LLMSend(room, persona, character, setTypingCharacterId, t);
     }
 }

@@ -1,9 +1,9 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from 'i18next-browser-languagedetector';
-import en from './locales/en.tsx';
-import ko from './locales/ko.tsx';
-import ja from './locales/ja.tsx';
+import en from './locales/en.ts';
+import ko from './locales/ko.ts';
+import ja from './locales/ja.ts';
 
 // the translations
 // (tip move them in a JSON file and import them,

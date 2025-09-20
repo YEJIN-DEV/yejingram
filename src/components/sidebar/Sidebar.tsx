@@ -21,7 +21,7 @@ interface SidebarProps {
 }
 
 function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, toggleCharacterPanel, openCreateGroupChatModal, openEditGroupChatModal, onCloseMobile }: SidebarProps) {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const rooms = useSelector(selectAllRooms);
@@ -49,7 +49,7 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
                             id="close-sidebar-mobile"
                             onClick={onCloseMobile}
                             className="p-2 -ml-2 rounded-full hover:bg-[var(--color-bg-hover)] md:hidden"
-                            title="닫기"
+                            title={t('sidebar.tooltipClose')}
                         >
                             <X className="w-5 h-5 text-[var(--color-icon-primary)]" />
                         </button>
@@ -60,7 +60,7 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
                             id="open-new-character-modal"
                             onClick={handleNewCharacter}
                             className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] transition-colors"
-                            title="새 채팅"
+                            title={t('sidebar.tooltipNewChat')}
                         >
                             <Plus className="w-6 h-6 text-[var(--color-icon-primary)]" />
                         </button>
@@ -68,7 +68,7 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
                             id="open-settings-modal"
                             onClick={openSettingsModal}
                             className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] transition-colors"
-                            title="설정"
+                            title={t('sidebar.tooltipSettings')}
                         >
                             <Settings className="w-6 h-6 text-[var(--color-icon-primary)]" />
                         </button>
@@ -81,7 +81,7 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
                     <input
                         id="search-input"
                         type="text"
-                        placeholder="검색..."
+                        placeholder={t('sidebar.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-input-primary)] text-[var(--color-text-primary)] rounded-full border-0 focus:bg-[var(--color-bg-input-secondary)] focus:ring-2 focus:ring-[var(--color-focus-border)]/20 transition-transform duration-200 text-sm placeholder-[var(--color-text-secondary)]"
@@ -98,7 +98,7 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
                             onClick={openCreateGroupChatModal}
                             className="flex items-center text-sm text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)] font-medium"
                         >
-                            그룹 채팅 만들기
+                            {t('sidebar.createGroupChat')}
                         </button>
                     </div>
                 </div>
@@ -115,7 +115,7 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
                     <div className="group flex items-center justify-between px-4 py-2 bg-[var(--color-bg-secondary)]">
                         <div className="flex items-center space-x-2">
                             <User className="w-4 h-4 text-[var(--color-icon-tertiary)]" />
-                            <h3 className="text-sm font-semibold text-[var(--color-text-interface)]">연락처</h3>
+                            <h3 className="text-sm font-semibold text-[var(--color-text-interface)]">{t('sidebar.contacts')}</h3>
                             <span className="text-xs bg-[var(--color-bg-secondary-accent)] text-[var(--color-text-tertiary)] px-2 py-0.5 rounded-full">
                                 {filteredCharacters.length}
                             </span>

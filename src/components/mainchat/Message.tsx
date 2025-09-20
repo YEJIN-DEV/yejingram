@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
@@ -99,6 +100,7 @@ const MessageList: React.FC<MessageListProps> = ({
   setTypingCharacterId,
   setIsWaitingForResponse
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const allCharacters = useSelector((state: RootState) => charactersAdapter.getSelectors().selectAll(state.characters));
   const animatedMessageIds = useRef(new Set<string>());
@@ -199,22 +201,22 @@ const MessageList: React.FC<MessageListProps> = ({
                       className="edit-message-textarea w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-2xl border border-[var(--color-border-strong)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 shadow-lg hover:shadow-xl placeholder-[var(--color-text-informative-secondary)]"
                       rows={5}
                       defaultValue={msg.content || ''}
-                      placeholder="메시지를 입력하세요..."
+                      placeholder={t('main.message.edit.placeholder')}
                       autoFocus
                     ></textarea>
                     <div className="absolute bottom-3 right-3 text-xs text-[var(--color-text-informative-secondary)]">
-                      Enter로 줄바꿈
+                      {t('main.message.edit.linebreakHint')}
                     </div>
                   </div>
                   <div className="flex items-center justify-between w-full">
                     <div className="text-xs text-[var(--color-text-informative-secondary)]">
-                      메시지 편집 중...
+                      {t('main.message.edit.editing')}
                     </div>
                     <div className="flex items-center space-x-3">
                       <button onClick={() => {
                         setEditingMessageId(null);
                       }} data-id={msg.id.toString()} className="cancel-edit-btn text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-interface)] bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] px-5 py-2.5 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 border border-[var(--color-border)]">
-                        취소
+                        {t('common.cancel')}
                       </button>
                       <button onClick={() => {
                         const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
@@ -227,7 +229,7 @@ const MessageList: React.FC<MessageListProps> = ({
                           setEditingMessageId(null);
                         }
                       }} data-id={msg.id.toString()} className="save-edit-btn text-sm text-[var(--color-text-accent)] bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] px-6 py-2.5 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg">
-                        저장
+                        {t('common.save')}
                       </button>
                     </div>
                   </div>
@@ -243,7 +245,7 @@ const MessageList: React.FC<MessageListProps> = ({
               const heightStyle = isExpanded ? { maxHeight: '400px' } : { maxHeight: '120px' };
 
               const imgSrc = stickerData.data;
-              const stickerName = stickerData.name || '스티커';
+              const stickerName = stickerData.name || t('main.message.sticker.defaultName');
 
               return (
                 <div className="inline-block cursor-pointer transition-all duration-300 hover:scale-110 transform" onClick={() => toggleStickerSize(msg.id.toString())}>
@@ -263,12 +265,12 @@ const MessageList: React.FC<MessageListProps> = ({
                     }}
                     className={`relative ${msg.type === 'IMAGE' && !isRegenerating ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
                   >
-                    {renderFile(msg.file, false)}
+                    {renderFile(msg.file, false, t)}
                     {isRegenerating && (
                       <div className="absolute inset-0 bg-[var(--color-bg-shadow)]/50 flex items-center justify-center rounded-lg">
                         <div className="flex flex-col items-center text-[var(--color-text-accent)]">
                           <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                          <span className="text-sm font-medium">이미지 재생성 중...</span>
+                          <span className="text-sm font-medium">{t('main.message.actions.imageRerolling')}</span>
                         </div>
                       </div>
                     )}
@@ -315,8 +317,17 @@ const MessageList: React.FC<MessageListProps> = ({
                   <div className="flex flex-col items-center text-sm text-[var(--color-icon-tertiary)] bg-[var(--color-button-secondary)] px-4 py-2 rounded-full animate-fadeIn">
                     {msg.content}
                     {msg.leaveCharId && (
-                      <span className=" text-[var(--color-text-informative-secondary)] underline items-center" onClick={() => inviteCharacter(msg.leaveCharId ?? null, room, allCharacters.find(c => c.id === msg.leaveCharId)?.name || 'Unknown', dispatch)}>
-                        채팅방으로 초대하기
+                      <span
+                        className=" text-[var(--color-text-informative-secondary)] underline items-center"
+                        onClick={() => inviteCharacter(
+                          msg.leaveCharId ?? null,
+                          room,
+                          allCharacters.find(c => c.id === msg.leaveCharId)?.name || t('common.unknown'),
+                          dispatch,
+                          t
+                        )}
+                      >
+                        {t('main.message.system.inviteCta')}
                       </span>
                     )}
                   </div>
@@ -360,8 +371,8 @@ const MessageList: React.FC<MessageListProps> = ({
                                 data-id={msg.id.toString()}
                                 onClick={() => { setEditingMessageId(msg.id) }}
                                 className="edit-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-icon-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
-                                aria-label="메시지 편집"
-                                title="편집"
+                                aria-label={t('main.message.actions.editAriaLabel')}
+                                title={t('main.message.actions.edit')}
                               >
                                 <Edit3 className="w-4 h-4" />
                               </button>
@@ -371,8 +382,8 @@ const MessageList: React.FC<MessageListProps> = ({
                               data-id={msg.id.toString()}
                               onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
                               className="delete-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-negative)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
-                              aria-label="메시지 삭제"
-                              title="삭제"
+                              aria-label={t('main.message.actions.deleteAriaLabel')}
+                              title={t('main.message.actions.delete')}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -384,14 +395,14 @@ const MessageList: React.FC<MessageListProps> = ({
                                   console.log('Reroll message', msg.id)
                                   dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
                                   setIsWaitingForResponse(true);
-                                  SendMessage(room, setTypingCharacterId)
+                                  SendMessage(room, setTypingCharacterId, t)
                                     .finally(() => {
                                       setIsWaitingForResponse(false);
                                     });
                                 }}
                                 className="reroll-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
-                                aria-label="다시 생성"
-                                title="다시 생성"
+                                aria-label={t('main.message.actions.rerollAriaLabel')}
+                                title={t('main.message.actions.reroll')}
                               >
                                 <RefreshCw className="w-4 h-4" />
                               </button>
@@ -438,8 +449,8 @@ const MessageList: React.FC<MessageListProps> = ({
                                   ? 'opacity-60 cursor-not-allowed text-[var(--color-icon-tertiary)]'
                                   : 'text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)]'
                                   }`}
-                                aria-label="이미지 다시 생성"
-                                title={regeneratingImageIds.has(msg.id.toString()) ? "이미지 재생성 중..." : "이미지 다시 생성"}
+                                aria-label={t('main.message.actions.imageRerollAriaLabel')}
+                                title={regeneratingImageIds.has(msg.id.toString()) ? t('main.message.actions.imageRerolling') : t('main.message.actions.imageReroll')}
                               >
                                 {regeneratingImageIds.has(msg.id.toString()) ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -459,7 +470,7 @@ const MessageList: React.FC<MessageListProps> = ({
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                           {showUnread && (
-                            <span className="text-sm text-[var(--color-button-primary)] animate-pulse">전송됨</span>
+                            <span className="text-sm text-[var(--color-button-primary)] animate-pulse">{t('main.message.sent')}</span>
                           )}
                         </div>
                       )}
@@ -499,14 +510,14 @@ const MessageList: React.FC<MessageListProps> = ({
           <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center">
             <img
               src={selectedImageUrl}
-              alt="확대된 이미지"
+              alt={t('main.message.imageModal.alt')}
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-scaleIn"
               onClick={(e) => e.stopPropagation()}
             />
             <button
               onClick={() => setImageModalOpen(false)}
               className="absolute top-4 right-4 p-2 bg-[var(--color-bg-shadow)]/60 text-[var(--color-text-accent)] rounded-full hover:bg-[var(--color-bg-shadow)]/70 transition-all duration-200"
-              aria-label="이미지 닫기"
+              aria-label={t('main.message.imageModal.closeAria')}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

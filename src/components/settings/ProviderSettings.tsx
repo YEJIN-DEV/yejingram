@@ -3,6 +3,8 @@ import type { SettingsState, ApiConfig } from '../../entities/setting/types';
 import { Key, Cpu, Link, Plus, X, Briefcase, Globe } from 'lucide-react';
 import { initialApiConfigs } from '../../entities/setting/slice';
 
+import { useTranslation } from 'react-i18next';
+
 interface ProviderSettingsProps {
     settings: SettingsState;
     setSettings: React.Dispatch<React.SetStateAction<SettingsState>>;
@@ -41,6 +43,7 @@ const providerModels: Record<string, string[]> = {
 export type ProviderModel = typeof providerModels[keyof typeof providerModels][number];
 
 export function ProviderSettings({ settings, setSettings }: ProviderSettingsProps) {
+    const { t } = useTranslation();
     const [customModelInput, setCustomModelInput] = useState('');
     const provider = settings.apiProvider;
     const rawConfig = settings?.apiConfigs?.[provider];
@@ -86,11 +89,11 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
             <div className="flex items-center justify-between p-3 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border)]">
                 <div className="flex flex-col">
                     <label htmlFor="structured-output-toggle" className="font-medium text-[var(--color-text-primary)] cursor-pointer">
-                        구조화된 출력 사용
+                        {t('settings.ai.structuredOutput.label')}
                     </label>
-                    <p className="text-xs text-[var(--color-text-secondary)]">LLM이 응답 시간과 메시지를 직접 제어합니다. (권장)</p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.ai.structuredOutput.help')}</p>
                     {provider === 'claude' && (
-                        <p className="text-xs text-[var(--color-text-secondary)] mt-1">주의: Claude의 경우 요청에 실패할 가능성이 있습니다.</p>
+                        <p className="text-xs text-[var(--color-text-secondary)] mt-1">{t('settings.ai.structuredOutput.warnClaude')}</p>
                     )}
                 </div>
                 <label htmlFor="structured-output-toggle" className="relative flex items-center cursor-pointer">
@@ -108,9 +111,9 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                 <div className="flex items-center justify-between p-3 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border)]">
                     <div className="flex flex-col">
                         <label htmlFor="image-response-toggle" className="font-medium text-[var(--color-text-primary)] cursor-pointer">
-                            이미지 응답 허용
+                            {t('settings.ai.imageResponse.label')}
                         </label>
-                        <p className="text-xs text-[var(--color-text-secondary)]">대화 컨텍스트에 따라서 이미지 응답을 허용합니다.</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.ai.imageResponse.help')}</p>
                     </div>
                     <label htmlFor="image-response-toggle" className="relative flex items-center cursor-pointer">
                         <input
@@ -126,12 +129,12 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
             )}
             {provider !== 'vertexai' && (
                 <div>
-                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Key className="w-4 h-4 mr-2" />API 키</label>
+                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Key className="w-4 h-4 mr-2" />{t('settings.ai.apiKeyLabel')}</label>
                     <input
                         type="password"
                         value={config.apiKey}
                         onChange={e => handleConfigChange('apiKey', e.target.value)}
-                        placeholder="API 키를 입력하세요"
+                        placeholder={t('settings.ai.apiKeyPlaceholder')}
                         className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                     />
                 </div>
@@ -140,17 +143,17 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
             {provider === 'vertexai' && (
                 <>
                     <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Briefcase className="w-4 h-4 mr-2" />Project ID</label>
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Briefcase className="w-4 h-4 mr-2" />{t('settings.ai.vertex.projectIdLabel')}</label>
                         <input
                             type="text"
                             value={config.projectId || ''}
                             onChange={e => handleConfigChange('projectId', e.target.value)}
-                            placeholder="Vertex AI Project ID"
+                            placeholder={t('settings.ai.vertex.projectIdPlaceholder')}
                             className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                         />
                     </div>
                     <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Globe className="w-4 h-4 mr-2" />Location</label>
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Globe className="w-4 h-4 mr-2" />{t('settings.ai.vertex.locationLabel')}</label>
                         <input
                             type="text"
                             value={config.location || ''}
@@ -160,7 +163,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         />
                     </div>
                     <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Key className="w-4 h-4 mr-2" />Access Token</label>
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Key className="w-4 h-4 mr-2" />{t('settings.ai.vertex.accessTokenLabel')}</label>
                         <input
                             type="password"
                             value={config.accessToken || ''}
@@ -174,7 +177,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
             {provider === 'customOpenAI' && (
                 <div>
-                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Link className="w-4 h-4 mr-2" />Base URL</label>
+                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Link className="w-4 h-4 mr-2" />{t('settings.ai.customOpenAI.baseUrlLabel')}</label>
                     <input
                         type="text"
                         value={config.baseUrl || ''}
@@ -186,7 +189,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
             )}
 
             <div>
-                <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Cpu className="w-4 h-4 mr-2" />모델</label>
+                <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Cpu className="w-4 h-4 mr-2" />{t('settings.ai.modelLabel')}</label>
 
                 {models.length > 0 && (
                     <div className="grid grid-cols-1 gap-2 mb-3">
@@ -207,20 +210,20 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         type="text"
                         value={customModelInput}
                         onChange={e => setCustomModelInput(e.target.value)}
-                        placeholder="커스텀 모델명 입력"
+                        placeholder={t('settings.ai.customModelPlaceholder')}
                         className="flex-1 px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm"
                     />
                     <button
                         type="button"
                         onClick={handleAddCustomModel}
                         className="px-4 py-2 bg-[var(--color-button-positive)] hover:bg-[var(--color-button-positive)] text-[var(--color-text-accent)] rounded-lg text-sm flex items-center gap-1">
-                        <Plus className="w-4 h-4" />추가
+                        <Plus className="w-4 h-4" />{t('settings.ai.add')}
                     </button>
                 </div>
 
                 {config.customModels.length > 0 && (
                     <div className="mt-3 space-y-1">
-                        <label className="text-xs text-[var(--color-icon-tertiary)]">커스텀 모델</label>
+                        <label className="text-xs text-[var(--color-icon-tertiary)]">{t('settings.ai.customModelsLabel')}</label>
                         {config.customModels.map((model, index) => (
                             <div key={index} className="flex items-center gap-2">
                                 <button

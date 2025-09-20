@@ -2,7 +2,7 @@ import type { FileToSend } from '../../entities/message/types';
 import { StickyNote } from 'lucide-react';
 
 
-export const renderFile = (file: FileToSend, preview: boolean) => {
+export const renderFile = (file: FileToSend, preview: boolean, t: (key: string) => string) => {
   const { dataUrl, mimeType } = file;
 
   if (mimeType.startsWith('image/')) {
@@ -10,7 +10,7 @@ export const renderFile = (file: FileToSend, preview: boolean) => {
       <img
         src={dataUrl}
         className={`${preview ? "max-w-full max-h-32" : "max-w-64"} object-contain rounded-lg`}
-        alt="미리보기"
+        alt={t('main.filePreview.alt')}
       />
     );
   }
@@ -26,8 +26,8 @@ export const renderFile = (file: FileToSend, preview: boolean) => {
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-[var(--color-text-primary)]">오디오 파일</p>
-            <p className="text-xs text-[var(--color-text-secondary)]">클릭하여 재생</p>
+            <p className="text-sm font-medium text-[var(--color-text-primary)]">{t('main.filePreview.audioFile')}</p>
+            <p className="text-xs text-[var(--color-text-secondary)]">{t('main.filePreview.clickToPlay')}</p>
           </div>
         </div>
         <audio

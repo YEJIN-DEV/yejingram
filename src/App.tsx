@@ -40,6 +40,7 @@ function App() {
       i18n.changeLanguage(uiLanguage);
     } else {
       dispatch(settingsActions.setUILanguage(i18n.language as 'ko' | 'en' | 'ja'));
+      dispatch(settingsActions.updatePromptNamesToLocale(i18n.language as 'ko' | 'en' | 'ja'));
     }
   }, [uiLanguage, dispatch]);
 

@@ -4,6 +4,7 @@ import { selectAllSettings } from '../../entities/setting/selectors';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
 import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Image, CircleEllipsis, Palette, Languages } from 'lucide-react';
 import i18n from '../../i18n/i18n';
+import { useTranslation } from 'react-i18next';
 import { ProviderSettings } from './ProviderSettings';
 import { backupStateToFile, restoreStateFromFile } from '../../utils/backup';
 import { settingsActions } from '../../entities/setting/slice';
@@ -17,6 +18,7 @@ interface SettingsPanelProps {
 }
 
 function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const settings = useSelector(selectAllSettings);
     const tabContainerRef = useRef<HTMLDivElement>(null);
@@ -36,10 +38,10 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
 
             try {
                 await restoreStateFromFile(file);
-                alert("백업 파일이 성공적으로 불러와졌습니다.");
+                alert(t('settings.alerts.backupImported'));
             } catch (err) {
                 console.error(err);
-                alert("백업 파일 불러오기 실패");
+                alert(t('settings.alerts.backupImportFailed'));
             }
         };
 
@@ -130,7 +132,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
         <>
             <div className="fixed md:relative top-0 bottom-0 z-40 w-full max-w-sm md:max-w-lg left-0 md:left-auto bg-[var(--color-bg-main)] h-full flex flex-col border-r border-[var(--color-border)]">
                 <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)] shrink-0">
-                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">설정</h3>
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('settings.title')}</h3>
                     <button onClick={onClose} className="p-1 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors"><X className="w-5 h-5 text-[var(--color-icon-tertiary)]" /></button>
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto flex-1">
@@ -147,7 +149,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 }`}
                         >
                             <Globe className="w-4 h-4 inline mr-2" />
-                            AI
+                            {t('settings.tabs.ai')}
                         </button>
                         {localSettings.useImageResponse && (
                             <button
@@ -158,7 +160,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     }`}
                             >
                                 <Image className="w-4 h-4 inline mr-2" />
-                                이미지
+                                {t('settings.tabs.image')}
                             </button>
                         )}
                         <button
@@ -169,7 +171,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 }`}
                         >
                             <User className="w-4 h-4 inline mr-2" />
-                            페르소나
+                            {t('settings.tabs.persona')}
                         </button>
                         <button
                             onClick={() => setActiveTab('proactive')}
@@ -179,7 +181,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 }`}
                         >
                             <MessageSquarePlus className="w-4 h-4 inline mr-2" />
-                            선톡
+                            {t('settings.tabs.proactive')}
                         </button>
                         <button
                             onClick={() => setActiveTab('others')}
@@ -189,7 +191,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 }`}
                         >
                             <CircleEllipsis className="w-4 h-4 inline mr-2" />
-                            기타 설정
+                            {t('settings.tabs.others')}
                         </button>
                     </div>
 
@@ -198,7 +200,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         {activeTab === 'ai' && (
                             <div className="space-y-4">
                                 <div>
-                                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Globe className="w-4 h-4 mr-2" />AI 제공업체</label>
+                                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Globe className="w-4 h-4 mr-2" />{t('settings.ai.providerLabel')}</label>
                                     <select id="settings-api-provider" value={localSettings.apiProvider} onChange={handleProviderChange} className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm">
                                         <option value="gemini">Google Gemini</option>
                                         <option value="vertexai">Google Vertex AI</option>
@@ -212,7 +214,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 <ProviderSettings settings={localSettings} setSettings={setLocalSettings} />
                                 <div>
                                     <button id="open-prompt-modal" onClick={handlePromptModalOpen} className="w-full mt-2 py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-                                        <FilePenLine className="w-4 h-4" /> 프롬프트 수정
+                                        <FilePenLine className="w-4 h-4" /> {t('settings.ai.editPrompts')}
                                     </button>
                                 </div>
                             </div>
@@ -226,7 +228,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             <div className="space-y-4">
                                 <div className="py-2">
                                     <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] cursor-pointer">
-                                        <span className="flex items-center"><MessageSquarePlus className="w-4 h-4 mr-2" />연락처 내 선톡 활성화</span>
+                                        <span className="flex items-center"><MessageSquarePlus className="w-4 h-4 mr-2" />{t('settings.proactive.enableInContacts')}</span>
                                         <div className="relative inline-block w-10 align-middle select-none">
                                             <input type="checkbox" id="settings-proactive-toggle" checked={localSettings.proactiveChatEnabled} onChange={e => setLocalSettings(prev => ({ ...prev, proactiveChatEnabled: e.target.checked }))} className="absolute opacity-0 w-0 h-0 peer" />
                                             <label htmlFor="settings-proactive-toggle" className="block overflow-hidden h-6 rounded-full bg-[var(--color-toggle-off)] cursor-pointer peer-checked:bg-[var(--color-toggle-on)]"></label>
@@ -236,7 +238,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 </div>
                                 <div className="py-2 border-t border-[var(--color-border)] mt-2 pt-2">
                                     <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] cursor-pointer">
-                                        <span className="flex items-center"><Shuffle className="w-4 h-4 mr-2" />랜덤 선톡 활성화</span>
+                                        <span className="flex items-center"><Shuffle className="w-4 h-4 mr-2" />{t('settings.proactive.enableRandom')}</span>
                                         <div className="relative inline-block w-10 align-middle select-none">
                                             <input type="checkbox" id="settings-random-first-message-toggle" checked={localSettings.randomFirstMessageEnabled} onChange={e => setLocalSettings(prev => ({ ...prev, randomFirstMessageEnabled: e.target.checked }))} className="absolute opacity-0 w-0 h-0 peer" />
                                             <label htmlFor="settings-random-first-message-toggle" className="block overflow-hidden h-6 rounded-full bg-[var(--color-toggle-off)] cursor-pointer peer-checked:bg-[var(--color-toggle-on)]"></label>
@@ -247,17 +249,17 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         <div id="random-chat-options" className="mt-4 space-y-4">
                                             <div>
                                                 <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
-                                                    <span>생성할 인원 수</span>
-                                                    <span id="random-character-count-label" className="text-[var(--color-button-primary)] font-semibold">{localSettings.randomCharacterCount}명</span>
+                                                    <span>{t('settings.proactive.countLabel')}</span>
+                                                    <span id="random-character-count-label" className="text-[var(--color-button-primary)] font-semibold">{localSettings.randomCharacterCount}{t('units.peopleSuffix')}</span>
                                                 </label>
                                                 <input id="settings-random-character-count" type="range" min="1" max="5" step="1" value={localSettings.randomCharacterCount} onChange={e => setLocalSettings(prev => ({ ...prev, randomCharacterCount: +e.target.value }))} className="w-full accent-[var(--color-button-primary)]" />
                                             </div>
                                             <div>
-                                                <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">선톡 시간 간격 (분 단위)</label>
+                                                <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">{t('settings.proactive.intervalLabel')}</label>
                                                 <div className="flex items-center gap-2">
-                                                    <input id="settings-random-frequency-min" type="number" min="1" value={localSettings.randomMessageFrequencyMin} onChange={e => setLocalSettings(prev => ({ ...prev, randomMessageFrequencyMin: +e.target.value }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" placeholder="최소" />
+                                                    <input id="settings-random-frequency-min" type="number" min="1" value={localSettings.randomMessageFrequencyMin} onChange={e => setLocalSettings(prev => ({ ...prev, randomMessageFrequencyMin: +e.target.value }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" placeholder={t('settings.proactive.minPlaceholder') ?? ''} />
                                                     <span className="text-[var(--color-text-secondary)]">-</span>
-                                                    <input id="settings-random-frequency-max" type="number" min="1" value={localSettings.randomMessageFrequencyMax} onChange={e => setLocalSettings(prev => ({ ...prev, randomMessageFrequencyMax: +e.target.value }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" placeholder="최대" />
+                                                    <input id="settings-random-frequency-max" type="number" min="1" value={localSettings.randomMessageFrequencyMax} onChange={e => setLocalSettings(prev => ({ ...prev, randomMessageFrequencyMax: +e.target.value }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" placeholder={t('settings.proactive.maxPlaceholder') ?? ''} />
                                                 </div>
                                             </div>
                                         </div>
@@ -270,16 +272,16 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             <div className="space-y-4">
                                 <div>
                                     <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
-                                        <span className="flex items-center"><FastForward className="w-4 h-4 mr-2" />메시지 입력 가속</span>
+                                        <span className="flex items-center"><FastForward className="w-4 h-4 mr-2" />{t('settings.others.speedupLabel')}</span>
                                         <span className="text-[var(--color-button-primary)] font-semibold">{localSettings.speedup}X</span>
                                     </label>
-                                    <p className="text-xs text-[var(--color-text-secondary)] mt-2">* 구조화된 출력 사용중에는 적용되지 않습니다.</p>
+                                    <p className="text-xs text-[var(--color-text-secondary)] mt-2">{t('settings.others.speedupNote')}</p>
                                     <input id="settings-speedup" type="range" min="1" max="4" step="0.5" value={localSettings.speedup} onChange={e => setLocalSettings(prev => ({ ...prev, speedup: +e.target.value }))} className="w-full accent-[var(--color-button-primary)]" />
-                                    <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mt-1"><span>느리게</span><span>빠르게</span></div>
+                                    <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mt-1"><span>{t('settings.others.slower')}</span><span>{t('settings.others.faster')}</span></div>
                                 </div>
                                 <div className="pt-4 border-t border-[var(--color-border)]">
-                                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Languages className="w-4 h-4 mr-2" />UI 언어</label>
-                                    <select id="settings-ui-language" value={localSettings.uiLanguage} onChange={handleLanguageChange} className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm">
+                                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Languages className="w-4 h-4 mr-2" />{t('settings.others.uiLanguageLabel')}</label>
+                                    <select id="settings-ui-language" value={localSettings.uiLanguage ?? (i18n.language as 'ko' | 'en' | 'ja')} onChange={handleLanguageChange} className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm">
                                         <option value="ko">한국어</option>
                                         <option value="en">English</option>
                                         <option value="ja">日本語</option>
@@ -287,7 +289,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 </div>
                                 <div className="pt-4 border-t border-[var(--color-border)]">
                                     <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
-                                        <span className="flex items-center"><Palette className="w-4 h-4 mr-2" />UI 테마</span>
+                                        <span className="flex items-center"><Palette className="w-4 h-4 mr-2" />{t('settings.others.uiThemeLabel')}</span>
                                     </label>
                                     {/* Four buttons 2x2 (light, dark, system, custom). Selected if matches with localSettings.colorTheme */}
                                     <div className="grid grid-cols-2 gap-2">
@@ -298,7 +300,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
                                         >
-                                            라이트 테마
+                                            {t('settings.others.theme.light')}
                                         </button>
                                         <button
                                             onClick={() => handleColorThemeChange('dark')}
@@ -307,7 +309,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
                                         >
-                                            다크 테마
+                                            {t('settings.others.theme.dark')}
                                         </button>
                                         <button
                                             onClick={() => handleColorThemeChange('system')}
@@ -316,7 +318,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
                                         >
-                                            시스템 기본값
+                                            {t('settings.others.theme.system')}
                                         </button>
                                         <button
                                             onClick={() => handleColorThemeChange('custom')}
@@ -325,7 +327,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
                                         >
-                                            커스텀 테마
+                                            {t('settings.others.theme.custom')}
                                         </button>
                                     </div>
                                     <div className={`pt-4 ${localSettings.colorTheme === 'custom' ? 'block' : 'hidden'}`}>
@@ -334,10 +336,10 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 </div>
                                 <div className="space-y-3 pt-4 border-t border-[var(--color-border)]">
                                     <button onClick={backupStateToFile} id="backup-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-                                        <Upload className="w-4 h-4" /> 백업하기
+                                        <Upload className="w-4 h-4" /> {t('settings.others.backup.backupButton')}
                                     </button>
                                     <button onClick={importBackup} id="restore-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
-                                        <Download className="w-4 h-4" /> 불러오기
+                                        <Download className="w-4 h-4" /> {t('settings.others.backup.restoreButton')}
                                     </button>
                                 </div>
                             </div>
@@ -345,7 +347,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                     </div>
                 </div>
                 <div className="p-6 border-t border-[var(--color-border)] shrink-0">
-                    <button onClick={handleSave} className="w-full py-2.5 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors">저장</button>
+                    <button onClick={handleSave} className="w-full py-2.5 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors">{t('common.save')}</button>
                 </div>
             </div>
         </>

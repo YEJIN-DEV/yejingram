@@ -1,5 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Image, Upload, Download, MessageSquarePlus, ChevronDown } from 'lucide-react';
 import { selectEditingCharacterId, selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
@@ -50,6 +51,7 @@ interface CharacterPanelProps {
 
 function CharacterPanel({ onClose }: CharacterPanelProps) {
     const dispatch = useDispatch();
+    const { t } = useTranslation();
     const editingId = useSelector(selectEditingCharacterId);
     const editingCharacter = useSelector((state: RootState) => editingId ? selectCharacterById(state, editingId) : null);
     const proactiveChatEnabled = useSelector((state: RootState) => state.settings.proactiveChatEnabled)
@@ -152,19 +154,19 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                                 setChar(characterFromCard);
                             } catch (e) {
                                 console.error("Failed to parse character card:", e);
-                                alert("유효하지 않은 연락처 카드 형식입니다.");
+                                alert(t('characterPanel.alerts.invalidCardFormat'));
                             }
                         } else {
-                            alert("이 이미지에는 연락처 데이터가 없습니다.");
+                            alert(t('characterPanel.alerts.noContactDataInImage'));
                         }
                     } catch (err) {
                         console.error(err);
-                        alert("연락처 불러오기 실패");
+                        alert(t('characterPanel.alerts.importFailed'));
                     }
                 };
                 reader.readAsDataURL(file);
             } else {
-                alert('지원하지 않는 파일 형식입니다. PNG/JPEG/JSON/CHARX를 사용하세요.');
+                alert(t('characterPanel.alerts.unsupportedFileType'));
             }
         };
 
@@ -173,7 +175,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
 
     const exportPersonaImage = async (method: "png-trailer" | "alpha-channel") => {
         if (!char.avatar) {
-            alert("아바타 이미지가 없습니다. 이미지를 먼저 추가해주세요.");
+            alert(t('characterPanel.alerts.missingAvatar'));
             return;
         }
 
@@ -189,26 +191,26 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
     return (
         <div className="fixed inset-y-0 right-0 z-40 w-96 max-w-full bg-[var(--color-bg-main)] border-l border-[var(--color-border)] shadow-xl flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)] shrink-0">
-                <h3 className="text-xl font-semibold text-[var(--color-text-primary)]">{isNew ? '연락처 추가' : '연락처 수정'}</h3>
+                <h3 className="text-xl font-semibold text-[var(--color-text-primary)]">{isNew ? t('characterPanel.titleAdd') : t('characterPanel.titleEdit')}</h3>
             </div>
             <div className="flex border-b border-[var(--color-border)]">
                 <button
                     className={`py-3 px-6 text-sm font-medium transition-colors ${activeTab === 'basicInfo' ? 'text-[var(--color-button-primary-accent)] border-b-2 border-[var(--color-focus-border)]' : 'text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'}`}
                     onClick={() => setActiveTab('basicInfo')}
                 >
-                    기본정보
+                    {t('characterPanel.tabs.basicInfo')}
                 </button>
                 <button
                     className={`py-3 px-6 text-sm font-medium transition-colors ${activeTab === 'lorebook' ? 'text-[var(--color-button-primary-accent)] border-b-2 border-[var(--color-focus-border)]' : 'text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'}`}
                     onClick={() => setActiveTab('lorebook')}
                 >
-                    로어북
+                    {t('characterPanel.tabs.lorebook')}
                 </button>
                 <button
                     className={`py-3 px-6 text-sm font-medium transition-colors ${activeTab === 'backup' ? 'text-[var(--color-button-primary-accent)] border-b-2 border-[var(--color-focus-border)]' : 'text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'}`}
                     onClick={() => setActiveTab('backup')}
                 >
-                    백업
+                    {t('characterPanel.tabs.backup')}
                 </button>
             </div>
             <div className="p-6 space-y-6 overflow-y-auto">
@@ -220,27 +222,27 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                             </div>
                             <div className="flex flex-col gap-2">
                                 <button onClick={() => avatarInputRef.current?.click()} className="py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-                                    <Image className="w-4 h-4" /> 프로필 이미지
+                                    <Image className="w-4 h-4" /> {t('characterPanel.profileImage')}
                                 </button>
                                 <button onClick={importPersonaImage} className="py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-                                    <Upload className="w-4 h-4" /> 연락처 불러오기
+                                    <Upload className="w-4 h-4" /> {t('characterPanel.importContact')}
                                 </button>
                             </div>
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">이름</label>
-                            <input id="character-name" type="text" placeholder="이름을 입력하세요" value={char.name} onChange={e => handleInputChange('name', e.target.value)} className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" />
+                            <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">{t('characterPanel.nameLabel')}</label>
+                            <input id="character-name" type="text" placeholder={t('characterPanel.namePlaceholder')} value={char.name} onChange={e => handleInputChange('name', e.target.value)} className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" />
                         </div>
                         <div>
                             <div className="flex items-center justify-between mb-2">
-                                <label className="text-sm font-medium text-[var(--color-text-interface)]">인물 정보</label>
+                                <label className="text-sm font-medium text-[var(--color-text-interface)]">{t('characterPanel.personInfoLabel')}</label>
                             </div>
-                            <textarea id="character-prompt" placeholder="특징, 배경, 관계, 기억 등을 자유롭게 서술해주세요." value={char.prompt} onChange={e => handleInputChange('prompt', e.target.value)} className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" rows={6}></textarea>
+                            <textarea id="character-prompt" placeholder={t('characterPanel.personInfoPlaceholder')} value={char.prompt} onChange={e => handleInputChange('prompt', e.target.value)} className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" rows={6}></textarea>
                         </div>
                         {proactiveChatEnabled && (
                             <div className="border-t border-[var(--color-border)] pt-4">
                                 <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] cursor-pointer">
-                                    <span className="flex items-center"><MessageSquarePlus className="w-4 h-4 mr-2" />개별 선톡 허용</span>
+                                    <span className="flex items-center"><MessageSquarePlus className="w-4 h-4 mr-2" />{t('characterPanel.allowProactive')}</span>
                                     <div className="relative inline-block w-10 align-middle select-none">
                                         <input type="checkbox" id="character-proactive-toggle" checked={char.proactiveEnabled} onChange={e => handleInputChange('proactiveEnabled', e.target.checked)} className="absolute opacity-0 w-0 h-0 peer" />
                                         <label htmlFor="character-proactive-toggle" className="block overflow-hidden h-6 rounded-full bg-[var(--color-toggle-off)] cursor-pointer peer-checked:bg-[var(--color-toggle-on)]"></label>
@@ -252,14 +254,14 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
 
                         <details className="group/additional border-t border-[var(--color-border)] pt-4">
                             <summary className="flex items-center justify-between cursor-pointer list-none">
-                                <span className="text-base font-medium text-[var(--color-text-primary)]">추가 설정</span>
+                                <span className="text-base font-medium text-[var(--color-text-primary)]">{t('characterPanel.additionalSettings')}</span>
                                 <ChevronDown className="w-5 h-5 text-[var(--color-icon-secondary)] transition-transform duration-300 group-open/additional:rotate-180" />
                             </summary>
                             <div className="content-wrapper">
                                 <div className="content-inner pt-6 space-y-6">
                                     <details className="group/sticker border-t border-[var(--color-border)] pt-2">
                                         <summary className="flex items-center justify-between cursor-pointer list-none py-2">
-                                            <h4 className="text-sm font-medium text-[var(--color-text-interface)]">스티커</h4>
+                                            <h4 className="text-sm font-medium text-[var(--color-text-interface)]">{t('characterPanel.stickers')}</h4>
                                             <ChevronDown className="w-5 h-5 text-[var(--color-icon-secondary)] transition-transform duration-300 group-open/sticker:rotate-180" />
                                         </summary>
                                         <StickerManager characterId={char.id} draft={char} onDraftChange={setChar} />
@@ -267,7 +269,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                                     {/* 메모리는 별도 탭으로 이동 */}
                                     <details className="group/attribute border-t border-[var(--color-border)] pt-2">
                                         <summary className="flex items-center justify-between cursor-pointer list-none py-2">
-                                            <h4 className="text-sm font-medium text-[var(--color-text-interface)]">메시지 응답성</h4>
+                                            <h4 className="text-sm font-medium text-[var(--color-text-interface)]">{t('characterPanel.messageReactivity')}</h4>
                                             <ChevronDown className="w-5 h-5 text-[var(--color-icon-secondary)] transition-transform duration-300 group-open/attribute:rotate-180" />
                                         </summary>
                                         <AttributeSliders characterId={char.id} draft={char} onDraftChange={setChar} />
@@ -284,21 +286,21 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                 )}
                 {activeTab === 'backup' && (
                     <div className="space-y-6">
-                        <h4 className="text-lg font-semibold text-[var(--color-text-primary)]">백업 설정</h4>
+                        <h4 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('characterPanel.backupSettings')}</h4>
                         <div className="flex flex-col gap-3">
                             <button onClick={() => exportPersonaImage("alpha-channel")} className="py-3 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
-                                <Download className="w-4 h-4" /> 연락처 공유하기 (아리스톡)
+                                <Download className="w-4 h-4" /> {t('characterPanel.shareArisutalk')}
                             </button>
                             <button onClick={() => exportPersonaImage("png-trailer")} className="py-3 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-                                <Download className="w-4 h-4" /> 연락처 공유하기 (예진그램)
+                                <Download className="w-4 h-4" /> {t('characterPanel.shareYejingram')}
                             </button>
                         </div>
                     </div>
                 )}
             </div>
             <div className="p-6 mt-auto border-t border-[var(--color-border)] shrink-0 flex justify-end space-x-3">
-                <button onClick={() => { dispatch(charactersActions.resetEditingCharacterId()); onClose(); }} className="flex-1 py-2.5 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors">취소</button>
-                <button onClick={handleSave} className="flex-1 py-2.5 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors">저장</button>
+                <button onClick={() => { dispatch(charactersActions.resetEditingCharacterId()); onClose(); }} className="flex-1 py-2.5 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors">{t('common.cancel')}</button>
+                <button onClick={handleSave} className="flex-1 py-2.5 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors">{t('characterPanel.save')}</button>
             </div>
             {/* 숨겨진 파일 입력: 어디서든 아바타 업로드 버튼이 동작하도록 전역 배치 */}
             <input type="file" accept="image/png,image/jpeg" ref={avatarInputRef} onChange={handleAvatarChange} className="hidden" />
