@@ -6,6 +6,7 @@ import 'jsoneditor/dist/jsoneditor.css';
 import type { SettingsState } from '../../../entities/setting/types';
 import type { ImageApiProvider } from '../../../entities/setting/image/types';
 import { initialImageApiConfigs } from '../../../entities/setting/image/slice';
+import { Toggle } from '../../Toggle';
 
 interface ComfySettingsProps {
   settings: SettingsState;
@@ -278,30 +279,19 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
 
       {/* NovelAI 스타일 인식 토글 - NovelAI가 선택된 경우에만 표시 */}
       {imageProvider === 'novelai' && (
-        <div className="flex items-center justify-between p-3 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border)]">
-          <div className="flex flex-col">
-            <label htmlFor="style-aware-toggle" className="font-medium text-[var(--color-text-primary)] cursor-pointer">
-              스타일 인식 모드
-            </label>
-            <p className="text-xs text-[var(--color-text-secondary)]">활성화하면 캐릭터 이미지의 스타일을 인식하여 일관된 그림체로 생성합니다.</p>
-          </div>
-          <label htmlFor="style-aware-toggle" className="relative flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              id="style-aware-toggle"
-              className="sr-only peer"
-              checked={settings.imageSettings.styleAware}
-              onChange={e => setSettings(prev => ({
-                ...prev,
-                imageSettings: {
-                  ...prev.imageSettings,
-                  styleAware: e.target.checked
-                }
-              }))}
-            />
-            <div className="w-11 h-6 bg-[var(--color-toggle-off)] rounded-full peer peer-focus:ring-4 peer-focus:ring-[var(--color-toggle-on)]/30 peer-checked:after:translate-x-full peer-checked:after:border-[var(--color-border)] after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-[var(--color-bg-main)] after:border-[var(--color-border-strong)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-toggle-on)]"></div>
-          </label>
-        </div>
+        <Toggle
+          id="style-aware-toggle"
+          label="스타일 인식 모드"
+          description="활성화하면 캐릭터 이미지의 스타일을 인식하여 일관된 그림체로 생성합니다."
+          checked={settings.imageSettings.styleAware || false}
+          onChange={checked => setSettings(prev => ({
+            ...prev,
+            imageSettings: {
+              ...prev.imageSettings,
+              styleAware: checked
+            }
+          }))}
+        />
       )}
 
       {/* 그림체 설정 (ArtStyleManagerUI 연동) */}

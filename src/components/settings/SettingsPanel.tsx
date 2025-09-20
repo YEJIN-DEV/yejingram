@@ -9,6 +9,7 @@ import { settingsActions } from '../../entities/setting/slice';
 import PersonaManager from './PersonaModal';
 import { ImageSettings } from './image/ImageSettings';
 import ThemeSettings from './ThemeSettings';
+import { Toggle } from '../Toggle';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;
@@ -215,45 +216,40 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
 
                         {activeTab === 'proactive' && (
                             <div className="space-y-4">
-                                <div className="py-2">
-                                    <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] cursor-pointer">
-                                        <span className="flex items-center"><MessageSquarePlus className="w-4 h-4 mr-2" />연락처 내 선톡 활성화</span>
-                                        <div className="relative inline-block w-10 align-middle select-none">
-                                            <input type="checkbox" id="settings-proactive-toggle" checked={localSettings.proactiveChatEnabled} onChange={e => setLocalSettings(prev => ({ ...prev, proactiveChatEnabled: e.target.checked }))} className="absolute opacity-0 w-0 h-0 peer" />
-                                            <label htmlFor="settings-proactive-toggle" className="block overflow-hidden h-6 rounded-full bg-[var(--color-toggle-off)] cursor-pointer peer-checked:bg-[var(--color-toggle-on)]"></label>
-                                            <span className="absolute left-0.5 top-0.5 block w-5 h-5 rounded-full bg-[var(--color-bg-main)] transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
+                                <Toggle
+                                    id="settings-proactive-toggle"
+                                    label="연락처 내 선톡 활성화"
+                                    checked={localSettings.proactiveChatEnabled || false}
+                                    onChange={checked => setLocalSettings(prev => ({ ...prev, proactiveChatEnabled: checked }))}
+                                    icon={<MessageSquarePlus className="w-4 h-4" />}
+                                />
+                                <Toggle
+                                    id="settings-random-first-message-toggle"
+                                    label="랜덤 선톡 활성화"
+                                    checked={localSettings.randomFirstMessageEnabled || false}
+                                    onChange={checked => setLocalSettings(prev => ({ ...prev, randomFirstMessageEnabled: checked }))}
+                                    icon={<Shuffle className="w-4 h-4" />}
+                                />
+                                {localSettings.randomFirstMessageEnabled && (
+                                    <div id="random-chat-options" className="mt-4 space-y-4">
+                                        <div>
+                                            <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
+                                                <span>생성할 인원 수</span>
+                                                <span id="random-character-count-label" className="text-[var(--color-button-primary)] font-semibold">{localSettings.randomCharacterCount}명</span>
+                                            </label>
+                                            <input id="settings-random-character-count" type="range" min="1" max="5" step="1" value={localSettings.randomCharacterCount} onChange={e => setLocalSettings(prev => ({ ...prev, randomCharacterCount: +e.target.value }))} className="w-full accent-[var(--color-button-primary)]" />
                                         </div>
-                                    </label>
-                                </div>
-                                <div className="py-2 border-t border-[var(--color-border)] mt-2 pt-2">
-                                    <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] cursor-pointer">
-                                        <span className="flex items-center"><Shuffle className="w-4 h-4 mr-2" />랜덤 선톡 활성화</span>
-                                        <div className="relative inline-block w-10 align-middle select-none">
-                                            <input type="checkbox" id="settings-random-first-message-toggle" checked={localSettings.randomFirstMessageEnabled} onChange={e => setLocalSettings(prev => ({ ...prev, randomFirstMessageEnabled: e.target.checked }))} className="absolute opacity-0 w-0 h-0 peer" />
-                                            <label htmlFor="settings-random-first-message-toggle" className="block overflow-hidden h-6 rounded-full bg-[var(--color-toggle-off)] cursor-pointer peer-checked:bg-[var(--color-toggle-on)]"></label>
-                                            <span className="absolute left-0.5 top-0.5 block w-5 h-5 rounded-full bg-[var(--color-bg-main)] transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
-                                        </div>
-                                    </label>
-                                    {localSettings.randomFirstMessageEnabled && (
-                                        <div id="random-chat-options" className="mt-4 space-y-4">
-                                            <div>
-                                                <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
-                                                    <span>생성할 인원 수</span>
-                                                    <span id="random-character-count-label" className="text-[var(--color-button-primary)] font-semibold">{localSettings.randomCharacterCount}명</span>
-                                                </label>
-                                                <input id="settings-random-character-count" type="range" min="1" max="5" step="1" value={localSettings.randomCharacterCount} onChange={e => setLocalSettings(prev => ({ ...prev, randomCharacterCount: +e.target.value }))} className="w-full accent-[var(--color-button-primary)]" />
-                                            </div>
-                                            <div>
-                                                <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">선톡 시간 간격 (분 단위)</label>
-                                                <div className="flex items-center gap-2">
-                                                    <input id="settings-random-frequency-min" type="number" min="1" value={localSettings.randomMessageFrequencyMin} onChange={e => setLocalSettings(prev => ({ ...prev, randomMessageFrequencyMin: +e.target.value }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" placeholder="최소" />
-                                                    <span className="text-[var(--color-text-secondary)]">-</span>
-                                                    <input id="settings-random-frequency-max" type="number" min="1" value={localSettings.randomMessageFrequencyMax} onChange={e => setLocalSettings(prev => ({ ...prev, randomMessageFrequencyMax: +e.target.value }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" placeholder="최대" />
-                                                </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">선톡 시간 간격 (분 단위)</label>
+                                            <div className="flex items-center gap-2">
+                                                <input id="settings-random-frequency-min" type="number" min="1" value={localSettings.randomMessageFrequencyMin} onChange={e => setLocalSettings(prev => ({ ...prev, randomMessageFrequencyMin: +e.target.value }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" placeholder="최소" />
+                                                <span className="text-[var(--color-text-secondary)]">-</span>
+                                                <input id="settings-random-frequency-max" type="number" min="1" value={localSettings.randomMessageFrequencyMax} onChange={e => setLocalSettings(prev => ({ ...prev, randomMessageFrequencyMax: +e.target.value }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" placeholder="최대" />
                                             </div>
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
+
                             </div>
                         )}
 

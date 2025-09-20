@@ -10,6 +10,7 @@ import { StickerManager } from './StickerManager';
 import { decodeText, encodeText } from '../../utils/imageStego';
 import { LorebookEditor } from './LorebookEditor';
 import { extractBasicCharacterInfo } from '../../utils/risuai/risuCharacterCard';
+import { Toggle } from '../Toggle';
 
 const personaCardToCharacter = (card: PersonaChatAppCharacterCard): Character => {
     const { name, prompt, responseTime, thinkingTime, reactivity, tone, proactiveEnabled } = card;
@@ -238,16 +239,15 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                             <textarea id="character-prompt" placeholder="특징, 배경, 관계, 기억 등을 자유롭게 서술해주세요." value={char.prompt} onChange={e => handleInputChange('prompt', e.target.value)} className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" rows={6}></textarea>
                         </div>
                         {proactiveChatEnabled && (
-                            <div className="border-t border-[var(--color-border)] pt-4">
-                                <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] cursor-pointer">
-                                    <span className="flex items-center"><MessageSquarePlus className="w-4 h-4 mr-2" />개별 선톡 허용</span>
-                                    <div className="relative inline-block w-10 align-middle select-none">
-                                        <input type="checkbox" id="character-proactive-toggle" checked={char.proactiveEnabled} onChange={e => handleInputChange('proactiveEnabled', e.target.checked)} className="absolute opacity-0 w-0 h-0 peer" />
-                                        <label htmlFor="character-proactive-toggle" className="block overflow-hidden h-6 rounded-full bg-[var(--color-toggle-off)] cursor-pointer peer-checked:bg-[var(--color-toggle-on)]"></label>
-                                        <span className="absolute left-0.5 top-0.5 block w-5 h-5 rounded-full bg-[var(--color-bg-main)] transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
-                                    </div>
-                                </label>
-                            </div>
+
+                            <Toggle
+                                id="character-proactive-toggle"
+                                label="개별 선톡 허용"
+                                checked={char.proactiveEnabled || false}
+                                onChange={checked => handleInputChange('proactiveEnabled', checked)}
+                                icon={<MessageSquarePlus className="w-4 h-4" />}
+                            />
+
                         )}
 
                         <details className="group/additional border-t border-[var(--color-border)] pt-4">

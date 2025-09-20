@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { SettingsState, ApiConfig } from '../../entities/setting/types';
 import { Key, Cpu, Link, Plus, X, Briefcase, Globe } from 'lucide-react';
 import { initialApiConfigs } from '../../entities/setting/slice';
+import { Toggle } from '../Toggle';
 
 interface ProviderSettingsProps {
     settings: SettingsState;
@@ -83,46 +84,26 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border)]">
-                <div className="flex flex-col">
-                    <label htmlFor="structured-output-toggle" className="font-medium text-[var(--color-text-primary)] cursor-pointer">
-                        구조화된 출력 사용
-                    </label>
-                    <p className="text-xs text-[var(--color-text-secondary)]">LLM이 응답 시간과 메시지를 직접 제어합니다. (권장)</p>
-                    {provider === 'claude' && (
+            <Toggle
+                id="structured-output-toggle"
+                label="구조화된 출력 사용"
+                description="LLM이 응답 시간과 메시지를 직접 제어합니다. (권장)"
+                checked={settings.useStructuredOutput || false}
+                onChange={checked => setSettings(prev => ({ ...prev, useStructuredOutput: checked, useImageResponse: checked ? prev.useImageResponse : false }))}
+                additionalDescription={
+                    provider === 'claude' && (
                         <p className="text-xs text-[var(--color-text-secondary)] mt-1">주의: Claude의 경우 요청에 실패할 가능성이 있습니다.</p>
-                    )}
-                </div>
-                <label htmlFor="structured-output-toggle" className="relative flex items-center cursor-pointer">
-                    <input
-                        type="checkbox"
-                        id="structured-output-toggle"
-                        className="sr-only peer"
-                        checked={settings.useStructuredOutput}
-                        onChange={e => setSettings(prev => ({ ...prev, useStructuredOutput: e.target.checked, useImageResponse: e.target.checked ? prev.useImageResponse : false }))}
-                    />
-                    <div className="w-11 h-6 bg-[var(--color-toggle-off)] rounded-full peer peer-focus:ring-4 peer-focus:ring-[var(--color-toggle-on)]/30 peer-checked:after:translate-x-full peer-checked:after:border-[var(--color-border)] after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-[var(--color-bg-main)] after:border-[var(--color-border-strong)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-toggle-on)]"></div>
-                </label>
-            </div>
+                    )
+                }
+            />
             {settings.useStructuredOutput && (
-                <div className="flex items-center justify-between p-3 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border)]">
-                    <div className="flex flex-col">
-                        <label htmlFor="image-response-toggle" className="font-medium text-[var(--color-text-primary)] cursor-pointer">
-                            이미지 응답 허용
-                        </label>
-                        <p className="text-xs text-[var(--color-text-secondary)]">대화 컨텍스트에 따라서 이미지 응답을 허용합니다.</p>
-                    </div>
-                    <label htmlFor="image-response-toggle" className="relative flex items-center cursor-pointer">
-                        <input
-                            type="checkbox"
-                            id="image-response-toggle"
-                            className="sr-only peer"
-                            checked={settings.useImageResponse}
-                            onChange={e => setSettings(prev => ({ ...prev, useImageResponse: e.target.checked }))}
-                        />
-                        <div className="w-11 h-6 bg-[var(--color-toggle-off)] rounded-full peer peer-focus:ring-4 peer-focus:ring-[var(--color-toggle-on)]/30 peer-checked:after:translate-x-full peer-checked:after:border-[var(--color-border)] after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-[var(--color-bg-main)] after:border-[var(--color-border-strong)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-toggle-on)]"></div>
-                    </label>
-                </div>
+                <Toggle
+                    id="image-response-toggle"
+                    label="이미지 응답 허용"
+                    description="대화 컨텍스트에 따라서 이미지 응답을 허용합니다."
+                    checked={settings.useImageResponse || false}
+                    onChange={checked => setSettings(prev => ({ ...prev, useImageResponse: checked }))}
+                />
             )}
             {provider !== 'vertexai' && (
                 <div>
