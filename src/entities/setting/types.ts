@@ -47,7 +47,9 @@ export interface Prompts {
 }
 
 export interface SettingsState {
-    isDarkMode: boolean;
+    colorTheme: 'light' | 'dark' | 'system' | 'custom';
+    customThemeBase: 'light' | 'dark';
+    customTheme: ThemeOverrides;
     isModalOpen: boolean;
     isPromptModalOpen: boolean;
     isCreateGroupChatModalOpen: boolean;
@@ -76,4 +78,9 @@ export interface Persona {
     id: string;
     name: string;
     description: string;
+}
+
+export interface ThemeOverrides {
+    light: Record<string, string>;
+    dark: Record<string, string>;
 }

@@ -2,12 +2,13 @@ import { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
-import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Search, Image } from 'lucide-react';
+import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Image, CircleEllipsis, Palette } from 'lucide-react';
 import { ProviderSettings } from './ProviderSettings';
 import { backupStateToFile, restoreStateFromFile } from '../../utils/backup';
 import { settingsActions } from '../../entities/setting/slice';
 import PersonaManager from './PersonaModal';
 import { ImageSettings } from './image/ImageSettings';
+import ThemeSettings from './ThemeSettings';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;
@@ -20,7 +21,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
     const tabContainerRef = useRef<HTMLDivElement>(null);
 
     const [localSettings, setLocalSettings] = useState<SettingsState>(settings);
-    const [activeTab, setActiveTab] = useState<'ai' | 'image' | 'scale' | 'persona' | 'proactive' | 'data'>('ai');
+    const [activeTab, setActiveTab] = useState<'ai' | 'image' | 'persona' | 'proactive' | 'others'>('ai');
 
     const importBackup = () => {
         const input = document.createElement("input");
@@ -104,11 +105,16 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
     const handlePromptModalOpen = () => {
         dispatch(settingsActions.setSettings(localSettings));
         openPromptModal();
-    }
+    };
 
     const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const provider = e.target.value as ApiProvider;
         setLocalSettings(prev => ({ ...prev, apiProvider: provider }));
+    };
+
+    const handleColorThemeChange = (theme: 'light' | 'dark' | 'system' | 'custom') => {
+        setLocalSettings(prev => ({ ...prev, colorTheme: theme }));
+        dispatch(settingsActions.setColorTheme(theme));
     };
 
     return (
@@ -122,7 +128,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                     {/* Tab Navigation */}
                     <div
                         ref={tabContainerRef}
-                        className="flex border-b border-[var(--color-border)] -mx-6 whitespace-nowrap overflow-x-scroll scrollbar-hide touch-pan-x select-none"
+                        className="flex justify-center border-b border-[var(--color-border)] -mx-6 whitespace-nowrap overflow-x-scroll scrollbar-hide touch-pan-x select-none"
                     >
                         <button
                             onClick={() => setActiveTab('ai')}
@@ -147,16 +153,6 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             </button>
                         )}
                         <button
-                            onClick={() => setActiveTab('scale')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'scale'
-                                ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
-                                : 'border-transparent text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'
-                                }`}
-                        >
-                            <Search className="w-4 h-4 inline mr-2" />
-                            배율
-                        </button>
-                        <button
                             onClick={() => setActiveTab('persona')}
                             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'persona'
                                 ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
@@ -177,14 +173,14 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             선톡
                         </button>
                         <button
-                            onClick={() => setActiveTab('data')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'data'
+                            onClick={() => setActiveTab('others')}
+                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'others'
                                 ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
                                 : 'border-transparent text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'
                                 }`}
                         >
-                            <Download className="w-4 h-4 inline mr-2" />
-                            데이터
+                            <CircleEllipsis className="w-4 h-4 inline mr-2" />
+                            기타 설정
                         </button>
                     </div>
 
@@ -214,19 +210,6 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         )}
 
                         {activeTab === 'image' && <ImageSettings settings={localSettings} setSettings={setLocalSettings} />}
-                        {activeTab === 'scale' && (
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
-                                        <span className="flex items-center"><FastForward className="w-4 h-4 mr-2" />메시지 입력 가속</span>
-                                        <span className="text-[var(--color-button-primary)] font-semibold">{localSettings.speedup}X</span>
-                                    </label>
-                                    <p className="text-xs text-[var(--color-text-secondary)] mt-2">* 구조화된 출력 사용중에는 적용되지 않습니다.</p>
-                                    <input id="settings-speedup" type="range" min="1" max="4" step="0.5" value={localSettings.speedup} onChange={e => setLocalSettings(prev => ({ ...prev, speedup: +e.target.value }))} className="w-full accent-[var(--color-button-primary)]" />
-                                    <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mt-1"><span>느리게</span><span>빠르게</span></div>
-                                </div>
-                            </div>
-                        )}
 
                         {activeTab === 'persona' && <PersonaManager />}
 
@@ -274,14 +257,72 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             </div>
                         )}
 
-                        {activeTab === 'data' && (
-                            <div className="space-y-3">
-                                <button onClick={backupStateToFile} id="backup-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-                                    <Download className="w-4 h-4" /> 백업하기
-                                </button>
-                                <button onClick={importBackup} id="restore-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
-                                    <Upload className="w-4 h-4" /> 불러오기
-                                </button>
+                        {activeTab === 'others' && (
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
+                                        <span className="flex items-center"><FastForward className="w-4 h-4 mr-2" />메시지 입력 가속</span>
+                                        <span className="text-[var(--color-button-primary)] font-semibold">{localSettings.speedup}X</span>
+                                    </label>
+                                    <p className="text-xs text-[var(--color-text-secondary)] mt-2">* 구조화된 출력 사용중에는 적용되지 않습니다.</p>
+                                    <input id="settings-speedup" type="range" min="1" max="4" step="0.5" value={localSettings.speedup} onChange={e => setLocalSettings(prev => ({ ...prev, speedup: +e.target.value }))} className="w-full accent-[var(--color-button-primary)]" />
+                                    <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mt-1"><span>느리게</span><span>빠르게</span></div>
+                                </div>
+                                <div className="pt-4 border-t border-[var(--color-border)]">
+                                    <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
+                                        <span className="flex items-center"><Palette className="w-4 h-4 mr-2" />UI 테마</span>
+                                    </label>
+                                    {/* Four buttons 2x2 (light, dark, system, custom). Selected if matches with localSettings.colorTheme */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            onClick={() => handleColorThemeChange('light')}
+                                            className={`py-2 px-4 rounded-lg text-xs font-medium border transition-colors ${localSettings.colorTheme === 'light'
+                                                ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
+                                                : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
+                                                }`}
+                                        >
+                                            라이트 테마
+                                        </button>
+                                        <button
+                                            onClick={() => handleColorThemeChange('dark')}
+                                            className={`py-2 px-4 rounded-lg text-xs font-medium border transition-colors ${localSettings.colorTheme === 'dark'
+                                                ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
+                                                : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
+                                                }`}
+                                        >
+                                            다크 테마
+                                        </button>
+                                        <button
+                                            onClick={() => handleColorThemeChange('system')}
+                                            className={`py-2 px-4 rounded-lg text-xs font-medium border transition-colors ${localSettings.colorTheme === 'system'
+                                                ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
+                                                : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
+                                                }`}
+                                        >
+                                            시스템 기본값
+                                        </button>
+                                        <button
+                                            onClick={() => handleColorThemeChange('custom')}
+                                            className={`py-2 px-4 rounded-lg text-xs font-medium border transition-colors ${localSettings.colorTheme === 'custom'
+                                                ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
+                                                : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
+                                                }`}
+                                        >
+                                            커스텀 테마
+                                        </button>
+                                    </div>
+                                    <div className={`pt-4 ${localSettings.colorTheme === 'custom' ? 'block' : 'hidden'}`}>
+                                        <ThemeSettings />
+                                    </div>
+                                </div>
+                                <div className="space-y-3 pt-4 border-t border-[var(--color-border)]">
+                                    <button onClick={backupStateToFile} id="backup-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                                        <Download className="w-4 h-4" /> 백업하기
+                                    </button>
+                                    <button onClick={importBackup} id="restore-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
+                                        <Upload className="w-4 h-4" /> 불러오기
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>

@@ -49,8 +49,8 @@ export const migrations = {
         state = applyRules(state, {
             add: [{
                 path: 'settings',
-                keys: ['imageSettings'],
-                defaults: { imageSettings: imageSettingsInitialState }
+                keys: ['imageSettings', 'colorTheme', 'customThemeBase', 'customTheme'],
+                defaults: { imageSettings: imageSettingsInitialState, colorTheme: 'light', customThemeBase: 'light', customTheme: { light: {}, dark: {} } }
             }],
             move: [
                 {

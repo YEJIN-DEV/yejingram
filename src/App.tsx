@@ -10,7 +10,7 @@ import EditGroupChatModal from './components/modals/EditGroupChatModal'
 import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { selectEditingCharacterId } from './entities/character/selectors'
-import { selectIsDarkMode } from './entities/setting/selectors'
+import { selectAllSettings, selectColorTheme } from './entities/setting/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -26,17 +26,51 @@ function App() {
   const [isCharacterPanelOpen, setIsCharacterPanelOpen] = useState(false);
   const [isCreateGroupChatModalOpen, setIsCreateGroupChatModalOpen] = useState(false);
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
-  const isDarkMode = useSelector(selectIsDarkMode);
+  const colorTheme = useSelector(selectColorTheme);
+  const settings = useSelector(selectAllSettings);
 
   const editingCharacterId = useSelector(selectEditingCharacterId);
 
   useEffect(() => {
-    if (isDarkMode) {
+    document.documentElement.classList.remove('light', 'dark', 'custom-theme');
+    if (colorTheme === 'dark' || (colorTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
+    } else if (colorTheme === 'light' || (colorTheme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('light');
+    } else if (colorTheme === 'custom') {
+      // Apply base class as well for fallback variables
+      if (settings.customThemeBase === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.add('light');
+      }
+      document.documentElement.classList.add('custom-theme');
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
     }
-  }, [isDarkMode]);
+  }, [colorTheme, settings.customThemeBase]);
+
+  // Apply custom variable overrides when using custom theme
+  const appliedCustomKeysRef = useRef<string[]>([]);
+  useEffect(() => {
+    // Clear previously applied overrides
+    for (const key of appliedCustomKeysRef.current) {
+      document.documentElement.style.removeProperty(key);
+    }
+    appliedCustomKeysRef.current = [];
+
+    if (colorTheme !== 'custom') {
+      return;
+    }
+  const baseKey = settings.customThemeBase === 'light' ? 'light' : 'dark';
+  const overrides = settings.customTheme ? settings.customTheme[baseKey] : {};
+    for (const [name, value] of Object.entries(overrides)) {
+      if (name.startsWith('--color-') && value) {
+        document.documentElement.style.setProperty(name, value);
+        appliedCustomKeysRef.current.push(name);
+      }
+    }
+  }, [colorTheme, settings.customThemeBase, settings.customTheme]);
 
   useEffect(() => {
     setActiveRoomId(roomId);

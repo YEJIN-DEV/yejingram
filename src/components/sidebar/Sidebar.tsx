@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Bot, Plus, X, User, Sun, Moon } from 'lucide-react';
+import { Settings, Bot, Plus, X, User } from 'lucide-react';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
@@ -7,8 +7,6 @@ import { charactersActions } from '../../entities/character/slice';
 import { selectAllRooms } from '../../entities/room/selectors';
 import GroupChatList from './GroupChatList';
 import type { Room } from '../../entities/room/types';
-import { selectIsDarkMode } from '../../entities/setting/selectors';
-import { settingsActions } from '../../entities/setting/slice';
 
 interface SidebarProps {
     roomId: string | null;
@@ -25,7 +23,6 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const rooms = useSelector(selectAllRooms);
-    const isDarkMode = useSelector(selectIsDarkMode);
     const [searchQuery, setSearchQuery] = useState('');
 
     const groupChats = rooms.filter((r: Room) => r.type === 'Group');
@@ -37,10 +34,6 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
     const handleNewCharacter = () => {
         dispatch(charactersActions.setEditingCharacterId(null));
         toggleCharacterPanel();
-    }
-
-    const handleToggleDarkMode = () => {
-        dispatch(settingsActions.toggleDarkMode());
     }
 
     return (
@@ -68,18 +61,6 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
                             title="새 채팅"
                         >
                             <Plus className="w-6 h-6 text-[var(--color-icon-primary)]" />
-                        </button>
-                        <button
-                            id="toggle-dark-mode"
-                            onClick={handleToggleDarkMode}
-                            className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] transition-colors"
-                            title="다크 모드 전환"
-                        >
-                            {isDarkMode ? (
-                                <Sun className="w-6 h-6 text-[var(--color-icon-primary)]" />
-                            ) : (
-                                <Moon className="w-6 h-6 text-[var(--color-icon-primary)]" />
-                            )}
                         </button>
                         <button
                             id="open-settings-modal"
