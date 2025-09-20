@@ -53,7 +53,7 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
 
     return (
         <div
-            className={`relative group cursor-pointer transition-transform duration-200 px-4 py-3 select-none ${isSelected ? 'bg-[var(--color-bg-roomlist)] border-l-4 border-[var(--color-focus-border)]' : 'hover:bg-[var(--color-bg-secondary)]'
+            className={`relative group cursor-pointer transition-all duration-200 px-4 py-3 select-none ${isSelected ? 'bg-[var(--color-bg-roomlist)] border-l-4 border-[var(--color-focus-border)]' : 'hover:bg-[var(--color-bg-secondary)]'
                 }`}
             onDoubleClick={handleRoomSelect}
         >
