@@ -176,7 +176,7 @@ async function callApi(
             break;
         case 'openai':
         case 'customOpenAI':
-            payload = await buildOpenAIApiPayload(room, persona, character, messages, isProactive, settings.useStructuredOutput, apiConfig.model, extraSystemInstruction);
+            payload = await buildOpenAIApiPayload(room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, extraSystemInstruction);
             break;
     }
     let url: string;

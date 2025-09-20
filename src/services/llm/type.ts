@@ -35,17 +35,37 @@ export interface GeminiApiPayload {
             text: string;
         }[];
     };
-    generationConfig: {
-        temperature: number;
-        topK: number;
-        topP: number;
-        responseMimeType: string;
-        responseSchema: any;
-    };
+    generationConfig: GeminiGenerationConfig;
     safetySettings: {
         category: string;
         threshold: string;
     }[];
+}
+
+// ---------- Gemini ----------
+type GeminiSchemaType = 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT';
+
+export interface GeminiStructuredSchema {
+    type: GeminiSchemaType;
+    properties?: Record<string, GeminiStructuredSchema>;
+    items?: GeminiStructuredSchema | {
+        type: GeminiSchemaType;
+        properties?: Record<string, GeminiStructuredSchema>;
+        items?: GeminiStructuredSchema;
+        required?: string[];
+    };
+    required?: string[];
+}
+
+export interface GeminiGenerationConfig {
+    temperature?: number;
+    topP?: number;
+    topK?: number;
+    candidateCount?: number;
+    maxOutputTokens?: number;
+    stopSequences?: string[];
+    responseMimeType?: string; // e.g., 'application/json'
+    responseSchema?: GeminiStructuredSchema;
 }
 
 export interface ClaudeApiPayload {
@@ -74,6 +94,30 @@ export interface ClaudeApiPayload {
     max_tokens: number;
 }
 
+// ---------- OpenAI ----------
+interface OpenAIJSONSchema {
+    name?: string;
+    strict?: boolean;
+    type?: string | string[];
+    schema?: {
+        type: string | string[];
+        properties?: Record<string, OpenAIJSONSchema>;
+        required?: string[];
+        additionalProperties?: boolean;
+    };
+    items?: OpenAIJSONSchema;
+    properties?: Record<string, OpenAIJSONSchema>;
+    additionalProperties?: boolean;
+    required?: string[];
+}
+
+export interface OpenAIStructuredSchema {
+    type: 'json_schema';
+    json_schema: OpenAIJSONSchema;
+    required?: string[];
+    additionalProperties?: boolean;
+}
+
 export interface OpenAIApiPayload {
     model: string;
     messages: Array<{
@@ -88,6 +132,9 @@ export interface OpenAIApiPayload {
     temperature?: number;
     top_p?: number;
     max_completion_tokens?: number;
-    // Supported by Chat Completions for JSON-mode on modern models
-    response_format?: { type: 'json_object' } | { type: 'text' };
+
+    response_format?:
+    | { type: 'json_object' }
+    | { type: 'text' }
+    | OpenAIStructuredSchema;
 }

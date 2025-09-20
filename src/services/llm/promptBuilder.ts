@@ -2,7 +2,7 @@ import { store } from "../../app/store";
 import type { Character } from "../../entities/character/types";
 import type { Message } from "../../entities/message/types";
 import { selectPrompts } from "../../entities/setting/selectors";
-import type { GeminiApiPayload, ClaudeApiPayload, OpenAIApiPayload } from "./type";
+import type { GeminiApiPayload, ClaudeApiPayload, OpenAIApiPayload, GeminiStructuredSchema as GeminiStructuredSchema, GeminiGenerationConfig, OpenAIStructuredSchema as OpenAIStructuredSchema } from "./type";
 import { getActiveRoomId } from "../../utils/activeRoomTracker";
 import { selectRoomById } from "../../entities/room/selectors";
 import { selectCharacterById } from "../../entities/character/selectors";
@@ -39,26 +39,56 @@ export type OpenAIContent = {
     content: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>;
 };
 
-const structuredOutputSchema = {
-    type: "OBJECT",
+const GeminiStructuredOutputSchema: GeminiStructuredSchema = {
+    type: 'OBJECT',
     properties: {
-        "reactionDelay": { "type": "INTEGER" },
-        "messages": {
-            type: "ARRAY",
+        reactionDelay: { type: 'INTEGER' },
+        messages: {
+            type: 'ARRAY',
             items: {
-                type: "OBJECT",
+                type: 'OBJECT',
                 properties: {
-                    "delay": { "type": "INTEGER" },
-                    "content": { "type": "STRING" },
-                    "sticker": { "type": "STRING" }
+                    delay: { type: 'INTEGER' },
+                    content: { type: 'STRING' },
+                    sticker: { type: 'STRING' },
                 },
-                required: ["delay"]
-            }
+                required: ['delay'],
+            },
         },
-        "newMemory": { "type": "STRING" }
+        newMemory: { type: 'STRING' },
     },
-    required: ["reactionDelay", "messages"]
-}
+    required: ['reactionDelay', 'messages'],
+};
+
+const OpenAIStructuredOutputSchema: OpenAIStructuredSchema = {
+    type: 'json_schema',
+    json_schema: {
+        name: 'chat_response',
+        strict: true,
+        schema: {
+            type: 'object',
+            properties: {
+                reactionDelay: { type: 'integer' },
+                messages: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            delay: { type: 'integer' },
+                            content: { type: 'string' },
+                            sticker: { type: ['string', 'null'] }
+                        },
+                        required: ['delay', 'content', 'sticker'],
+                        additionalProperties: false
+                    }
+                },
+                newMemory: { type: ['string', 'null'] }
+            },
+            required: ['reactionDelay', 'messages', 'newMemory'],
+            additionalProperties: false
+        }
+    }
+};
 
 function shouldIncludePromptItem(item: PromptItem, useStructuredOutput: boolean, room?: Room | null): boolean {
     if (item.type === 'plain-structured' && !useStructuredOutput) {
@@ -305,7 +335,7 @@ export async function buildGeminiApiPayload(
         const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput);
         const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput);
 
-        const generationConfig: any = {
+        const generationConfig: GeminiGenerationConfig = {
             temperature: selectPrompts(store.getState()).temperature,
             topP: selectPrompts(store.getState()).topP,
         };
@@ -318,16 +348,20 @@ export async function buildGeminiApiPayload(
 
         if (useStructuredOutput) {
             generationConfig.responseMimeType = "application/json";
-            generationConfig.responseSchema = structuredOutputSchema;
+            generationConfig.responseSchema = structuredClone(GeminiStructuredOutputSchema);
             if (useImageResponse) {
-                generationConfig.responseSchema.properties.messages.items.properties.imageGenerationSetting = {
-                    type: "OBJECT",
-                    properties: {
-                        "prompt": { "type": "STRING" },
-                        "isSelfie": { "type": "BOOLEAN" }
-                    },
-                    required: ["prompt", "isSelfie"]
-                };
+                const schema = generationConfig.responseSchema!;
+                const items = schema.properties!.messages.items!;
+                if (items.properties) {
+                    items.properties.imageGenerationSetting = {
+                        type: "OBJECT",
+                        properties: {
+                            prompt: { type: "STRING" },
+                            isSelfie: { type: "BOOLEAN" }
+                        },
+                        required: ["prompt", "isSelfie"]
+                    };
+                }
             }
         }
 
@@ -579,6 +613,7 @@ export async function buildOpenAIApiPayload(
     messages: Message[],
     isProactive: boolean,
     useStructuredOutput: boolean,
+    useImageResponse: boolean | undefined,
     model: string,
     extraSystemInstruction?: string
 ): Promise<OpenAIApiPayload> {
@@ -587,14 +622,35 @@ export async function buildOpenAIApiPayload(
 
     while (true) {
         const history = await buildOpenAIContents(trimmedMessages, isProactive, model, persona, character, extraSystemInstruction, room, useStructuredOutput);
+        const JSONSchema = structuredClone(OpenAIStructuredOutputSchema);
+
+        if (useImageResponse) {
+            const items = JSONSchema.json_schema.schema?.properties?.messages?.items;
+            if (items?.properties && items?.required) {
+                items.properties.imageGenerationSetting = {
+                    type: ['object', 'null'],
+                    properties: {
+                        prompt: { type: 'string' },
+                        isSelfie: { type: 'boolean' }
+                    },
+                    required: ['prompt', 'isSelfie'],
+                    additionalProperties: false
+                };
+                items.required.push('imageGenerationSetting');
+            }
+        }
+
+        const response_format: OpenAIApiPayload['response_format'] = useStructuredOutput
+            ? JSONSchema
+            : { type: 'text' };
 
         const payload: OpenAIApiPayload = {
             model,
             messages: history,
-            temperature: model == "gpt-5" ? 1 : selectPrompts(store.getState()).temperature,
-            top_p: model == "gpt-5" ? undefined : selectPrompts(store.getState()).topP,
+            temperature: model == 'gpt-5' ? 1 : selectPrompts(store.getState()).temperature,
+            top_p: model == 'gpt-5' ? undefined : selectPrompts(store.getState()).topP,
             max_completion_tokens: selectPrompts(store.getState()).maxResponseTokens,
-            response_format: useStructuredOutput ? { type: 'json_object' } : { type: 'text' },
+            response_format,
         };
 
         const tokenCount = await CountTokens({ content: history }, 'openai', model);
