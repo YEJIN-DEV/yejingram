@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
-import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Image, CircleEllipsis, Palette } from 'lucide-react';
+import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Image, CircleEllipsis, Palette, Languages } from 'lucide-react';
+import i18n from '../../i18n/i18n';
 import { ProviderSettings } from './ProviderSettings';
 import { backupStateToFile, restoreStateFromFile } from '../../utils/backup';
 import { settingsActions } from '../../entities/setting/slice';
@@ -115,6 +116,14 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
     const handleColorThemeChange = (theme: 'light' | 'dark' | 'system' | 'custom') => {
         setLocalSettings(prev => ({ ...prev, colorTheme: theme }));
         dispatch(settingsActions.setColorTheme(theme));
+    };
+
+    const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const language = e.target.value as 'ko' | 'en' | 'ja';
+        setLocalSettings(prev => ({ ...prev, uiLanguage: language }));
+        dispatch(settingsActions.setUILanguage(language));
+        // Apply language immediately and allow detector to cache it in localStorage
+        try { i18n.changeLanguage(language); } catch { /* noop */ }
     };
 
     return (
@@ -267,6 +276,14 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     <p className="text-xs text-[var(--color-text-secondary)] mt-2">* 구조화된 출력 사용중에는 적용되지 않습니다.</p>
                                     <input id="settings-speedup" type="range" min="1" max="4" step="0.5" value={localSettings.speedup} onChange={e => setLocalSettings(prev => ({ ...prev, speedup: +e.target.value }))} className="w-full accent-[var(--color-button-primary)]" />
                                     <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mt-1"><span>느리게</span><span>빠르게</span></div>
+                                </div>
+                                <div className="pt-4 border-t border-[var(--color-border)]">
+                                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Languages className="w-4 h-4 mr-2" />UI 언어</label>
+                                    <select id="settings-ui-language" value={localSettings.uiLanguage} onChange={handleLanguageChange} className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm">
+                                        <option value="ko">한국어</option>
+                                        <option value="en">English</option>
+                                        <option value="ja">日本語</option>
+                                    </select>
                                 </div>
                                 <div className="pt-4 border-t border-[var(--color-border)]">
                                     <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">

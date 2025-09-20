@@ -19,6 +19,7 @@ export const initialState: SettingsState = {
     colorTheme: 'light',
     customThemeBase: 'light',
     customTheme: { light: {}, dark: {} },
+    uiLanguage: null,
     isModalOpen: false,
     isPromptModalOpen: false,
     isCreateGroupChatModalOpen: false,
@@ -92,6 +93,9 @@ const settingsSlice = createSlice({
         },
         setCustomTheme: (state, action: PayloadAction<ThemeOverrides>) => {
             state.customTheme = action.payload;
+        },
+        setUILanguage: (state, action: PayloadAction<'ko' | 'en' | 'ja'>) => {
+            state.uiLanguage = action.payload;
         },
         setEditingRoomId: (state, action: PayloadAction<string>) => {
             state.editingRoomId = action.payload;

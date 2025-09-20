@@ -7,17 +7,20 @@ import PromptModal from './components/settings/PromptModal'
 import CharacterPanel from './components/character/CharacterPanel'
 import CreateGroupChatModal from './components/modals/CreateGroupChatModal'
 import EditGroupChatModal from './components/modals/EditGroupChatModal'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { selectEditingCharacterId } from './entities/character/selectors'
-import { selectAllSettings, selectColorTheme } from './entities/setting/selectors'
+import { selectAllSettings, selectColorTheme, selectUILanguage } from './entities/setting/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
+import i18n from './i18n/i18n'
+import { settingsActions } from './entities/setting/slice'
 
 function App() {
+  const dispatch = useDispatch();
   const [roomId, setRoomId] = useState<string | null>(null)
   const room = useSelector((state: RootState) => roomId ? selectRoomById(state, roomId) : null)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -28,8 +31,17 @@ function App() {
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
   const colorTheme = useSelector(selectColorTheme);
   const settings = useSelector(selectAllSettings);
+  const uiLanguage = useSelector(selectUILanguage);
 
   const editingCharacterId = useSelector(selectEditingCharacterId);
+
+  useEffect(() => {
+    if (uiLanguage !== null) {
+      i18n.changeLanguage(uiLanguage);
+    } else {
+      dispatch(settingsActions.setUILanguage(i18n.language as 'ko' | 'en' | 'ja'));
+    }
+  }, [uiLanguage, dispatch]);
 
   useEffect(() => {
     document.documentElement.classList.remove('light', 'dark', 'custom-theme');
@@ -62,8 +74,8 @@ function App() {
     if (colorTheme !== 'custom') {
       return;
     }
-  const baseKey = settings.customThemeBase === 'light' ? 'light' : 'dark';
-  const overrides = settings.customTheme ? settings.customTheme[baseKey] : {};
+    const baseKey = settings.customThemeBase === 'light' ? 'light' : 'dark';
+    const overrides = settings.customTheme ? settings.customTheme[baseKey] : {};
     for (const [name, value] of Object.entries(overrides)) {
       if (name.startsWith('--color-') && value) {
         document.documentElement.style.setProperty(name, value);

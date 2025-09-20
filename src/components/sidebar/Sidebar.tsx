@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Settings, Bot, Plus, X, User } from 'lucide-react';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import { useDispatch, useSelector } from 'react-redux';
@@ -20,6 +21,7 @@ interface SidebarProps {
 }
 
 function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, toggleCharacterPanel, openCreateGroupChatModal, openEditGroupChatModal, onCloseMobile }: SidebarProps) {
+    const { t, i18n } = useTranslation();
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const rooms = useSelector(selectAllRooms);
@@ -51,7 +53,7 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
                         >
                             <X className="w-5 h-5 text-[var(--color-icon-primary)]" />
                         </button>
-                        <h1 className="text-2xl font-light text-[var(--color-text-primary)] tracking-wide">예진그램</h1>
+                        <h1 className="text-2xl font-light text-[var(--color-text-primary)] tracking-wide">{t('yejingram')}</h1>
                     </div>
                     <div className="flex items-center space-x-2">
                         <button
