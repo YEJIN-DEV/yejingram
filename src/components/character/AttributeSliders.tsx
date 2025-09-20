@@ -16,9 +16,9 @@ interface SliderProps {
 function Slider({ id, description, left, right, value, onChange }: SliderProps) {
     return (
         <div>
-            <p className="text-sm font-medium text-gray-600 mb-2">{description}</p>
+            <p className="text-sm font-medium text-[var(--color-text-tertiary)] mb-2">{description}</p>
             <input id={id} type="range" min="1" max="10" value={value} onChange={onChange} className="w-full" />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mt-1">
                 <span>{left}</span>
                 <span>{right}</span>
             </div>

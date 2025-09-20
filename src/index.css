@@ -1,5 +1,340 @@
 @import "tailwindcss";
 
+:root {
+  /* Background Colors */
+  /* bg-white */
+  --color-bg-main: #ffffff;
+  /* bg-gray-50 */
+  --color-bg-secondary: #f9fafb;
+  /* bg-gray-200 */
+  --color-bg-secondary-accent: #e5e7eb;
+  /* bg-black */
+  --color-bg-shadow: #000000;
+  /* hover:bg-gray-100 */
+  --color-bg-hover: #f3f4f6;
+
+  /* Input Background Colors */
+  /* bg-gray-100 */
+  --color-bg-input-primary: #f3f4f6;
+  /* bg-gray-50 */
+  --color-bg-input-secondary: #f9fafb;
+
+  /* Message Background Colors */
+  /* blue-500 */
+  --color-message-self: oklch(62.3% 0.214 259.815);
+  /* gray-200 */
+  --color-message-other: #e5e7eb;
+  /* blue-200 */
+  --color-message-url-self: oklch(88.2% 0.059 254.128);
+  /* blue-100 */
+  --color-message-url-self-hover: #dbeafe;
+  /* blue-600 */
+  --color-message-url-other: #155dfc;
+  /* blue-800 */
+  --color-message-url-other-hover: #193cb8;
+
+  /* Button Colors */
+  /* bg-blue-500 */
+  --color-button-primary: oklch(62.3% 0.214 259.815);
+  /* bg-blue-600 */
+  --color-button-primary-accent: #155dfc;
+  /* bg-gray-100 */
+  --color-button-secondary: #f3f4f6;
+  /* bg-gray-200 */
+  --color-button-secondary-accent: #e5e7eb;
+  /* bg-gray-300 */
+  --color-button-disabled: #d1d5dc;
+  /* bg-gray-800 */
+  --color-button-tertiary: #1e2939;
+  /* bg-gray-700 */
+  --color-button-neutral: #364153;
+  /* bg-gray-600 */
+  --color-button-neutral-hover: #4a5565;
+  /* text-green-600 */
+  --color-button-positive: oklch(62.7% 0.194 149.214);
+  /* text-green-700 */
+  --color-button-positive-accent: oklch(52.7% 0.154 150.069);
+  /* bg-red-500 */
+  --color-button-negative: #fb2c36;
+  /* bg-red-600 */
+  --color-button-negative-accent: oklch(57.7% 0.245 27.325);
+  /* text-red-600 */
+  --color-textual-button-negative: oklch(57.7% 0.245 27.325);
+  /* text-red-700 */
+  --color-textual-button-negative-accent: oklch(50.5% 0.213 27.518);
+  /* gray-300 */
+  --color-toggle-off: #d1d5dc;
+  /* blue-500 */
+  --color-toggle-on: oklch(62.3% 0.214 259.815);
+
+  /* Border Colors */
+  /* border-gray-200 */
+  --color-border: #e5e7eb;
+  /* border-gray-100 */
+  --color-border-secondary: #f3f4f6;
+  /* gray-300 */
+  --color-border-strong: #d1d5dc;
+  /* blue-500 */
+  --color-focus-border: oklch(62.3% 0.214 259.815);
+
+  /* Icon Colors */
+  /* text-gray-600 */
+  --color-icon-primary: #4a5565;
+  /* text-gray-400 */
+  --color-icon-secondary: #99a1af;
+  /* text-gray-500 */
+  --color-icon-tertiary: #6a7282;
+
+  /* Text Colors */
+  /* text-gray-700 */
+  --color-text-interface: #364153;
+  /* text-gray-900 */
+  --color-text-primary: #101828;
+  /* text-gray-500 */
+  --color-text-secondary: #6a7282;
+  /* text-gray-600 */
+  --color-text-tertiary: #4a5565;
+  /* gray-500 */
+  --color-text-informative-primary: #6a7282;
+  /* gray-400 */
+  --color-text-informative-secondary: #99a1af;
+  /* text-white */
+  --color-text-accent: #ffffff;
+
+  /* Toaster Colors */
+  --color-toaster-bg: #1f2937;
+  --color-toaster-text: #f3f4f6;
+  --color-toaster-border: #374151;
+  --color-toaster-icon-primary: #10b981;
+  --color-toaster-icon-secondary: #1f2937;
+
+  /* Sidebar Room List Colors */
+  /* blue-50 */
+  --color-bg-roomlist: #eff6ff;
+  --color-bg-roomactions-positive: #dbeafe;
+  --color-bg-roomactions-positive-hover: oklch(88.2% 0.059 254.128);
+  --color-bg-roomactions-negative: #ffe2e2;
+  --color-bg-roomactions-negative-hover: oklch(88.5% 0.062 18.334);
+  --color-text-roomlist-title: #1c398e;
+
+  /* Live Indicator Colors */
+  /* green-500 [Indicator - Online] */
+  --color-indicator-online: oklch(72.3% 0.219 149.579);
+  /* gray-500 [Indicator - Offline] */
+  --color-indicator-offline: #6a7282;
+
+  /* Alert Colors */
+  /* amber-200 */
+  --color-alert-border: #fee685;
+  /* amber-100 */
+  --color-alert-bg: #fef3c6;
+  /* amber-900 */
+  --color-alert-text: #7b3306;
+
+  /* Avatar Background Colors */
+  /* gray-600 */
+  --color-avatar-from: #4a5565;
+  /* gray-700 */
+  --color-avatar-to: #364153;
+  /* blue-500 */
+  --color-group-from: oklch(62.3% 0.214 259.815);
+  /* indigo-600 */
+  --color-group-to: #4f39f6;
+
+  /* Specific Use Cases */
+  /* blue-700 [For PersonaModal] */
+  --color-persona-selected: #1447e6;
+  /* blue-600 [For PromptModal] */
+  --color-mainprompt: #155dfc;
+  /* green-600 [For PromptModal] */
+  --color-image-response: oklch(62.7% 0.194 149.214);
+
+  /* Additional */
+  /* purple-50 */
+  --color-preview-from: #faf5ff;
+  /* blue-50 */
+  --color-preview-to: #eff6ff;
+  /* purple-200 */
+  --color-preview-border: oklch(90.2% 0.063 306.703);
+  /* purple-500 */
+  --color-preview-accent-from: oklch(62.7% 0.265 303.9);
+  /* blue-500 */
+  --color-preview-accent-to: oklch(62.3% 0.214 259.815);
+}
+
+.dark {
+  /* Hint browsers and form controls we are in dark mode */
+  color-scheme: dark;
+
+  /* Background Colors */
+  /* near-black, deep navy */
+  --color-bg-main: #0b0f17;
+  /* darker surface */
+  --color-bg-secondary: #0f1623;
+  /* raised surface */
+  --color-bg-secondary-accent: #172033;
+  /* true black shadow */
+  --color-bg-shadow: #000000;
+  /* gray-900 */
+  --color-bg-hover: #111827;
+
+  /* Input Background Colors */
+  --color-bg-input-primary: #111827;
+  /* input fields */
+  --color-bg-input-secondary: #0f1623;
+  /* subtle inputs */
+
+  /* Message Background Colors */
+  /* blue-purple accent bubble */
+  --color-message-self: oklch(58% 0.22 268);
+  /* gray-800 bubble */
+  --color-message-other: #1f2937;
+  /* blue-200 */
+  --color-message-url-self: oklch(88.2% 0.059 254.128);
+  /* blue-100 */
+  --color-message-url-self-hover: #dbeafe;
+  /* blue-600 */
+  --color-message-url-other: #155dfc;
+  /* blue-800 */
+  --color-message-url-other-hover: #193cb8;
+
+  /* Button Colors */
+  /* blue→violet accent */
+  --color-button-primary: oklch(60% 0.23 267);
+  /* hover/active */
+  --color-button-primary-accent: oklch(55% 0.23 267);
+  /* subtle dark button */
+  --color-button-secondary: #111827;
+  /* hover */
+  --color-button-secondary-accent: #1f2937;
+  /* gray-700 */
+  --color-button-disabled: #374151;
+  /* bg-gray-700 */
+  --color-button-tertiary: #0b1324;
+  /* bg-gray-600 */
+  --color-button-neutral: #364153;
+  /* ghost/dim */
+  --color-button-neutral-hover: #6b7280;
+  /* green */
+  --color-button-positive: oklch(62.7% 0.194 149.214);
+  /* deeper green */
+  --color-button-positive-accent: oklch(52.7% 0.154 150.069);
+  /* red-500 */
+  --color-button-negative: #ef4444;
+  /* red-600 */
+  --color-button-negative-accent: #dc2626;
+  /* red-400 text */
+  --color-textual-button-negative: #f87171;
+  /* red-500 text */
+  --color-textual-button-negative-accent: #ef4444;
+  /* gray-700 */
+  --color-toggle-off: #374151;
+  /* blue */
+  --color-toggle-on: oklch(62.3% 0.214 259.815);
+
+  /* Border Colors */
+  /* gray-800 */
+  --color-border: #1f2937;
+  /* gray-900 */
+  --color-border-secondary: #111827;
+  /* gray-700 */
+  --color-border-strong: #374151;
+  /* blue focus */
+  --color-focus-border: oklch(62.3% 0.214 259.815);
+
+  /* Icon Colors */
+  /* slate-300 */
+  --color-icon-primary: #cbd5e1;
+  /* slate-400 */
+  --color-icon-secondary: #94a3b8;
+  /* slate-500 */
+  --color-icon-tertiary: #8d96a8;
+
+  /* Text Colors */
+  /* slate-300 */
+  --color-text-interface: #cbd5e1;
+  /* gray-200 */
+  --color-text-primary: #e5e7eb;
+  /* gray-400 */
+  --color-text-secondary: #9ca3af;
+  /* gray-500 */
+  --color-text-tertiary: #8d96a8;
+  /* gray-400 */
+  --color-text-informative-primary: #9ca3af;
+  /* gray-500 */
+  --color-text-informative-secondary: #6b7280;
+  /* white */
+  --color-text-accent: #ffffff;
+
+  /* Toaster Colors */
+  /* deep panel */
+  --color-toaster-bg: #0b1220;
+  /* readable */
+  --color-toaster-text: #e5e7eb;
+  /* subtle border */
+  --color-toaster-border: #1f2937;
+  /* green accent */
+  --color-toaster-icon-primary: #10b981;
+  /* match bg */
+  --color-toaster-icon-secondary: #0b1220;
+
+  /* Sidebar Room List Colors */
+  /* slate-900 */
+  --color-bg-roomlist: #0f172a;
+  /* deep blue */
+  --color-bg-roomactions-positive: #0b1f3a;
+  --color-bg-roomactions-positive-hover: oklch(36% 0.08 254.128);
+  /* deep red */
+  --color-bg-roomactions-negative: #3a0f0f;
+  --color-bg-roomactions-negative-hover: oklch(38% 0.09 18.334);
+  /* blue-300 */
+  --color-text-roomlist-title: #93c5fd;
+
+  /* Live Indicator Colors */
+  /* green */
+  --color-indicator-online: oklch(72.3% 0.219 149.579);
+  /* gray-500 */
+  --color-indicator-offline: #6b7280;
+
+  /* Alert Colors */
+  /* amber-600 */
+  --color-alert-border: #a16207;
+  /* amber-950 */
+  --color-alert-bg: #422006;
+  /* amber-300 */
+  --color-alert-text: #fde68a;
+
+  /* Avatar Background Colors */
+  /* gray-600 */
+  --color-avatar-from: #4a5565;
+  /* gray-700 */
+  --color-avatar-to: #364153;
+  /* blue-500 */
+  --color-group-from: oklch(62.3% 0.214 259.815);
+  /* indigo-600 */
+  --color-group-to: #4f39f6;
+
+  /* Specific Use Cases */
+  /* indigo-600 */
+  --color-persona-selected: #4f46e5;
+  /* blue-500 */
+  --color-mainprompt: #3b82f6;
+  /* green */
+  --color-image-response: oklch(62.7% 0.194 149.214);
+
+  /* Additional Preview */
+  /* purple-950 */
+  --color-preview-from: #2e1065;
+  /* deep blue */
+  --color-preview-to: #0b1220;
+  /* purple border */
+  --color-preview-border: oklch(45% 0.12 306.703);
+  /* purple-500 */
+  --color-preview-accent-from: #8b5cf6;
+  /* blue-500 */
+  --color-preview-accent-to: #3b82f6;
+}
+
 /* Instagram 스타일 Inter 폰트 설정 */
 * {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -219,6 +554,7 @@ details .content-wrapper {
     opacity: 0;
     transform: scale(0.8);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);

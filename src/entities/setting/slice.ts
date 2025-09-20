@@ -1,6 +1,6 @@
 import { createEntityAdapter, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona } from './types';
+import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona, ThemeOverrides } from './types';
 import type { ImageApiConfig, ImageApiProvider, ArtStyle } from './image/types';
 import { initialState as imageSettingsInitialState, initialImageApiConfigs } from './image/slice';
 import { nanoid } from '@reduxjs/toolkit';
@@ -16,6 +16,9 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
 };
 
 export const initialState: SettingsState = {
+    colorTheme: 'light',
+    customThemeBase: 'light',
+    customTheme: { light: {}, dark: {} },
     isModalOpen: false,
     isPromptModalOpen: false,
     isCreateGroupChatModalOpen: false,
@@ -81,6 +84,15 @@ const settingsSlice = createSlice({
     name: 'settings',
     initialState,
     reducers: {
+        setColorTheme: (state, action: PayloadAction<'light' | 'dark' | 'system' | 'custom'>) => {
+            state.colorTheme = action.payload;
+        },
+        setCustomThemeBase: (state, action: PayloadAction<'light' | 'dark'>) => {
+            state.customThemeBase = action.payload;
+        },
+        setCustomTheme: (state, action: PayloadAction<ThemeOverrides>) => {
+            state.customTheme = action.payload;
+        },
         setEditingRoomId: (state, action: PayloadAction<string>) => {
             state.editingRoomId = action.payload;
         },

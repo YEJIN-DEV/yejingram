@@ -170,19 +170,19 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
     <div className="space-y-4">
       {/* 이미지 생성용 API 키 */}
       <div>
-        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Key className="w-4 h-4 mr-2" />이미지 생성용 API 키</label>
+        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Key className="w-4 h-4 mr-2" />이미지 생성용 API 키</label>
         <input
           type="password"
           value={imageConfig.apiKey || ''}
           onChange={e => handleImageModelConfigChange(imageProvider, 'apiKey', e.target.value)}
           placeholder="이미지 모델 API 키를 입력하세요"
-          className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm"
+          className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
         />
       </div>
 
       {/* 이미지 생성 모델 */}
       <div>
-        <label className="flex items-center text-sm font-medium text-gray-700 mb-2"><Image className="w-4 h-4 mr-2" />이미지 생성 모델</label>
+        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Image className="w-4 h-4 mr-2" />이미지 생성 모델</label>
         {imageModels.length > 0 && (
           <div className="grid grid-cols-1 gap-2">
             {imageModels.map(model => (
@@ -190,7 +190,7 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
                 key={model}
                 type="button"
                 onClick={() => handleImageModelSelect(model)}
-                className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors border ${imageConfig.model === model ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'}`}>
+                className={`model-select-btn px-3 py-2 text-left text-sm rounded-lg transition-colors border ${imageConfig.model === model ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary)]' : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] hover:bg-[var(--color-bg-hover)] border-[var(--color-border)]'}`}>
                 {model}
               </button>
             ))}
@@ -201,7 +201,7 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
       {/* Gemini 참고 */}
       {imageProvider === 'gemini' && (
         <div className="mb-3">
-          <p className="text-xs text-gray-500">참고: Gemini는 이미지 생성이 검열될 수 있습니다.</p>
+          <p className="text-xs text-[var(--color-text-informative-primary)]">참고: Gemini는 이미지 생성이 검열될 수 있습니다.</p>
         </div>
       )}
 
@@ -210,7 +210,7 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
         <>
           {/* ComfyUI URL */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
               <Globe className="w-4 h-4 mr-2" />
               ComfyUI 요청 URL
             </label>
@@ -218,41 +218,41 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
               type="url"
               value={imageConfig.custom?.baseUrl || ''}
               onChange={(e) => handleImageModelConfigChange('comfy', 'baseUrl', e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 text-gray-900 border-gray-200 rounded-xl border focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-sm font-mono"
+              className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] border-[var(--color-border)] rounded-xl border focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm font-mono"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-[var(--color-text-informative-primary)] mt-1">
               ComfyUI API 서버의 기본 URL을 입력하세요 (Cloudflare Tunnel 포함)
             </p>
           </div>
 
           {/* Workflow JSON */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
               <Code className="w-4 h-4 mr-2" />
               Workflow JSON
               {!isValidWorkflow && (
-                <span className="ml-2 text-xs text-red-500">⚠ Invalid JSON</span>
+                <span className="ml-2 text-xs text-[var(--color-textual-button-negative)]">⚠ Invalid JSON</span>
               )}
             </label>
 
             <div
               ref={editorInstance}
-              className="prose min-h-full resize-y overflow-auto border border-gray-300 rounded-lg"
+              className="prose min-h-full resize-y overflow-auto border border-[var(--color-border-strong)] rounded-lg"
             />
 
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-[var(--color-text-informative-primary)] mt-1">
               ComfyUI API에 전송할 워크플로우 JSON 구조를 입력하세요.<br />이미지 입력에 따라 프롬프트가 동적으로 삽입됩니다.<br />우측 하단의 핸들을 드래그하여 에디터 높이를 조절할 수 있습니다.
             </p>
           </div>
 
           {/* Timeout */}
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
               <span className="flex items-center">
                 <Clock className="w-4 h-4 mr-2" />
                 Timeout (초)
               </span>
-              <span className="text-blue-500 font-semibold">
+              <span className="text-[var(--color-preview-accent-to)] font-semibold">
                 {imageConfig.custom?.timeout || 60}초
               </span>
             </label>
@@ -263,13 +263,13 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
               step={30}
               value={imageConfig.custom?.timeout || 60}
               onChange={(e) => handleImageModelConfigChange('comfy', 'timeout', parseInt(e.target.value))}
-              className="w-full accent-blue-500"
+              className="w-full accent-[var(--color-button-primary)]"
             />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-[var(--color-text-informative-primary)] mt-1">
               <span>30초</span>
               <span>10분</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-[var(--color-text-informative-primary)] mt-1">
               이미지 생성 요청의 최대 대기 시간을 설정합니다.
             </p>
           </div>
@@ -278,12 +278,12 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
 
       {/* NovelAI 스타일 인식 토글 - NovelAI가 선택된 경우에만 표시 */}
       {imageProvider === 'novelai' && (
-        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex items-center justify-between p-3 bg-[var(--color-bg-input-secondary)] rounded-lg border border-[var(--color-border)]">
           <div className="flex flex-col">
-            <label htmlFor="style-aware-toggle" className="font-medium text-gray-900 cursor-pointer">
+            <label htmlFor="style-aware-toggle" className="font-medium text-[var(--color-text-primary)] cursor-pointer">
               스타일 인식 모드
             </label>
-            <p className="text-xs text-gray-500">활성화하면 캐릭터 이미지의 스타일을 인식하여 일관된 그림체로 생성합니다.</p>
+            <p className="text-xs text-[var(--color-text-informative-primary)]">활성화하면 캐릭터 이미지의 스타일을 인식하여 일관된 그림체로 생성합니다.</p>
           </div>
           <label htmlFor="style-aware-toggle" className="relative flex items-center cursor-pointer">
             <input
@@ -299,14 +299,14 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
                 }
               }))}
             />
-            <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+            <div className="w-11 h-6 bg-[var(--color-toggle-off)] rounded-full peer peer-focus:ring-4 peer-focus:ring-[var(--color-focus-border)]/20 peer-checked:after:translate-x-full peer-checked:after:border-[var(--color-text-accent)] after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-[var(--color-text-accent)] after:border-[var(--color-border)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-toggle-on)]"></div>
           </label>
         </div>
       )}
 
       {/* 그림체 설정 (ArtStyleManagerUI 연동) */}
       <div className="space-y-4 my-6">
-        <div className="p-4 rounded-xl bg-gray-100">
+        <div className="p-4 rounded-xl bg-[var(--color-bg-input-primary)]">
           <ArtStyleList />
         </div>
       </div>

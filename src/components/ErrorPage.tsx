@@ -174,7 +174,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                     {isExpanded && (
                                         <div className="mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
                                             <pre className="text-xs text-gray-700 overflow-auto max-h-32">
-                                                {`${error.message}\n${error.stack}`}
+                                                {error.message}
                                             </pre>
                                         </div>
                                     )}

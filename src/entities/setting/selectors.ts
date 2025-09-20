@@ -3,6 +3,11 @@ import { createSelector } from '@reduxjs/toolkit';
 
 const selectSettingsState = (state: RootState) => state.settings;
 
+export const selectColorTheme = createSelector(
+    [selectSettingsState],
+    (settings) => settings.colorTheme || 'light'
+);
+
 export const selectIsSettingsPanelOpen = createSelector(
     [selectSettingsState],
     (settings) => settings.isModalOpen
