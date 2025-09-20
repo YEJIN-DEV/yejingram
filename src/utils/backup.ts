@@ -46,7 +46,7 @@ export async function backupStateToFile() {
   // 2) 메타와 함께 파일로 저장
   const payload: BackupFile = {
     app: 'yejingram',
-    version: 1,
+    version: persistConfig.version,
     createdAt: new Date().toISOString(),
     data,
   };
