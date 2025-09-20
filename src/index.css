@@ -107,8 +107,6 @@
   --color-toaster-border: #374151;
   --color-toaster-icon-primary: #10b981;
   --color-toaster-icon-secondary: #1f2937;
-  --color-bg-secondary: #f7fafc;
-  --color-bg-accent: #edf2f7;
 
   /* Sidebar Room List Colors */
   /* blue-50 */
@@ -279,10 +277,6 @@
   --color-toaster-icon-primary: #10b981;
   /* match bg */
   --color-toaster-icon-secondary: #0b1220;
-
-  /* Additional Surfaces */
-  /* very subtle accent surface */
-  --color-bg-accent: #0c1422;
 
   /* Sidebar Room List Colors */
   /* slate-900 */
@@ -560,6 +554,7 @@ details .content-wrapper {
     opacity: 0;
     transform: scale(0.8);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);

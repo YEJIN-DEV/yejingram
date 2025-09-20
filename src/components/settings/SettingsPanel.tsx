@@ -317,10 +317,10 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 </div>
                                 <div className="space-y-3 pt-4 border-t border-[var(--color-border)]">
                                     <button onClick={backupStateToFile} id="backup-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-                                        <Download className="w-4 h-4" /> 백업하기
+                                        <Upload className="w-4 h-4" /> 백업하기
                                     </button>
                                     <button onClick={importBackup} id="restore-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
-                                        <Upload className="w-4 h-4" /> 불러오기
+                                        <Download className="w-4 h-4" /> 불러오기
                                     </button>
                                 </div>
                             </div>
