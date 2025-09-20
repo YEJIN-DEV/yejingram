@@ -52,10 +52,23 @@ export const migrations = {
                 keys: ['imageSettings'],
                 defaults: { imageSettings: imageSettingsInitialState }
             }],
-            delete: [{
-                path: 'settings',
-                keys: ['imageApiConfigs', 'imageApiProvider']
-            }]
+            move: [
+                {
+                    from: 'settings.imageApiConfigs',
+                    to: 'settings.imageSettings.config',
+                    keys: ['gemini', 'novelai'],
+                    overwrite: true,
+                    keepSource: false
+                },
+                {
+                    from: 'settings',
+                    to: 'settings.imageSettings',
+                    keys: ['imageApiProvider'],
+                    rename: { imageApiProvider: 'imageProvider' },
+                    overwrite: true,
+                    keepSource: false
+                }
+            ],
         });
         return state;
     }

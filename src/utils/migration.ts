@@ -25,25 +25,30 @@ type Rules = {
     move?: MoveRule[];
 };
 
-function traverseTargets(root: any, path: string): any[] {
-    const parts = path.split('.');
-    const results: any[] = [];
+type TargetInfo = { target: any; parent: any; key: string };
 
-    function dfs(node: any, i: number) {
+function traverseTargets(root: any, path: string): TargetInfo[] {
+    const parts = path.split('.');
+    const results: TargetInfo[] = [];
+
+    function dfs(node: any, parent: any, key: string, i: number) {
         if (node == null) return;
-        if (i === parts.length) { results.push(node); return; }
+        if (i === parts.length) {
+            results.push({ target: node, parent, key });
+            return;
+        }
 
         const part = parts[i];
         if (part === '*') {
             if (node && typeof node === 'object') {
-                Object.keys(node).forEach(k => dfs(node[k], i + 1));
+                Object.keys(node).forEach(k => dfs(node[k], node, k, i + 1));
             }
         } else {
-            dfs(node[part], i + 1);
+            dfs(node[part], node, part, i + 1);
         }
     }
 
-    dfs(root, 0);
+    dfs(root, null, '', 0);
     return results;
 }
 
@@ -66,7 +71,8 @@ function getOrCreateTarget(root: any, path: string): any | undefined {
 
 function applyAddRule(root: any, rule: AddRule) {
     const targets = traverseTargets(root, rule.path);
-    targets.forEach(obj => {
+    targets.forEach(info => {
+        const obj = info.target;
         if (obj && typeof obj === 'object') {
             rule.keys.forEach(key => {
                 if (key === '*') {
@@ -88,7 +94,8 @@ function applyAddRule(root: any, rule: AddRule) {
 
 function applyDeleteRule(root: any, rule: DeleteRule) {
     const targets = traverseTargets(root, rule.path);
-    targets.forEach(obj => {
+    targets.forEach(info => {
+        const obj = info.target;
         if (obj && typeof obj === 'object') {
             rule.keys.forEach(key => {
                 if (key in obj) delete obj[key];
@@ -98,8 +105,10 @@ function applyDeleteRule(root: any, rule: DeleteRule) {
 }
 
 function applyMoveRule(root: any, rule: MoveRule) {
-    const sources = traverseTargets(root, rule.from);
-    const destsRaw = traverseTargets(root, rule.to);
+    const sourcesWithParents = traverseTargets(root, rule.from);
+    const sources = sourcesWithParents.map(info => info.target);
+    const destsWithParents = traverseTargets(root, rule.to);
+    const destsRaw = destsWithParents.map(info => info.target);
     const overwrite = !!rule.overwrite;
     const keepSource = !!rule.keepSource;
     const rename = rule.rename || {};
@@ -160,11 +169,22 @@ function applyMoveRule(root: any, rule: MoveRule) {
             moveOnce(sources[i], dests[i]);
         }
     }
+
+    // 이동 후 keepSource가 false이고 소스 객체가 비게 되면 부모에서 삭제
+    if (!keepSource) {
+        sourcesWithParents.forEach(({ target, parent, key }) => {
+            if (target && typeof target === 'object' && Object.keys(target).length === 0 && parent) {
+                delete parent[key];
+            }
+        });
+    }
 }
 
 export function applyRules(state: any, rules: Rules) {
     rules.add?.forEach(rule => applyAddRule(state, rule));
-    rules.delete?.forEach(rule => applyDeleteRule(state, rule));
+    state = JSON.parse(JSON.stringify(state)); // Deep copy
     (rules as any).move?.forEach((rule: MoveRule) => applyMoveRule(state, rule));
+    state = JSON.parse(JSON.stringify(state)); // Deep copy
+    rules.delete?.forEach(rule => applyDeleteRule(state, rule));
     return state;
 }
