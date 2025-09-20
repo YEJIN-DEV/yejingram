@@ -496,25 +496,30 @@ const MessageList: React.FC<MessageListProps> = ({
           className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-bg-shadow)]/80 animate-fadeIn"
           onClick={() => setImageModalOpen(false)}
         >
-          <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center">
-            <img
-              src={selectedImageUrl}
-              alt="확대된 이미지"
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-scaleIn"
+          <div className="flex items-center justify-center">
+            <div
+              className="relative inline-block"
               onClick={(e) => e.stopPropagation()}
-            />
-            <button
-              onClick={() => setImageModalOpen(false)}
-              className="absolute top-4 right-4 p-2 bg-[var(--color-bg-shadow)]/60 text-[var(--color-text-accent)] rounded-full hover:bg-[var(--color-bg-shadow)]/70 transition-all duration-200"
-              aria-label="이미지 닫기"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+              <img
+                src={selectedImageUrl}
+                alt="확대된 이미지"
+                className="block max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl animate-scaleIn"
+              />
+              <button
+                onClick={() => setImageModalOpen(false)}
+                className="absolute top-2 right-2 p-2 bg-[var(--color-bg-shadow)]/60 text-[var(--color-text-accent)] rounded-full hover:bg-[var(--color-bg-shadow)]/70 transition-all duration-200 backdrop-blur-sm ring-1 ring-white/20"
+                aria-label="이미지 닫기"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       )}
+
     </>
   );
 };
