@@ -180,7 +180,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 }`}
                         >
                             <CircleEllipsis className="w-4 h-4 inline mr-2" />
-                            기타 설정
+                            기타
                         </button>
                     </div>
 
@@ -276,7 +276,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     <div className="grid grid-cols-2 gap-2">
                                         <button
                                             onClick={() => handleColorThemeChange('light')}
-                                            className={`py-2 px-4 rounded-lg text-sm font-medium border transition-colors ${localSettings.colorTheme === 'light'
+                                            className={`py-2 px-4 rounded-lg text-sm font-medium border ${localSettings.colorTheme === 'light'
                                                 ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
@@ -285,7 +285,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         </button>
                                         <button
                                             onClick={() => handleColorThemeChange('dark')}
-                                            className={`py-2 px-4 rounded-lg text-sm font-medium border transition-colors ${localSettings.colorTheme === 'dark'
+                                            className={`py-2 px-4 rounded-lg text-sm font-medium border ${localSettings.colorTheme === 'dark'
                                                 ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
@@ -294,7 +294,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         </button>
                                         <button
                                             onClick={() => handleColorThemeChange('system')}
-                                            className={`py-2 px-4 rounded-lg text-sm font-medium border transition-colors ${localSettings.colorTheme === 'system'
+                                            className={`py-2 px-4 rounded-lg text-sm font-medium border ${localSettings.colorTheme === 'system'
                                                 ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
@@ -303,7 +303,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         </button>
                                         <button
                                             onClick={() => handleColorThemeChange('custom')}
-                                            className={`py-2 px-4 rounded-lg text-sm font-medium border transition-colors ${localSettings.colorTheme === 'custom'
+                                            className={`py-2 px-4 rounded-lg text-sm font-medium border ${localSettings.colorTheme === 'custom'
                                                 ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
@@ -316,10 +316,10 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     </div>
                                 </div>
                                 <div className="space-y-3 pt-4 border-t border-[var(--color-border)]">
-                                    <button onClick={backupStateToFile} id="backup-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                                    <button onClick={backupStateToFile} id="backup-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg text-sm flex items-center justify-center gap-2">
                                         <Upload className="w-4 h-4" /> 백업하기
                                     </button>
-                                    <button onClick={importBackup} id="restore-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
+                                    <button onClick={importBackup} id="restore-data-btn" className="w-full py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
                                         <Download className="w-4 h-4" /> 불러오기
                                     </button>
                                 </div>
@@ -328,7 +328,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                     </div>
                 </div>
                 <div className="p-6 border-t border-[var(--color-border)] shrink-0">
-                    <button onClick={handleSave} className="w-full py-2.5 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors">저장</button>
+                    <button onClick={handleSave} className={`w-full py-2.5 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg ${activeTab !== 'others' ? 'transition-colors' : ''}`}>저장</button>
                 </div>
             </div>
         </>
