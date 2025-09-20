@@ -163,7 +163,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         value={config.apiKey}
                         onChange={e => handleConfigChange('apiKey', e.target.value)}
                         placeholder="API 키를 입력하세요"
-                        className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
+                        className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                     />
                 </div>
             )}
@@ -177,7 +177,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                             value={config.projectId || ''}
                             onChange={e => handleConfigChange('projectId', e.target.value)}
                             placeholder="Vertex AI Project ID"
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                         />
                     </div>
                     <div>
@@ -187,7 +187,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                             value={config.location || ''}
                             onChange={e => handleConfigChange('location', e.target.value)}
                             placeholder="global"
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                         />
                     </div>
                     <div>
@@ -197,7 +197,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                             value={config.accessToken || ''}
                             onChange={e => handleConfigChange('accessToken', e.target.value)}
                             placeholder="gcloud auth print-access-token"
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                         />
                     </div>
                 </>
@@ -211,7 +211,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         value={config.baseUrl || ''}
                         onChange={e => handleConfigChange('baseUrl', e.target.value)}
                         placeholder="https://api.openai.com/v1"
-                        className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
+                        className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                     />
                 </div>
             )}
@@ -281,7 +281,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                             value={imageConfig.apiKey}
                             onChange={e => handleImageModelConfigChange(imageProvider, 'apiKey', e.target.value)}
                             placeholder="이미지 모델 API 키를 입력하세요"
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                         />
                     </div>
                     <div>
@@ -336,7 +336,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                             value={config.topK ?? undefined}
                             onChange={e => handleConfigChange('topK', e.target.value === '' ? null : +e.target.value)}
                             placeholder={provider !== 'claude' ? '비워둘 경우 비활성화됩니다. (초기값: 40)' : '기본값: 40'}
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                         />
                     </div>
                 )}
@@ -348,7 +348,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                             value={config.maxTokens ?? 8192}
                             onChange={e => handleConfigChange('maxTokens', e.target.value)}
                             placeholder="기본값: 8192"
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                         />
                     </div>
                 )}

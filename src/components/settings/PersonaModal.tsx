@@ -67,7 +67,7 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="페르소나 이름을 입력하세요"
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                             required
                         />
                     </div>
@@ -82,7 +82,7 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="이 페르소나는 어떤 사람인지 설명해주세요"
                             rows={4}
-                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                         />
                     </div>
 

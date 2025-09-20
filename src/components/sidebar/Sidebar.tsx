@@ -100,7 +100,7 @@ function Sidebar({ setRoomId, roomId, openSettingsModal, toggleCharacterPanel, o
                         placeholder="검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-input-primary)] text-[var(--color-text-primary)] rounded-full border-0 focus:bg-[var(--color-bg-input-secondary)] focus:ring-2 focus:ring-[var(--color-focus-border)]/20 transition-all duration-200 text-sm placeholder-[var(--color-text-secondary)]"
+                        className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-input-primary)] text-[var(--color-text-primary)] rounded-full border-0 focus:bg-[var(--color-bg-input-secondary)] focus:ring-2 focus:ring-[var(--color-focus-border)]/20 transition-transform duration-200 text-sm placeholder-[var(--color-text-secondary)]"
                     />
                 </div>
             </header>

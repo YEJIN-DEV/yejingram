@@ -56,7 +56,7 @@ function RoomList({
 
     return (
         <div
-            className={`chat-room-item group relative cursor-pointer transition-all duration-200 select-none ${isSelected ? 'bg-[var(--color-bg-roomlist)] border-l-4 border-[var(--color-focus-border)]' : 'hover:bg-[var(--color-bg-secondary)]'
+            className={`chat-room-item group relative cursor-pointer transition-transform duration-200 select-none ${isSelected ? 'bg-[var(--color-bg-roomlist)] border-l-4 border-[var(--color-focus-border)]' : 'hover:bg-[var(--color-bg-secondary)]'
                 }`}
             data-chat-id={room.id}
         >
