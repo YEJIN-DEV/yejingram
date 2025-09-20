@@ -99,7 +99,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         id="structured-output-toggle"
                         className="sr-only peer"
                         checked={settings.useStructuredOutput}
-                        onChange={e => setSettings(prev => ({ ...prev, useStructuredOutput: e.target.checked }))}
+                        onChange={e => setSettings(prev => ({ ...prev, useStructuredOutput: e.target.checked, useImageResponse: e.target.checked ? prev.useImageResponse : false }))}
                     />
                     <div className="w-11 h-6 bg-[var(--color-toggle-off)] rounded-full peer peer-focus:ring-4 peer-focus:ring-[var(--color-toggle-on)]/30 peer-checked:after:translate-x-full peer-checked:after:border-[var(--color-border)] after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-[var(--color-bg-main)] after:border-[var(--color-border-strong)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-toggle-on)]"></div>
                 </label>
