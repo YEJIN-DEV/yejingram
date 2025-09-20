@@ -182,9 +182,9 @@ function applyMoveRule(root: any, rule: MoveRule) {
 
 export function applyRules(state: any, rules: Rules) {
     rules.add?.forEach(rule => applyAddRule(state, rule));
-    state = JSON.parse(JSON.stringify(state)); // Deep copy
+    state = structuredClone(state);
     (rules as any).move?.forEach((rule: MoveRule) => applyMoveRule(state, rule));
-    state = JSON.parse(JSON.stringify(state)); // Deep copy
+    state = structuredClone(state);
     rules.delete?.forEach(rule => applyDeleteRule(state, rule));
     return state;
 }
