@@ -276,7 +276,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     <div className="grid grid-cols-2 gap-2">
                                         <button
                                             onClick={() => handleColorThemeChange('light')}
-                                            className={`py-2 px-4 rounded-lg text-xs font-medium border transition-colors ${localSettings.colorTheme === 'light'
+                                            className={`py-2 px-4 rounded-lg text-sm font-medium border transition-colors ${localSettings.colorTheme === 'light'
                                                 ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
@@ -285,7 +285,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         </button>
                                         <button
                                             onClick={() => handleColorThemeChange('dark')}
-                                            className={`py-2 px-4 rounded-lg text-xs font-medium border transition-colors ${localSettings.colorTheme === 'dark'
+                                            className={`py-2 px-4 rounded-lg text-sm font-medium border transition-colors ${localSettings.colorTheme === 'dark'
                                                 ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
@@ -294,7 +294,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         </button>
                                         <button
                                             onClick={() => handleColorThemeChange('system')}
-                                            className={`py-2 px-4 rounded-lg text-xs font-medium border transition-colors ${localSettings.colorTheme === 'system'
+                                            className={`py-2 px-4 rounded-lg text-sm font-medium border transition-colors ${localSettings.colorTheme === 'system'
                                                 ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
@@ -303,7 +303,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         </button>
                                         <button
                                             onClick={() => handleColorThemeChange('custom')}
-                                            className={`py-2 px-4 rounded-lg text-xs font-medium border transition-colors ${localSettings.colorTheme === 'custom'
+                                            className={`py-2 px-4 rounded-lg text-sm font-medium border transition-colors ${localSettings.colorTheme === 'custom'
                                                 ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
                                                 : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                                 }`}
