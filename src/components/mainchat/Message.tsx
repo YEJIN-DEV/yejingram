@@ -508,7 +508,7 @@ const MessageList: React.FC<MessageListProps> = ({
               />
               <button
                 onClick={() => setImageModalOpen(false)}
-                className="absolute top-2 right-2 p-2 bg-[var(--color-bg-shadow)]/60 text-[var(--color-text-accent)] rounded-full hover:bg-[var(--color-bg-shadow)]/70 transition-all duration-200 backdrop-blur-sm ring-1 ring-white/20"
+                className="absolute top-2 right-2 p-2 bg-[var(--color-bg-shadow)]/60 text-[var(--color-text-accent)] rounded-full hover:bg-[var(--color-bg-shadow)]/70 transition-all duration-200"
                 aria-label="이미지 닫기"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
