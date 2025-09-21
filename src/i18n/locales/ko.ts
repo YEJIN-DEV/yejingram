@@ -1,4 +1,5 @@
 const ko = {
+    pageTitle: "Yejingram | 예진그램",
     yejingram: "예진그램",
 
     common: {

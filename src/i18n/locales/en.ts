@@ -1,4 +1,5 @@
 const en = {
+    pageTitle: "Yejingram",
     yejingram: "Yejingram",
 
     common: {

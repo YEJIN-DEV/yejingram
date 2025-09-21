@@ -18,6 +18,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
 import i18n from './i18n/i18n'
 import { settingsActions } from './entities/setting/slice'
+import { charactersActions } from './entities/character/slice'
 
 function App() {
   const dispatch = useDispatch();
@@ -38,9 +39,11 @@ function App() {
   useEffect(() => {
     if (uiLanguage !== null) {
       i18n.changeLanguage(uiLanguage);
-    } else {
+      document.title = i18n.t('pageTitle');
+    } else { // Only run on very first load when uiLanguage is null
       dispatch(settingsActions.setUILanguage(i18n.language as 'ko' | 'en' | 'ja'));
       dispatch(settingsActions.updatePromptNamesToLocale(i18n.language as 'ko' | 'en' | 'ja'));
+      dispatch(charactersActions.updateDefaultCharacterNameToLocale(i18n.language as 'ko' | 'en' | 'ja'));
     }
   }, [uiLanguage, dispatch]);
 

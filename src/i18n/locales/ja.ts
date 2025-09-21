@@ -1,4 +1,5 @@
 const ja = {
+    pageTitle: "Yejingram | イェジングラム",
     yejingram: "Yejingram",
 
     common: {
