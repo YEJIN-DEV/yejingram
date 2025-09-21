@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LogOut, X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '../../app/store';
@@ -21,6 +22,7 @@ interface EditGroupChatModalProps {
 }
 
 function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
+    const { t } = useTranslation();
     const dispatch = useDispatch<AppDispatch>();
     const editingRoomId = useSelector(selectEditingRoomId);
     const room = useSelector((state: RootState) => editingRoomId ? selectRoomById(state, editingRoomId) : null);
@@ -35,7 +37,7 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
     // State for leave modal
     const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
     const [leavingCharId, setLeavingCharId] = useState<number | null>(null);
-    const [leaveReason, setLeaveReason] = useState('채팅방을 나갔습니다');
+    const [leaveReason, setLeaveReason] = useState(t('main.group.editModal.leave.reason.defaultLeaveReason'));
     const [customLeaveReason, setCustomLeaveReason] = useState('');
 
     useEffect(() => {
@@ -82,7 +84,7 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
     };
 
     const handleInviteConfirm = () => {
-        inviteCharacter(selectedInviteId, room, allCharacters.find(c => c.id === selectedInviteId)?.name || 'Unknown', dispatch);
+        inviteCharacter(selectedInviteId, room, allCharacters.find(c => c.id === selectedInviteId)?.name || t('main.group.editModal.unknown'), dispatch, t);
     };
 
     const handleInviteCancel = () => {
@@ -93,7 +95,7 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
     // Handle leave button click
     const handleLeave = (charId: number) => {
         setLeavingCharId(charId);
-        setLeaveReason('나갔습니다.');
+        setLeaveReason(t('main.group.editModal.leave.reason.left'));
         setCustomLeaveReason('');
         setLeaveDialogOpen(true);
     };
@@ -114,16 +116,16 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
             },
         }));
         // Add system message
-        const leavingUserName = allCharacters.find(c => c.id === leavingCharId)?.name || 'Unknown';
+        const leavingUserName = allCharacters.find(c => c.id === leavingCharId)?.name || t('main.group.editModal.unknown');
         let reasonText = leaveReason;
-        if (leaveReason === '직접 입력') {
-            reasonText = customLeaveReason.trim() ? customLeaveReason : '방을 떠났습니다';
+        if (leaveReason === t('main.group.editModal.customInput')) {
+            reasonText = customLeaveReason.trim() ? customLeaveReason : t('main.group.editModal.leftRoom');
         }
         const leaveMessage = {
             id: nanoid(),
             roomId: room.id,
             authorId: 0,
-            content: `${leavingUserName}님이 ${reasonText}`,
+            content: t('main.group.editModal.leaveMessage', { name: leavingUserName, reason: reasonText }),
             createdAt: new Date().toISOString(),
             type: 'SYSTEM',
             leaveCharId: leavingCharId,
@@ -131,14 +133,14 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
         dispatch(messagesActions.upsertOne(leaveMessage));
         setLeaveDialogOpen(false);
         setLeavingCharId(null);
-        setLeaveReason('나갔습니다.');
+        setLeaveReason(t('main.group.editModal.leave.reason.left'));
         setCustomLeaveReason('');
     };
 
     const handleLeaveCancel = () => {
         setLeaveDialogOpen(false);
         setLeavingCharId(null);
-        setLeaveReason('나갔습니다.');
+        setLeaveReason(t('main.group.editModal.leave.reason.left'));
         setCustomLeaveReason('');
     };
 
@@ -148,7 +150,7 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                 <div className="bg-[var(--color-bg-main)] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
                     <div className="sticky top-0 bg-[var(--color-bg-main)] px-6 py-4 border-b border-[var(--color-border)] rounded-t-2xl">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">그룹 채팅 설정</h2>
+                            <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">{t('main.group.editModal.title')}</h2>
                             <button onClick={handleClose} className="p-2 text-[var(--color-icon-tertiary)] hover:text-[var(--color-icon-primary)] hover:bg-[var(--color-bg-hover)] rounded-full transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
@@ -157,35 +159,35 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
 
                     <div className="p-6 space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">그룹 채팅 이름</label>
+                            <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">{t('main.group.editModal.nameLabel')}</label>
                             <input type="text" value={name} onChange={e => setName(e.target.value)}
                                 className="w-full p-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:border-[var(--color-focus-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:outline-none" />
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">응답 설정</h3>
+                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('main.group.editModal.response.title')}</h3>
                             <div>
                                 <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">
-                                    <span>채팅방 응답 빈도 ({Math.round(settings.responseFrequency * 100)}%)</span>
-                                    <span className="text-xs text-[var(--color-text-secondary)] ml-2">0%: 입력에 반응하지 않음, 100%: 입력에 항상 반응함</span>
+                                    <span>{t('main.group.editModal.response.roomFreq', { value: Math.round(settings.responseFrequency * 100) })}</span>
+                                    <span className="text-xs text-[var(--color-text-secondary)] ml-2">{t('main.group.editModal.response.freqHelp')}</span>
                                 </label>
                                 <input type="range" min="0" max="100" value={Math.round(settings.responseFrequency * 100)}
                                     onChange={e => handleSettingChange('responseFrequency', parseInt(e.target.value) / 100)}
                                     className="w-full h-2 bg-[var(--color-bg-secondary-accent)] rounded-lg appearance-none cursor-pointer slider-thumb" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">최대 동시 응답 캐릭터 수</label>
+                                <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">{t('main.group.editModal.response.maxLabel')}</label>
                                 <div className="relative">
                                     <input type="number" min="1" max={participants.length} value={settings.maxRespondingCharacters}
                                         onChange={e => handleSettingChange('maxRespondingCharacters', parseInt(e.target.value))}
                                         className="w-full p-3 pr-10 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:border-[var(--color-focus-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:outline-none" />
-                                    <span className="absolute inset-y-0 right-3 flex items-center text-[var(--color-text-secondary)]">명</span>
+                                    <span className="absolute inset-y-0 right-3 flex items-center text-[var(--color-text-secondary)]">{t('units.peopleSuffix')}</span>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">개별 캐릭터 설정</h3>
+                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('main.group.editModal.participants.title')}</h3>
                             <div className="space-y-4">
                                 {participants.map(participant => (
                                     <div key={participant.id} className="space-y-2 max-h-60 overflow-y-auto">
@@ -204,11 +206,11 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                                                     onChange={e => handleParticipantSettingChange(participant.id, 'isActive', e.target.checked)}
                                                     className="group-chat-participant mr-3 text-[var(--color-button-primary-accent)] bg-[var(--color-bg-main)] border-[var(--color-border-strong)] rounded focus:ring-[var(--color-focus-border)]"
                                                 />
-                                                응답 활성화
+                                                {t('main.group.editModal.participants.activate')}
                                                 <button
                                                     type="button"
                                                     className="ml-2 opacity-100 transition-opacity duration-200 p-1 bg-[var(--color-button-negative)] hover:bg-[var(--color-button-negative-accent)] rounded-full text-[var(--color-text-accent)]"
-                                                    title="내보내기"
+                                                    title={t('main.group.editModal.participants.kick')}
                                                     onClick={() => handleLeave(participant.id)}
                                                 >
                                                     <LogOut className="w-4 h-4" />
@@ -216,8 +218,8 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                                             </div>
                                             <div className="flex-1">
                                                 <label className="block text-sm font-medium text-[var(--color-text-interface)]">
-                                                    <span>캐릭터 응답 빈도 ({Math.round(settings.participantSettings[participant.id]?.responseProbability * 100)}%)</span>
-                                                    <span className="text-xs text-[var(--color-text-secondary)] ml-2">0%: 응답하지 않음, 100%: 항상 응답</span>
+                                                    <span>{t('main.group.editModal.participants.probLabel', { value: Math.round(settings.participantSettings[participant.id]?.responseProbability * 100) })}</span>
+                                                    <span className="text-xs text-[var(--color-text-secondary)] ml-2">{t('main.group.editModal.participants.probHelp')}</span>
                                                 </label>
                                                 <input type="range" min="0" max="100" value={Math.round(settings.participantSettings[participant.id]?.responseProbability * 100)}
                                                     onChange={e => handleParticipantSettingChange(participant.id, 'responseProbability', parseInt(e.target.value) / 100)}
@@ -230,9 +232,9 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                         </div>
 
                         <div className="flex justify-end gap-3 pt-4 border-t border-[var(--color-border)]">
-                            <button onClick={handleInvite} className="px-6 py-2 bg-[var(--color-button-positive)] hover:bg-[var(--color-button-positive-accent)] text-[var(--color-text-accent)] rounded-xl transition-colors font-medium mr-auto">참여자 추가</button>
-                            <button onClick={handleClose} className="px-6 py-2 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-xl transition-colors font-medium">취소</button>
-                            <button onClick={handleSave} className="px-6 py-2 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-xl transition-colors font-medium">저장</button>
+                            <button onClick={handleInvite} className="px-6 py-2 bg-[var(--color-button-positive)] hover:bg-[var(--color-button-positive-accent)] text-[var(--color-text-accent)] rounded-xl transition-colors font-medium mr-auto">{t('main.group.editModal.actions.invite')}</button>
+                            <button onClick={handleClose} className="px-6 py-2 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-xl transition-colors font-medium">{t('common.cancel')}</button>
+                            <button onClick={handleSave} className="px-6 py-2 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-xl transition-colors font-medium">{t('common.save')}</button>
                         </div>
                     </div>
                 </div>
@@ -242,14 +244,14 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                 <div className="fixed inset-0 bg-[var(--color-bg-shadow)]/40 flex items-center justify-center z-50 p-4">
                     <div className="bg-[var(--color-bg-main)] rounded-2xl w-full max-w-md mx-4 shadow-xl max-h-[80vh] flex flex-col">
                         <div className="p-6 border-b border-[var(--color-border)] flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">참여자 추가</h3>
+                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('main.group.editModal.invite.title')}</h3>
                             <button onClick={handleInviteCancel} className="p-2 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors">
                                 <X className="w-5 h-5 text-[var(--color-icon-tertiary)]" />
                             </button>
                         </div>
                         <div className="p-6 space-y-2 overflow-y-auto flex-1">
                             {uninvitedCharacters.length === 0 ? (
-                                <div className="text-[var(--color-text-secondary)] text-center">추가할 수 있는 캐릭터가 없습니다.</div>
+                                <div className="text-[var(--color-text-secondary)] text-center">{t('main.group.editModal.invite.empty')}</div>
                             ) : (
                                 uninvitedCharacters.map(char => (
                                     <label key={char.id} className={`flex items-center p-3 bg-[var(--color-bg-input-secondary)] rounded-xl hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors border border-[var(--color-border-secondary)] ${selectedInviteId === char.id ? 'ring-2 ring-[var(--color-focus-border)]' : ''}`}>
@@ -272,13 +274,13 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                             )}
                         </div>
                         <div className="p-6 border-t border-[var(--color-border)] flex gap-3">
-                            <button onClick={handleInviteCancel} className="flex-1 py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-xl transition-colors font-medium">취소</button>
+                            <button onClick={handleInviteCancel} className="flex-1 py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-xl transition-colors font-medium">{t('common.cancel')}</button>
                             <button
                                 onClick={handleInviteConfirm}
                                 className="flex-1 py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-xl transition-colors disabled:bg-[var(--color-button-disabled)] disabled:text-[var(--color-icon-tertiary)] font-medium"
                                 disabled={selectedInviteId === null}
                             >
-                                초대
+                                {t('main.group.editModal.invite.submit')}
                             </button>
                         </div>
                     </div>
@@ -289,30 +291,30 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                 <div className="fixed inset-0 bg-[var(--color-bg-shadow)]/40 flex items-center justify-center z-50 p-4">
                     <div className="bg-[var(--color-bg-main)] rounded-2xl w-full max-w-md mx-4 shadow-xl max-h-[80vh] flex flex-col">
                         <div className="p-6 border-b border-[var(--color-border)] flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">퇴장 문구 입력</h3>
+                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('main.group.editModal.leave.title')}</h3>
                             <button onClick={handleLeaveCancel} className="p-2 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors">
                                 <X className="w-5 h-5 text-[var(--color-icon-tertiary)]" />
                             </button>
                         </div>
                         <div className="p-6 space-y-4 overflow-y-auto flex-1">
-                            <label className="block text-m font-medium text-[var(--color-text-interface)] mb-5">{allCharacters.find(c => c.id === leavingCharId)?.name || 'Unknown'}님이</label>
+                            <label className="block text-m font-medium text-[var(--color-text-interface)] mb-5">{t('main.group.editModal.leave.whoLabel', { name: allCharacters.find(c => c.id === leavingCharId)?.name || t('main.group.editModal.unknown') })}</label>
                             <select
                                 className="w-full p-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:border-[var(--color-focus-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:outline-none"
                                 value={leaveReason}
                                 onChange={e => setLeaveReason(e.target.value)}
                             >
-                                <option value="나갔습니다.">나갔습니다.</option>
-                                <option value="방을 떠났습니다.">방을 떠났습니다.</option>
-                                <option value="퇴장했습니다.">퇴장했습니다.</option>
-                                <option value="강제 퇴장되었습니다.">강제 퇴장되었습니다.</option>
-                                <option value="차단되었습니다.">차단되었습니다.</option>
-                                <option value="직접 입력">직접 입력</option>
+                                <option value={t('main.group.editModal.leave.reason.left')}>{t('main.group.editModal.leave.reason.left')}</option>
+                                <option value={t('main.group.editModal.leave.reason.leftRoom')}>{t('main.group.editModal.leave.reason.leftRoom')}</option>
+                                <option value={t('main.group.editModal.leave.reason.exited')}>{t('main.group.editModal.leave.reason.exited')}</option>
+                                <option value={t('main.group.editModal.leave.reason.forciblyRemoved')}>{t('main.group.editModal.leave.reason.forciblyRemoved')}</option>
+                                <option value={t('main.group.editModal.leave.reason.blocked')}>{t('main.group.editModal.leave.reason.blocked')}</option>
+                                <option value={t('main.group.editModal.leave.reason.customInput')}>{t('main.group.editModal.leave.reason.customInput')}</option>
                             </select>
-                            {leaveReason === '직접 입력' && (
+                            {leaveReason === t('main.group.editModal.customInput') && (
                                 <>
                                     <textarea
                                         className="w-full p-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:border-[var(--color-focus-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:outline-none min-h-[80px]"
-                                        placeholder="사유를 입력하세요"
+                                        placeholder={t('main.group.editModal.leave.customPlaceholder')}
                                         value={customLeaveReason}
                                         onChange={e => setCustomLeaveReason(e.target.value)}
                                     />
@@ -320,13 +322,13 @@ function EditGroupChatModal({ isOpen, onClose }: EditGroupChatModalProps) {
                             )}
                         </div>
                         <div className="p-6 border-t border-[var(--color-border)] flex gap-3">
-                            <button onClick={handleLeaveCancel} className="flex-1 py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-xl transition-colors font-medium">취소</button>
+                            <button onClick={handleLeaveCancel} className="flex-1 py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-xl transition-colors font-medium">{t('common.cancel')}</button>
                             <button
                                 onClick={handleLeaveConfirm}
                                 className="flex-1 py-2 px-4 bg-[var(--color-button-negative)] hover:bg-[var(--color-button-negative)] text-[var(--color-text-accent)] rounded-xl transition-colors font-medium"
-                                disabled={leaveReason === '직접 입력' && !customLeaveReason.trim()}
+                                disabled={leaveReason === t('main.group.editModal.customInput') && !customLeaveReason.trim()}
                             >
-                                내보내기
+                                {t('main.group.editModal.leave.submit')}
                             </button>
                         </div>
                     </div>

@@ -4,6 +4,7 @@ import { Plus, X, Edit3, Music, Smile } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { charactersActions } from '../../entities/character/slice';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { nanoid } from '@reduxjs/toolkit';
 
 interface StickerPanelProps {
@@ -15,6 +16,7 @@ interface StickerPanelProps {
 
 export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }: StickerPanelProps) {
     const dispatch = useDispatch();
+    const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleAddStickerClick = () => {
@@ -42,13 +44,13 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
     };
 
     const handleDeleteSticker = (stickerId: string) => {
-        if (confirm('정말로 스티커를 삭제하시겠습니까?')) {
+        if (confirm(t('main.stickerPanel.deleteConfirm'))) {
             dispatch(charactersActions.deleteSticker({ characterId, stickerId }));
         }
     };
 
     const handleEditStickerName = (stickerId: string, currentName: string) => {
-        const newName = prompt('새 스티커 이름을 입력하세요:', currentName);
+        const newName = prompt(t('main.stickerPanel.renamePrompt'), currentName);
         if (newName && newName.trim() !== '') {
             dispatch(charactersActions.editStickerName({ characterId, stickerId, newName: newName.trim() }));
         }
@@ -68,29 +70,29 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
     return (
         <div className="absolute bottom-full left-0 mb-2 w-80 bg-[var(--color-bg-main)] rounded-2xl shadow-xl border border-[var(--color-border)] animate-fadeIn">
             <div className="p-4 border-b border-[var(--color-border-secondary)] flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">페르소나 스티커</h3>
+                <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{t('main.stickerPanel.title')}</h3>
                 <div className="flex gap-2">
-                    <button onClick={handleAddStickerClick} className="p-2 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-full transition-colors shadow-sm" title="스티커 추가">
+                    <button onClick={handleAddStickerClick} className="p-2 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-full transition-colors shadow-sm" title={t('main.stickerPanel.addTitle')}>
                         <Plus className="w-4 h-4" />
                     </button>
-                    <button onClick={onClose} className="p-2 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-icon-primary)] rounded-full transition-colors" title="닫기">
+                    <button onClick={onClose} className="p-2 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-icon-primary)] rounded-full transition-colors" title={t('common.close')}>
                         <X className="w-4 h-4" />
                     </button>
                 </div>
             </div>
             <div className="p-4">
                 <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] mb-4">
-                    <span>jpg, gif, png, bmp, webp 지원</span>
-                    <span className="bg-[var(--color-bg-input-primary)] px-2 py-1 rounded-full">스티커: {stickers.length}개</span>
+                    <span>{t('main.stickerPanel.supportedFormats')}</span>
+                    <span className="bg-[var(--color-bg-input-primary)] px-2 py-1 rounded-full">{t('main.stickerPanel.count', { count: stickers.length })}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] mb-4">
-                    <span>총 용량: {formatBytes(totalSize)}</span>
+                    <span>{t('main.stickerPanel.totalSize', { size: formatBytes(totalSize) })}</span>
                 </div>
                 {stickers.length === 0 ? (
                     <div className="text-center text-[var(--color-icon-tertiary)] py-8">
                         <Smile className="w-12 h-12 mx-auto mb-3 text-[var(--color-icon-primary)]/50" />
-                        <p className="text-sm font-medium mb-2">스티커를 추가해보세요</p>
-                        <button onClick={handleAddStickerClick} className="text-sm text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)] font-medium">스티커 추가하기</button>
+                        <p className="text-sm font-medium mb-2">{t('main.stickerPanel.emptyTitle')}</p>
+                        <button onClick={handleAddStickerClick} className="text-sm text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)] font-medium">{t('main.stickerPanel.emptyCta')}</button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto">
@@ -114,11 +116,11 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
                                     </button>
                                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                         <button onClick={(e) => { e.stopPropagation(); handleEditStickerName(sticker.id, sticker.name); }}
-                                            className="w-6 h-6 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-full flex items-center justify-center transition-colors shadow-lg" title="이름 변경">
+                                            className="w-6 h-6 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-full flex items-center justify-center transition-colors shadow-lg" title={t('main.stickerPanel.renameTitle')}>
                                             <Edit3 className="w-3 h-3" />
                                         </button>
                                         <button onClick={(e) => { e.stopPropagation(); handleDeleteSticker(sticker.id); }}
-                                            className="w-6 h-6 bg-[var(--color-button-negative)] hover:bg-[var(--color-button-negative)] text-[var(--color-text-accent)] rounded-full flex items-center justify-center transition-colors shadow-lg" title="삭제">
+                                            className="w-6 h-6 bg-[var(--color-button-negative)] hover:bg-[var(--color-button-negative)] text-[var(--color-text-accent)] rounded-full flex items-center justify-center transition-colors shadow-lg" title={t('main.stickerPanel.deleteTitle')}>
                                             <X className="w-3 h-3" />
                                         </button>
                                     </div>

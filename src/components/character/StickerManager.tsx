@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, CheckSquare, CheckCircle, Trash2, Edit3 } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
@@ -14,6 +15,7 @@ interface StickerManagerProps {
 }
 
 export function StickerManager({ characterId, draft, onDraftChange }: StickerManagerProps) {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedStickers, setSelectedStickers] = useState<string[]>([]);
@@ -23,7 +25,7 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
     if (!character) {
         return (
             <div className="content-inner pt-4 space-y-4 text-sm text-[var(--color-text-informative-secondary)]">
-                선택된 캐릭터가 없습니다.
+                {t('characterPanel.stickersManager.noCharacter')}
             </div>
         );
     }
@@ -65,8 +67,8 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
     };
 
     const handleDeleteSelected = () => {
-        if (selectedStickers.length === 0) return;
-        if (confirm(`선택한 스티커 ${selectedStickers.length}개를 삭제하시겠습니까?`)) {
+    if (selectedStickers.length === 0) return;
+    if (confirm(t('characterPanel.stickersManager.deleteConfirm', { count: selectedStickers.length }))) {
             if (draft && onDraftChange) {
                 const newStickers = stickers.filter(s => !selectedStickers.includes(s.id));
                 onStickersChange(newStickers);
@@ -81,7 +83,7 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
     };
 
     const handleEditName = (stickerId: string, currentName: string) => {
-        const newName = prompt('새 스티커 이름을 입력하세요:', currentName);
+    const newName = prompt(t('characterPanel.stickersManager.renamePrompt'), currentName);
         if (newName && newName.trim() !== '') {
             if (draft && onDraftChange) {
                 const newStickers = stickers.map(s =>
@@ -110,7 +112,7 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
                 <div className="flex items-center gap-2">
                     <button onClick={handleAddStickerClick} className="py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center justify-center gap-1">
                         <Plus className="w-4 h-4" />
-                        <span className="text-xs">스티커<br />추가</span>
+                        <span className="text-xs">{t('characterPanel.stickersManager.addLine1')}<br />{t('characterPanel.stickersManager.addLine2')}</span>
                     </button>
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="image/*" />
                 </div>
@@ -118,24 +120,24 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
                     <div className="flex items-center gap-2">
                         <button onClick={() => setSelectionMode(!selectionMode)} className="py-2 px-3 bg-[var(--color-button-neutral)] hover:bg-[var(--color-button-neutral-hover)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center gap-1">
                             <CheckSquare className="w-4 h-4" />
-                            <span className="text-xs">선택<br />{selectionMode ? '해제' : '모드'}</span>
+                            <span className="text-xs">{t('characterPanel.stickersManager.selectLine1')}<br />{selectionMode ? t('characterPanel.stickersManager.selectCancel') : t('characterPanel.stickersManager.selectMode')}</span>
                         </button>
                         {selectionMode && (
                             <button onClick={selectAll} className="py-2 px-3 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center gap-1">
                                 <CheckCircle className="w-4 h-4" />
-                                <span className="text-xs">전체<br />선택</span>
+                                <span className="text-xs">{t('characterPanel.stickersManager.selectAllLine1')}<br />{t('characterPanel.stickersManager.selectAllLine2')}</span>
                             </button>
                         )}
                         <button onClick={handleDeleteSelected} disabled={selectedStickers.length === 0} className="py-2 px-3 bg-[var(--color-button-negative)] hover:bg-[var(--color-button-negative-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors text-sm flex flex-col items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                             <Trash2 className="w-4 h-4" />
-                            <span className="text-xs">삭제<br />(<span id="selected-count">{selectedStickers.length}</span>)</span>
+                            <span className="text-xs">{t('characterPanel.stickersManager.deleteLine1')}<br />(<span id="selected-count">{selectedStickers.length}</span>)</span>
                         </button>
                     </div>
                 )}
             </div>
             <div className="flex items-center justify-between text-xs text-[var(--color-text-informative-secondary)] mb-3">
-                <span>jpg, gif, png, bmp, webp 지원</span>
-                <span>스티커 개수: {stickers.length}개</span>
+                <span>{t('characterPanel.stickersManager.supportedFormats')}</span>
+                <span>{t('characterPanel.stickersManager.count', { count: stickers.length })}</span>
             </div>
             <div id="sticker-container" className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2">
                 {stickers.map(sticker => (
@@ -161,8 +163,8 @@ export function StickerManager({ characterId, draft, onDraftChange }: StickerMan
                 ))}
                 {stickers.length === 0 && (
                     <div className="col-span-full text-center text-[var(--color-text-informative-secondary)] text-sm py-8">
-                        <p>아직 스티커가 없습니다.</p>
-                        <p className="text-xs mt-1">스티커 추가 버튼을 눌러 추가해보세요.</p>
+                        <p>{t('characterPanel.stickersManager.emptyTitle')}</p>
+                        <p className="text-xs mt-1">{t('characterPanel.stickersManager.emptyDesc')}</p>
                     </div>
                 )}
             </div>

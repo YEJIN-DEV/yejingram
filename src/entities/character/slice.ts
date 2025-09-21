@@ -129,6 +129,19 @@ const charactersSlice = createSlice({
     importCharacters: (state, action: PayloadAction<Character[]>) => {
       charactersAdapter.upsertMany(state, action.payload); // 호출만
     },
+    updateDefaultCharacterNameToLocale: (state, action: PayloadAction<'ko' | 'en' | 'ja'>) => {
+      const locale = action.payload;
+      const localeMap: Record<'ko' | 'en' | 'ja', string> = {
+        ko: '한서연',
+        en: 'Han Seo-yeon',
+        ja: 'ハン・ソヨン',
+      };
+      for (const char of Object.values(state.entities)) {
+        if (char.name === '한서연') {
+          char.name = localeMap[locale];
+        }
+      }
+    }
   },
 })
 

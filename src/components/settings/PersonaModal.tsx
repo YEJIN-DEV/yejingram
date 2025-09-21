@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import { User, BrainCircuit, X, Plus, Trash2, Edit3, AlertTriangle } from 'lucide-react';
 import type { Persona } from '../../entities/setting/types';
@@ -12,14 +13,13 @@ interface PersonaModalProps {
     onSave: (persona: Omit<Persona, 'id'>) => void;
 }
 
-interface PersonaManagerProps {
-    // Props for the main persona management component
-}
+// No props required for PersonaManager
 
 // Modal component for adding/editing personas
 function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalProps) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const { t } = useTranslation();
 
     // Reset form when editingPersona changes
     useEffect(() => {
@@ -49,7 +49,7 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
             <div className="bg-[var(--color-bg-main)] rounded-lg p-6 w-full max-w-md mx-4 shadow-xl border border-[var(--color-border)]">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
-                        {editingPersona?.id ? '페르소나 수정' : '새 페르소나 추가'}
+                        {editingPersona?.id ? t('settings.persona.editTitle') : t('settings.persona.addTitle')}
                     </h3>
                     <button onClick={handleClose} className="p-1 hover:bg-[var(--color-bg-hover)] rounded-full">
                         <X className="w-5 h-5 text-[var(--color-icon-tertiary)]" />
@@ -60,13 +60,13 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
                     <div>
                         <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
                             <User className="w-4 h-4 mr-2" />
-                            이름
+                            {t('settings.persona.nameLabel')}
                         </label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="페르소나 이름을 입력하세요"
+                            placeholder={t('settings.persona.namePlaceholder')}
                             className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                             required
                         />
@@ -75,12 +75,12 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
                     <div>
                         <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
                             <BrainCircuit className="w-4 h-4 mr-2" />
-                            설명
+                            {t('settings.persona.descLabel')}
                         </label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="이 페르소나는 어떤 사람인지 설명해주세요"
+                            placeholder={t('settings.persona.descPlaceholder')}
                             rows={4}
                             className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
                         />
@@ -92,13 +92,13 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
                             onClick={handleClose}
                             className="flex-1 py-2.5 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors"
                         >
-                            취소
+                            {t('settings.persona.cancelButton')}
                         </button>
                         <button
                             type="submit"
                             className="flex-1 py-2.5 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg transition-colors"
                         >
-                            {editingPersona?.id ? '수정' : '추가'}
+                            {editingPersona?.id ? t('settings.persona.editButton') : t('settings.persona.addButton')}
                         </button>
                     </div>
                 </form>
@@ -108,12 +108,13 @@ function PersonaModal({ isOpen, editingPersona, onClose, onSave }: PersonaModalP
 }
 
 // Main persona management component
-function PersonaManager({ }: PersonaManagerProps) {
+function PersonaManager() {
     const dispatch = useDispatch();
     const personas = useSelector(selectPersonas) || [];
     const selectedPersonaId = useSelector(selectSelectedPersonaId);
 
     const [editingPersona, setEditingPersona] = useState<Persona | null>(null);
+    const { t } = useTranslation();
     const [showPersonaModal, setShowPersonaModal] = useState(false);
 
     const handleAddPersona = () => {
@@ -127,7 +128,7 @@ function PersonaManager({ }: PersonaManagerProps) {
     };
 
     const handleDeletePersona = (personaId: string) => {
-        if (confirm('이 페르소나를 삭제하시겠습니까?')) {
+        if (confirm(t('settings.persona.deleteConfirm'))) {
             dispatch(settingsActions.deletePersona(personaId));
         }
     };
@@ -165,18 +166,16 @@ function PersonaManager({ }: PersonaManagerProps) {
                 {selectedPersonaId == null && (
                     <div className="flex items-start gap-3 p-3 rounded-lg border border-[var(--color-alert-border)] bg-[var(--color-alert-bg)] text-[var(--color-alert-text)]">
                         <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm leading-5">
-                            선택된 페르소나가 없습니다. 하나를 선택하거나 새로 추가해주세요.
-                        </div>
+                        <p className="text-xs">{t('settings.persona.alertNoPersona')}</p>
                     </div>
                 )}
                 <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-sm font-medium text-[var(--color-text-interface)]">페르소나 관리</h4>
+                    <h4 className="text-sm font-medium text-[var(--color-text-interface)]">{t('settings.persona.manageTitle')}</h4>
                     <button
                         onClick={handleAddPersona}
                         className="px-3 py-1.5 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg text-xs flex items-center gap-1 transition-colors"
                     >
-                        <Plus className="w-3 h-3" /> 추가
+                        <Plus className="w-3 h-3" /> {t('settings.persona.addButton')}
                     </button>
                 </div>
 
@@ -193,12 +192,10 @@ function PersonaManager({ }: PersonaManagerProps) {
                             <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <h5 className="font-medium text-sm text-[var(--color-text-primary)]">
-                                            {persona.name || '이름 없음'}
-                                        </h5>
+                                        <h5 className="font-medium text-sm text-[var(--color-text-primary)]">{persona.name || t('settings.persona.untitled')}</h5>
                                         {selectedPersonaId === persona.id && (
                                             <span className="px-2 py-0.5 bg-[var(--color-persona-selected)]/20 text-[var(--color-persona-selected)] text-xs rounded-full">
-                                                선택됨
+                                                {t('settings.persona.selected')}
                                             </span>
                                         )}
                                     </div>
@@ -233,7 +230,7 @@ function PersonaManager({ }: PersonaManagerProps) {
                     )) : (
                         <div className="text-center py-8 text-[var(--color-icon-tertiary)]">
                             <User className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">등록된 페르소나가 없습니다.</p>
+                            <p className="text-sm">{t('settings.persona.emptyList')}</p>
                         </div>
                     )}
                 </div>

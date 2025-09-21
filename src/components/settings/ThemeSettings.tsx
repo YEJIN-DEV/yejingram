@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import { ChevronDown, Paintbrush } from 'lucide-react';
@@ -8,6 +9,7 @@ import type { ThemeOverrides } from '../../entities/setting/types';
 function ThemeSettings() {
     const dispatch = useDispatch();
     const settings = useSelector(selectAllSettings);
+    const { t } = useTranslation();
     // Parsed default colors from CSS (light = :root, dark = .dark)
     const [lightDefaults, setLightDefaults] = useState<Record<string, string>>({});
     const [darkDefaults, setDarkDefaults] = useState<Record<string, string>>({});
@@ -146,13 +148,13 @@ function ThemeSettings() {
         <>
             <details className="group/themecustom" >
                 <summary className="flex items-center justify-between cursor-pointer list-none">
-                    <span className="text-base font-medium text-[var(--color-text-primary)] flex items-center"><Paintbrush className="w-4 h-4 mr-2" />테마 팔레트 편집기</span>
+                    <span className="text-base font-medium text-[var(--color-text-primary)] flex items-center"><Paintbrush className="w-4 h-4 mr-2" />{t('themeSettings.title')}</span>
                     <ChevronDown className="w-5 h-5 text-[var(--color-icon-secondary)] transition-transform duration-300 group-open/themecustom:rotate-180" />
                 </summary>
                 <div className="mt-4 space-y-4">
-                    <p className="text-xs text-[var(--color-text-secondary)]">* 커스텀 테마는 라이트 / 다크 테마에서 각각 다른 색상을 설정할 수 있습니다. 별도로 설정되지 않은 색상은 기본 팔레트를 따릅니다.</p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">{t('themeSettings.info')}</p>
                     <div>
-                        <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">기본 팔레트</label>
+                        <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">{t('themeSettings.basePalette')}</label>
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => dispatch(settingsActions.setCustomThemeBase('light'))}
@@ -161,7 +163,7 @@ function ThemeSettings() {
                                     : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                     }`}
                             >
-                                라이트 테마
+                                {t('themeSettings.lightTheme')}
                             </button>
                             <button
                                 onClick={() => dispatch(settingsActions.setCustomThemeBase('dark'))}
@@ -170,15 +172,13 @@ function ThemeSettings() {
                                     : 'bg-[var(--color-bg-input-secondary)] text-[var(--color-text-interface)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
                                     }`}
                             >
-                                다크 테마
+                                {t('themeSettings.darkTheme')}
                             </button>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         {varList.length === 0 && (
-                            <div className="col-span-2 text-xs text-[var(--color-text-secondary)]">
-                                색상 변수를 불러오는 중이거나 찾을 수 없습니다. 페이지가 로드된 후 다시 시도해 주세요.
-                            </div>
+                            <div className="col-span-2 text-xs text-[var(--color-text-secondary)]">{t('themeSettings.loadingVariables')}</div>
                         )}
                         {varList.map(name => {
                             const defaultVal = defaultsForBase[name] ?? '';
@@ -191,7 +191,7 @@ function ThemeSettings() {
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="text-[10px] text-[var(--color-text-secondary)] break-words">{name.split('--color-')[1]}</span>
                                         {isOverridden && (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-button-primary)] text-[var(--color-text-accent)]">적용중</span>
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-button-primary)] text-[var(--color-text-accent)]">{t('themeSettings.applied')}</span>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -212,11 +212,11 @@ function ThemeSettings() {
                                             disabled={!isOverridden}
                                             className={`text-xs px-2 py-1 rounded border transition-colors ${isOverridden ? 'text-[var(--color-text-interface)] bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] border-[var(--color-border)]' : 'opacity-50 cursor-not-allowed border-[var(--color-border)]'}`}
                                         >
-                                            초기화
+                                            {t('themeSettings.reset')}
                                         </button>
                                     </div>
                                     {!isOverridden && defaultVal && (
-                                        <div className="text-[10px] text-[var(--color-text-secondary)]">기본값: <span className="font-mono">{defaultVal}</span> {isOKLCH(defaultVal) && (<span className="ml-1 text-[var(--color-text-informative-secondary)]">→ {toPreviewHex6(defaultVal)}</span>)}</div>
+                                        <div className="text-[10px] text-[var(--color-text-secondary)]">{t('themeSettings.defaultValue')}: <span className="font-mono">{defaultVal}</span> {isOKLCH(defaultVal) && (<span className="ml-1 text-[var(--color-text-informative-secondary)]">→ {toPreviewHex6(defaultVal)}</span>)}</div>
                                     )}
                                 </div>
                             );

@@ -1,13 +1,13 @@
 import type { Message } from "../entities/message/types";
 
-export function getMessageDisplayText(lastMessage: Message | null): string {
-    if (!lastMessage) return '새로운 메시지를 보내보세요';
+export function getMessageDisplayText(lastMessage: Message | null, t: (key: string) => string): string {
+    if (!lastMessage) return t('messages.new');
 
     return lastMessage.content ||
-        (lastMessage.type === 'STICKER' ? '스티커' :
-            lastMessage.type === 'IMAGE' ? '파일' :
-                lastMessage.type === 'AUDIO' ? '파일' :
-                    lastMessage.type === 'VIDEO' ? '파일' :
-                        lastMessage.type === 'FILE' ? '파일' :
-                            '새로운 메시지를 보내보세요')
+        (lastMessage.type === 'STICKER' ? t('messages.sticker') :
+            lastMessage.type === 'IMAGE' ? t('messages.file') :
+                lastMessage.type === 'AUDIO' ? t('messages.file') :
+                    lastMessage.type === 'VIDEO' ? t('messages.file') :
+                        lastMessage.type === 'FILE' ? t('messages.file') :
+                            t('messages.new'));
 }

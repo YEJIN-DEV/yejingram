@@ -8,6 +8,11 @@ export const selectColorTheme = createSelector(
     (settings) => settings.colorTheme || 'light'
 );
 
+export const selectUILanguage = createSelector(
+    [selectSettingsState],
+    (settings) => settings.uiLanguage
+);
+
 export const selectIsSettingsPanelOpen = createSelector(
     [selectSettingsState],
     (settings) => settings.isModalOpen

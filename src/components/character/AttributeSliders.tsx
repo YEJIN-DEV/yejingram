@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import { selectCharacterById } from '../../entities/character/selectors';
@@ -33,15 +34,16 @@ interface AttributeSlidersProps {
 }
 
 export function AttributeSliders({ characterId, draft, onDraftChange }: AttributeSlidersProps) {
+    const { t } = useTranslation();
     const storeCharacter = useSelector((state: RootState) => selectCharacterById(state, characterId));
     const source = draft && draft.id === characterId ? draft : storeCharacter;
     if (!source) return null;
 
     const sliders = [
-        { id: 'responseTime', description: '응답 속도', left: '느림', right: '빠름' },
-        { id: 'thinkingTime', description: '생각 시간', left: '짧음', right: '김' },
-        { id: 'reactivity', description: '반응성', left: '낮음', right: '높음' },
-        { id: 'tone', description: '말투', left: '차분함', right: '활발함' },
+        { id: 'responseTime', description: t('characterPanel.attributes.responseTime'), left: t('characterPanel.attributes.slower'), right: t('characterPanel.attributes.faster') },
+        { id: 'thinkingTime', description: t('characterPanel.attributes.thinkingTime'), left: t('characterPanel.attributes.shorter'), right: t('characterPanel.attributes.longer') },
+        { id: 'reactivity', description: t('characterPanel.attributes.reactivity'), left: t('characterPanel.attributes.lower'), right: t('characterPanel.attributes.higher') },
+        { id: 'tone', description: t('characterPanel.attributes.tone'), left: t('characterPanel.attributes.calm'), right: t('characterPanel.attributes.active') },
     ];
 
     return (

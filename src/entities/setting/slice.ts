@@ -19,6 +19,7 @@ export const initialState: SettingsState = {
     colorTheme: 'light',
     customThemeBase: 'light',
     customTheme: { light: {}, dark: {} },
+    uiLanguage: null,
     isModalOpen: false,
     isPromptModalOpen: false,
     isCreateGroupChatModalOpen: false,
@@ -93,6 +94,9 @@ const settingsSlice = createSlice({
         setCustomTheme: (state, action: PayloadAction<ThemeOverrides>) => {
             state.customTheme = action.payload;
         },
+        setUILanguage: (state, action: PayloadAction<'ko' | 'en' | 'ja'>) => {
+            state.uiLanguage = action.payload;
+        },
         setEditingRoomId: (state, action: PayloadAction<string>) => {
             state.editingRoomId = action.payload;
         },
@@ -120,6 +124,46 @@ const settingsSlice = createSlice({
         },
         resetPrompts: (state) => {
             state.prompts = initialState.prompts;
+        },
+        updatePromptNamesToLocale: (state, action: PayloadAction<'ko' | 'en' | 'ja'>) => {
+            const locale = action.payload;
+            const nameMap: Record<string, Record<'ko' | 'en' | 'ja', string>> = {
+                '정보 소개': { ko: '정보 소개', en: 'Information Intro', ja: '情報紹介' },
+                '사용자 지시': { ko: '사용자 지시', en: 'User Instructions', ja: 'ユーザー指示' },
+                '사용자 설명': { ko: '사용자 설명', en: 'User Description', ja: 'ユーザー説明' },
+                '캐릭터 지시': { ko: '캐릭터 지시', en: 'Character Instructions', ja: 'キャラクター指示' },
+                '캐릭터 설명': { ko: '캐릭터 설명', en: 'Character Description', ja: 'キャラクター説明' },
+                '메모리 지시': { ko: '메모리 지시', en: 'Memory Instructions', ja: 'メモリ指示' },
+                '메모리': { ko: '메모리', en: 'Memory', ja: 'メモリ' },
+                '로어북 섹션': { ko: '로어북 섹션', en: 'Lorebook Section', ja: 'ロアブックセクション' },
+                '성격 슬라이더': { ko: '성격 슬라이더', en: 'Personality Sliders', ja: '性格スライダー' },
+                '가이드라인 리마인더': { ko: '가이드라인 리마인더', en: 'Guidelines Reminder', ja: 'ガイドラインリマインダー' },
+                '대화 규칙': { ko: '대화 규칙', en: 'Conversation Rules', ja: '会話ルール' },
+                '시스템 규칙': { ko: '시스템 규칙', en: 'System Rules', ja: 'システムルール' },
+                '캐릭터 연기': { ko: '캐릭터 연기', en: 'Character Acting', ja: 'キャラクター演技' },
+                '메시지 작성(구조화)': { ko: '메시지 작성(구조화)', en: 'Message Composition (Structured)', ja: 'メッセージ作成（構造化）' },
+                '메시지 작성(비구조화)': { ko: '메시지 작성(비구조화)', en: 'Message Composition (Unstructured)', ja: 'メッセージ作成（非構造化）' },
+                '메모리 생성(구조화)': { ko: '메모리 생성(구조화)', en: 'Memory Creation (Structured)', ja: 'メモリ生成（構造化）' },
+                '출력 형식(구조화)': { ko: '출력 형식(구조화)', en: 'Output Format (Structured)', ja: '出力形式（構造化）' },
+                '출력 형식(비구조화)': { ko: '출력 형식(비구조화)', en: 'Output Format (Unstructured)', ja: '出力形式（非構造化）' },
+                '언어': { ko: '언어', en: 'Language', ja: '言語' },
+                '탈옥': { ko: '탈옥', en: 'Jailbreak', ja: 'ジョールブレイク' },
+                '스티커 사용법': { ko: '스티커 사용법', en: 'Sticker Usage', ja: 'ステッカーの使い方' },
+                '그룹챗 컨텍스트': { ko: '그룹챗 컨텍스트', en: 'Group Chat Context', ja: 'グループチャットコンテキスト' },
+                '추가 시스템 지시': { ko: '추가 시스템 지시', en: 'Additional System Instructions', ja: '追加システム指示' },
+                '작가의 노트': { ko: '작가의 노트', en: "Author's Note", ja: '著者のノート' },
+                '채팅 기록': { ko: '채팅 기록', en: 'Chat History', ja: 'チャット履歴' },
+                '이미지 응답 생성': { ko: '이미지 응답 생성', en: 'Image Response Generation', ja: '画像応答生成' },
+            };
+            state.prompts.main = state.prompts.main.map(prompt => {
+                if (nameMap[prompt.name]) {
+                    return { ...prompt, name: nameMap[prompt.name][locale] };
+                }
+                return prompt;
+            });
+            if (state.prompts.image_response_generation && nameMap[state.prompts.image_response_generation.name]) {
+                state.prompts.image_response_generation.name = nameMap[state.prompts.image_response_generation.name][locale];
+            }
         },
         importSettings: (_state, action: PayloadAction<SettingsState>) => {
             return action.payload;

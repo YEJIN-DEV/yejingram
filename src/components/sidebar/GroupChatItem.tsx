@@ -1,4 +1,5 @@
 import { Edit3, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { GroupChatAvatar } from '../../utils/Avatar';
 import type { Room } from '../../entities/room/types';
 import { useSelector, useDispatch } from 'react-redux';
@@ -15,6 +16,7 @@ interface GroupChatItemProps {
 }
 
 function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: GroupChatItemProps) {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const allCharacters = useSelector(selectAllCharacters);
     const messages = useSelector((state: any) => selectMessagesByRoomId(state, room.id));
@@ -27,12 +29,12 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
 
     const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
 
-    let lastMessageContent = '채팅을 시작해보세요';
+    let lastMessageContent = t('sidebar.groups.item.lastMessage.start');
     if (lastMessage) {
         if (lastMessage.type === 'IMAGE') {
-            lastMessageContent = '이미지를 보냈습니다';
+            lastMessageContent = t('sidebar.groups.item.lastMessage.image');
         } else if (lastMessage.type === 'STICKER') {
-            lastMessageContent = '스티커를 보냈습니다';
+            lastMessageContent = t('sidebar.groups.item.lastMessage.sticker');
         } else if (lastMessage.type === 'TEXT') {
             lastMessageContent = lastMessage.content;
         }
@@ -40,7 +42,7 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (window.confirm(`'${room.name}' 그룹을 삭제하시겠습니까?`)) {
+        if (window.confirm(t('sidebar.groups.item.deleteConfirm', { name: room.name }))) {
             dispatch(roomsActions.removeOne(room.id));
         }
     };
@@ -61,14 +63,14 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
                 <button
                     onClick={handleEdit}
                     className="p-1 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-tertiary)]/50 rounded-full text-[var(--color-icon-primary)] hover:text-[var(--color-text-accent)] transition-colors"
-                    title="수정"
+                    title={t('sidebar.groups.item.editTitle')}
                 >
                     <Edit3 className="w-3 h-3" />
                 </button>
                 <button
                     onClick={handleDelete}
                     className="p-1 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-negative)] rounded-full text-[var(--color-icon-primary)] hover:text-[var(--color-text-accent)] transition-colors"
-                    title="삭제"
+                    title={t('sidebar.groups.item.deleteTitle')}
                 >
                     <Trash2 className="w-3 h-3" />
                 </button>

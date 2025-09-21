@@ -23,6 +23,9 @@ import { settingsActions } from '../../entities/setting/slice';
 import { charactersActions } from '../../entities/character/slice';
 import { MemoryManager } from '../character/MemoryManager';
 import { renderFile } from './FilePreview';
+import { useTranslation } from 'react-i18next';
+import type { Character } from '../../entities/character/types';
+import type { Lore } from '../../entities/lorebook/types';
 
 interface MainChatProps {
   room: Room | null;
@@ -48,6 +51,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
   const [isLoreBookOpen, setIsLoreBookOpen] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
+  const { t } = useTranslation();
 
   // Pending LLM request management: store last pending room/message and debounce timer
   const pendingRequestRef = useRef<{ room: Room; } | null>(null);
@@ -141,7 +145,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
     } else if (room?.type === 'Group' && memberChars && memberChars.length > 0) {
       setIsLoreBookOpen(true);
     } else {
-      toast.error('로어북을 열 수 있는 캐릭터가 없습니다.');
+      toast.error(t('main.toast.noLorebookCharacter'));
     }
   };
 
@@ -211,9 +215,9 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
 
     let responsePromise;
     if (targetRoom.type === 'Group') {
-      responsePromise = SendGroupChatMessage(targetRoom, setTypingCharacterId);
+      responsePromise = SendGroupChatMessage(targetRoom, setTypingCharacterId, t);
     } else {
-      responsePromise = SendMessage(targetRoom, setTypingCharacterId);
+      responsePromise = SendMessage(targetRoom, setTypingCharacterId, t);
     }
 
     responsePromise.then(() => {
@@ -227,7 +231,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
 
     // Warn when no persona is explicitly selected
     if (settings?.selectedPersonaId == null) {
-      toast.error('선택된 페르소나가 없습니다. 설정 > 페르소나에서 선택 또는 추가해주세요.');
+      toast.error(t('main.toast.noPersonaSelected'));
       return;
     }
 
@@ -319,10 +323,10 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
             <MessageCircle className="w-12 h-12 text-[var(--color-icon-secondary)]" />
           </div>
           <h3 className="text-xl md:text-2xl font-semibold text-[var(--color-text-primary)] mb-3">
-            메시지를 보내세요
+            {t('main.empty.title')}
           </h3>
           <p className="text-sm md:text-base text-[var(--color-text-secondary)] leading-relaxed">
-            친구나 그룹과 개인 사진 및 메시지를 공유하세요.
+            {t('main.empty.description')}
           </p>
         </div>
       </div>
@@ -453,6 +457,8 @@ function ChatHeader({
   onOpenGroupchatSettings
 }: ChatHeaderProps) {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
+  const onlineStatus = useCharacterOnlineStatus(character?.id ?? -1);
   const getHeaderAvatar = () => {
     if (room.type === 'Group') {
       return (
@@ -465,7 +471,7 @@ function ChatHeader({
       return (
         <>
           <Avatar char={character} size="md" />
-          <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${useCharacterOnlineStatus(character.id) ? 'bg-[var(--color-indicator-online)]' : 'bg-[var(--color-indicator-offline)]'} border-2 border-[var(--color-bg-main)] rounded-full`}></div>
+          <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${onlineStatus ? 'bg-[var(--color-indicator-online)]' : 'bg-[var(--color-indicator-offline)]'} border-2 border-[var(--color-bg-main)] rounded-full`}></div>
         </>
       );
     }
@@ -483,7 +489,7 @@ function ChatHeader({
     if (room.type === 'Group') {
       return memberChars && memberChars.length > 0
         ? memberChars.map(char => char?.name).filter(Boolean).join(', ')
-        : `${room.memberIds.length}명의 참여자`;
+        : t('main.group.participantsCount', { count: room.memberIds.length });
     }
     if (room.type === 'Direct') {
       return room.name;
@@ -585,20 +591,21 @@ function ChatHeader({
         </div>
       </div>
       <div className="flex items-center space-x-2">
-        <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-primary)]" title="작가의 노트" onClick={onOpenAuthorNote}>
+        <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-primary)]" title={t('main.tooltips.authorNote')} onClick={onOpenAuthorNote}>
           <StickyNote className="w-5 h-5" />
         </button>
-        <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-primary)]" title="방 메모리" onClick={onOpenRoomMemory}>
+        <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-primary)]" title={t('main.tooltips.roomMemory')} onClick={onOpenRoomMemory}>
           <Brain className="w-5 h-5" />
         </button>
-        <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-primary)]" title="활성화된 로어북" onClick={onOpenLoreBook}>
+        <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-primary)]" title={t('main.tooltips.activeLorebook')} onClick={onOpenLoreBook}>
           <BookOpen className="w-5 h-5" />
         </button>
-        <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-primary)]" title={room.type === 'Direct' ? "캐릭터 설정" : "방 설정"} onClick={() => {
+        <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-primary)]" title={room.type === 'Direct' ? t('main.tooltips.characterSettings') : t('main.tooltips.roomSettings')} onClick={() => {
           if (room.type === 'Group') {
             dispatch(settingsActions.setEditingRoomId(room.id));
             onOpenGroupchatSettings();
           } else {
+            if (!character) return;
             dispatch(charactersActions.setEditingCharacterId(character.id));
             onOpenCharacterPanel();
           }
@@ -644,6 +651,7 @@ function InputArea({
   onUserActivity,
   renderUserStickerPanel,
 }: InputAreaProps) {
+  const { t } = useTranslation();
   const [text, setText] = useState("");
   const [showInputOptions, setInputOptions] = useState(false);
   const hasFile = !!fileToSend;
@@ -656,10 +664,10 @@ function InputArea({
   }, [isWaitingForResponse]);
 
   const placeholder = useMemo(() => {
-    if (hasFile) return "캡션 추가...";
-    if (stickerToSend) return "스티커와 함께 메시지...";
-    return "메시지 보내기...";
-  }, [hasFile, stickerToSend]);
+    if (hasFile) return t('main.input.captionPlaceholder');
+    if (stickerToSend) return t('main.input.stickerPlaceholder');
+    return t('main.input.messagePlaceholder');
+  }, [hasFile, stickerToSend, t]);
 
   const handleSend = () => {
     onSendMessage(text.trim());
@@ -677,7 +685,7 @@ function InputArea({
         <div className="mb-3 p-3 bg-[var(--color-bg-secondary)] rounded-xl">
           <div className="relative inline-block">
             <div className="rounded-lg overflow-hidden">
-              {renderFile(fileToSend, true)}
+              {renderFile(fileToSend, true, t)}
             </div>
             <button
               type="button"
@@ -720,7 +728,7 @@ function InputArea({
             }}
             className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
           >
-            <Paperclip className="w-4 h-4" /> 파일
+            <Paperclip className="w-4 h-4" /> {t('main.input.file')}
           </button>
         </div>
       )}
@@ -789,9 +797,9 @@ function InputArea({
                   onClick={handleSend}
                   className="p-1 text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)] transition-all duration-200 font-semibold text-sm"
                   disabled={isWaitingForResponse}
-                  title="전송"
+                  title={t('main.input.send')}
                 >
-                  전송
+                  {t('main.input.send')}
                 </button>
               ) : null}
             </div>
@@ -806,13 +814,14 @@ function InputArea({
 }
 
 function AuthorNoteModal({ open, onClose, value, onChange, onSave }: { open: boolean; onClose: () => void; value: string; onChange: (v: string) => void; onSave: () => void; }) {
+  const { t } = useTranslation();
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-[var(--color-bg-shadow)]/50">
       <div className="w-full max-w-lg mx-4 bg-[var(--color-bg-main)] rounded-2xl border border-[var(--color-border)] shadow-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-[var(--color-text-primary)] font-semibold">
-            <StickyNote className="w-5 h-5 text-[var(--color-button-primary)]" /> 작가의 노트
+            <StickyNote className="w-5 h-5 text-[var(--color-button-primary)]" /> {t('main.authorNoteModal.title')}
           </div>
           <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-tertiary)] transition-colors" onClick={onClose}>
             <X className="w-5 h-5" />
@@ -820,13 +829,13 @@ function AuthorNoteModal({ open, onClose, value, onChange, onSave }: { open: boo
         </div>
         <textarea
           className="w-full h-48 p-4 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] resize-none"
-          placeholder="방 전체에 적용될 메타 지침을 적어주세요. (예: 톤, 금지사항, 세계관 규칙, 줄거리 방향 등)"
+          placeholder={t('main.authorNoteModal.placeholder')}
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
         <div className="mt-4 flex justify-end gap-3">
-          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-button-secondary-accent)] transition-colors font-medium" onClick={onClose}>취소</button>
-          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-primary)] text-[var(--color-text-accent)] hover:bg-[var(--color-button-primary-accent)] transition-colors font-medium" onClick={onSave}>저장</button>
+          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-button-secondary-accent)] transition-colors font-medium" onClick={onClose}>{t('common.cancel')}</button>
+          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-primary)] text-[var(--color-text-accent)] hover:bg-[var(--color-button-primary-accent)] transition-colors font-medium" onClick={onSave}>{t('common.save')}</button>
         </div>
       </div>
     </div>
@@ -834,29 +843,31 @@ function AuthorNoteModal({ open, onClose, value, onChange, onSave }: { open: boo
 }
 
 function RoomMemoryModal({ open, onClose, roomId }: { open: boolean; onClose: () => void; roomId: string; }) {
+  const { t } = useTranslation();
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-[var(--color-bg-shadow)]/50">
       <div className="w-full max-w-2xl mx-4 bg-[var(--color-bg-main)] rounded-2xl border border-[var(--color-border)] shadow-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-[var(--color-text-primary)] font-semibold">
-            <Brain className="w-5 h-5 text-[var(--color-button-primary)]" /> 방 메모리
+            <Brain className="w-5 h-5 text-[var(--color-button-primary)]" /> {t('main.roomMemoryModal.title')}
           </div>
           <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-tertiary)] transition-colors" onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-sm text-[var(--color-text-secondary)] mb-3">이 방에만 적용되는 기억을 관리합니다. 모델은 여기의 메모리를 우선적으로 참고합니다.</p>
+        <p className="text-sm text-[var(--color-text-secondary)] mb-3">{t('main.roomMemoryModal.description')}</p>
         <MemoryManager roomId={roomId} />
         <div className="mt-4 flex justify-end">
-          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-primary)] text-[var(--color-text-accent)] hover:bg-[var(--color-button-primary-accent)] transition-colors font-medium" onClick={onClose}>닫기</button>
+          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-primary)] text-[var(--color-text-accent)] hover:bg-[var(--color-button-primary-accent)] transition-colors font-medium" onClick={onClose}>{t('main.roomMemoryModal.close')}</button>
         </div>
       </div>
     </div>
   );
 }
 
-function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, roomType, roomId }: { open: boolean; onClose: () => void; characterId?: number; memberChars?: any[]; roomLorebook?: any[]; roomType?: string; roomId?: string; }) {
+function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, roomType, roomId }: { open: boolean; onClose: () => void; characterId?: number; memberChars?: Character[]; roomLorebook?: Lore[]; roomType?: Room['type']; roomId?: string; }) {
+  const { t } = useTranslation();
   if (!open) return null;
 
   return (
@@ -864,17 +875,17 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
       <div className="w-full max-w-4xl mx-4 bg-[var(--color-bg-main)] rounded-2xl border border-[var(--color-border)] shadow-xl p-6 max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-[var(--color-text-primary)] font-semibold">
-            <BookOpen className="w-5 h-5 text-[var(--color-button-primary)]" /> 로어북 편집기
+            <BookOpen className="w-5 h-5 text-[var(--color-button-primary)]" /> {t('main.lorebookModal.title')}
           </div>
           <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-tertiary)] transition-colors" onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-sm text-[var(--color-text-secondary)] mb-3">캐릭터의 로어북을 편집합니다. 로어북은 채팅에서 특정 키워드가 등장할 때 자동으로 적용됩니다.</p>
+        <p className="text-sm text-[var(--color-text-secondary)] mb-3">{t('main.lorebookModal.description')}</p>
         {(roomType === 'Group') && roomLorebook && (
           <details className="mb-6">
             <summary className="flex items-center justify-between text-lg font-semibold text-[var(--color-text-primary)] mb-2 cursor-pointer hover:text-[var(--color-icon-primary)] transition-colors">
-              <span>그룹 채팅 로어북</span>
+              <span>{t('main.lorebookModal.groupSection')}</span>
               <ChevronDown className="w-5 h-5 text-[var(--color-icon-tertiary)]" />
             </summary>
             <LorebookEditor roomId={roomId} roomLorebook={roomLorebook} />
@@ -884,7 +895,7 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
           memberChars.map(char => (
             <details key={char.id} className="mb-6">
               <summary className="flex items-center justify-between text-lg font-semibold text-[var(--color-text-primary)] mb-2 cursor-pointer hover:text-[var(--color-icon-primary)] transition-colors">
-                <span>{char.name}의 로어북</span>
+                <span>{t('main.lorebookModal.charSection', { name: char.name })}</span>
                 <ChevronDown className="w-5 h-5 text-[var(--color-icon-tertiary)]" />
               </summary>
               <LorebookEditor characterId={char.id} />
@@ -896,7 +907,7 @@ function LoreBookModal({ open, onClose, characterId, memberChars, roomLorebook, 
           )
         )}
         <div className="mt-4 flex justify-end">
-          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-primary)] text-[var(--color-text-accent)] hover:bg-[var(--color-button-primary-accent)] transition-colors font-medium" onClick={onClose}>닫기</button>
+          <button className="px-4 py-2 rounded-xl bg-[var(--color-button-primary)] text-[var(--color-text-accent)] hover:bg-[var(--color-button-primary-accent)] transition-colors font-medium" onClick={onClose}>{t('main.lorebookModal.close')}</button>
         </div>
       </div>
     </div>

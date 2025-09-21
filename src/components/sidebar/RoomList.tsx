@@ -1,4 +1,5 @@
 import { Trash2, Copy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { useCallback, memo } from 'react';
 import type { RootState } from '../../app/store';
@@ -23,6 +24,7 @@ function RoomList({
     isSelected,
     useDoubleClick = false
 }: RoomListProps) {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const lastMessage = useSelector((state: RootState) => {
         const messages = selectMessagesByRoomId(state, room.id);
@@ -36,10 +38,10 @@ function RoomList({
         const diffHours = Math.floor(diffMins / 60);
         const diffDays = Math.floor(diffHours / 24);
 
-        if (diffMins < 1) return '방금';
-        if (diffMins < 60) return `${diffMins}분`;
-        if (diffHours < 24) return `${diffHours}시간`;
-        if (diffDays < 7) return `${diffDays}일`;
+        if (diffMins < 1) return t('units.justNow');
+        if (diffMins < 60) return `${diffMins}${t('units.minute')}`;
+        if (diffHours < 24) return `${diffHours}${t('units.hour')}`;
+        if (diffDays < 7) return `${diffDays}${t('units.days')}`;
         return date.toLocaleDateString();
     }, []);
 
@@ -83,7 +85,7 @@ function RoomList({
                         </div>
                     </div>
                     <p className="text-sm text-[var(--color-text-secondary)] truncate mt-1">
-                        {getMessageDisplayText(lastMessage)}
+                        {getMessageDisplayText(lastMessage, t)}
                     </p>
                 </div>
             </div>
@@ -92,19 +94,19 @@ function RoomList({
                 <button
                     onClick={duplicateRoom}
                     className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-[var(--color-bg-roomactions-positive)] hover:bg-[var(--color-bg-roomactions-positive-hover)] rounded-full text-[var(--color-button-primary-accent)]"
-                    title="채팅방 복제"
+                    title={t('sidebar.rooms.duplicateTitle')}
                 >
                     <Copy className="w-3 h-3" />
                 </button>
 
                 <button
                     onClick={() => {
-                        if (confirm('채팅방을 삭제하시겠습니까?')) {
+                        if (confirm(t('sidebar.rooms.deleteConfirm', { name: room.name }))) {
                             dispatch(roomsActions.removeOne(room.id));
                         }
                     }}
                     className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-[var(--color-bg-roomactions-negative)] hover:bg-[var(--color-bg-roomactions-negative-hover)] rounded-full text-[var(--color-button-negative-accent)]"
-                    title="채팅방 삭제"
+                    title={t('sidebar.rooms.deleteTitle')}
                 >
                     <Trash2 className="w-3 h-3" />
                 </button>

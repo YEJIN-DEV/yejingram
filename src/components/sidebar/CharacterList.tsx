@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { RootState } from '../../app/store';
 import type { Character } from '../../entities/character/types';
 import type { Message } from '../../entities/message/types';
@@ -26,6 +27,7 @@ function CharacterList({
     selectedRoomId,
     toggleCharacterPanel
 }: CharacterListProps) {
+    const { t } = useTranslation();
     const chatRooms = useSelector(selectAllRooms).filter(r => r.memberIds?.includes(character.id) && r.type === 'Direct') || [];
     const [isExpanded, setIsExpanded] = useState(false);
     const dispatch = useDispatch();
@@ -48,10 +50,10 @@ function CharacterList({
         const diffHours = Math.floor(diffMins / 60);
         const diffDays = Math.floor(diffHours / 24);
 
-        if (diffMins < 1) return '방금';
-        if (diffMins < 60) return `${diffMins}분`;
-        if (diffHours < 24) return `${diffHours}시간`;
-        if (diffDays < 7) return `${diffDays}일`;
+        if (diffMins < 1) return t('units.justNow');
+        if (diffMins < 60) return `${diffMins}${t('units.minute')}`;
+        if (diffHours < 24) return `${diffHours}${t('units.hour')}`;
+        if (diffDays < 7) return `${diffDays}${t('units.days')}`;
         return date.toLocaleDateString();
     };
 
@@ -68,7 +70,7 @@ function CharacterList({
                             e.stopPropagation();
                             dispatch(roomsActions.upsertOne({
                                 id: `${character.id}-${Date.now()}`,
-                                name: '새 채팅',
+                                name: t('sidebar.tooltipNewChat'),
                                 memberIds: [character.id],
                                 lastMessageId: null,
                                 type: "Direct",
@@ -76,7 +78,7 @@ function CharacterList({
                             }));
                         }}
                         className="p-1 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-primary)] rounded-full text-[var(--color-icon-primary)] hover:text-[var(--color-text-accent)] transition-colors"
-                        title="새 채팅방"
+                        title={t('sidebar.characters.newChatTitle')}
                     >
                         <Plus className="w-3 h-3" />
                     </button>
@@ -87,19 +89,19 @@ function CharacterList({
                             toggleCharacterPanel();
                         }}
                         className="p-1 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-tertiary)]/50 rounded-full text-[var(--color-icon-primary)] hover:text-[var(--color-text-accent)] transition-colors"
-                        title="수정"
+                        title={t('sidebar.characters.editTitle')}
                     >
                         <Edit3 className="w-3 h-3" />
                     </button>
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
-                            if (confirm(`'${character.name}' 캐릭터를 삭제하시겠습니까? 관련된 모든 채팅방과 메시지도 삭제됩니다.`)) {
+                            if (confirm(t('sidebar.characters.deleteConfirm', { name: character.name }))) {
                                 dispatch(charactersActions.removeOne(character.id));
                             }
                         }}
                         className="p-1 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-negative)] rounded-full text-[var(--color-icon-primary)] hover:text-[var(--color-text-accent)] transition-colors"
-                        title="삭제"
+                        title={t('sidebar.characters.deleteTitle')}
                     >
                         <Trash2 className="w-3 h-3" />
                     </button>
@@ -124,9 +126,9 @@ function CharacterList({
                                 </div>
                                 <div className="flex items-center justify-between mt-1">
                                     <p className="text-[var(--color-text-secondary)] text-sm truncate flex-1 mr-2">
-                                        {getMessageDisplayText(lastMessage)}
+                                        {getMessageDisplayText(lastMessage, t)}
                                         {chatRooms.length > 1 && (
-                                            <span className="text-[var(--color-text-informative-secondary)]"> · {chatRooms.length}개 채팅</span>
+                                            <span className="text-[var(--color-text-informative-secondary)]"> · {t('sidebar.characters.numOfRoom', { count: chatRooms.length })}</span>
                                         )}
                                     </p>
                                     <div className="flex items-center space-x-1 flex-shrink-0">
