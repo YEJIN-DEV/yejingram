@@ -61,7 +61,7 @@ function AnnouncementsPanel({ onClose }: AnnouncementsPanelProps) {
         return () => {
             mounted = false;
         };
-    }, []);
+    }, [t]);
 
     const combinedList = useMemo(() => {
         return [...serviceList, ...patchList].sort((a, b) => b.timestamp - a.timestamp);
@@ -103,8 +103,7 @@ function AnnouncementsPanel({ onClose }: AnnouncementsPanelProps) {
                 });
             }
         })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [visibleItems]);
+    }, [visibleItems, contentMap, loadingIds]);
 
     // Handle infinite scroll
     useEffect(() => {

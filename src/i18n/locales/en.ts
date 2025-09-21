@@ -31,7 +31,7 @@ const en = {
         tooltipClose: "Close",
         tooltipSettings: "Settings",
         tooltipNewChat: "New chat",
-    tooltipAnnouncements: "Announcements",
+        tooltipAnnouncements: "Announcements",
         searchPlaceholder: "Search…",
         createGroupChat: "Create group chat",
         contacts: "Contacts",

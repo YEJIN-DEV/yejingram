@@ -31,7 +31,7 @@ const ja = {
         tooltipClose: "閉じる",
         tooltipSettings: "設定",
         tooltipNewChat: "新しいチャット",
-    tooltipAnnouncements: "お知らせ",
+        tooltipAnnouncements: "お知らせ",
         searchPlaceholder: "検索…",
         createGroupChat: "グループチャットを作成",
         contacts: "連絡先",
