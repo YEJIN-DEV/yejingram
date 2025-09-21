@@ -35,7 +35,7 @@ const ko = {
             editTitle: "수정",
             deleteTitle: "삭제",
             deleteConfirm: "'{{name}}' 캐릭터를 삭제하시겠습니까? 관련된 모든 채팅방과 메시지도 삭제됩니다.",
-            numOfRoom: "{{count}}개 채팅",
+            numOfRoom: "채팅방 {{count}}개",
         },
         groups: {
             header: "그룹 채팅",
@@ -212,7 +212,7 @@ const ko = {
             image: "이미지",
             persona: "페르소나",
             proactive: "선톡",
-            others: "기타 설정",
+            others: "기타",
         },
         prompts: {
             confirmReset: "기본값으로 되돌리시겠습니까?",

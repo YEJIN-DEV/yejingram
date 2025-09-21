@@ -6,7 +6,7 @@ const ja = {
         close: "閉じる",
         cancel: "キャンセル",
         save: "保存",
-        unknown: "Unknown",
+        unknown: "不明",
     },
 
     units: {
@@ -35,7 +35,7 @@ const ja = {
             editTitle: "編集",
             deleteTitle: "削除",
             deleteConfirm: "'{{name}}' キャラクターを削除しますか？関連するすべてのルームとメッセージも削除されます。",
-            numOfRoom: "{{count}}件のチャット",
+            numOfRoom: "チャットルーム {{count}}件",
         },
         groups: {
             header: "グループチャット",
@@ -119,8 +119,8 @@ const ja = {
             editModal: {
                 title: "グループチャット設定",
                 nameLabel: "グループチャット名",
-                unknown: "Unknown",
-                leaveMessage: "{{name}}が{{reason}}",
+                unknown: "不明",
+                leaveMessage: "{{name}}さんが{{reason}}",
                 response: {
                     title: "応答設定",
                     roomFreq: "ルーム応答頻度 ({{value}}%)",
@@ -211,7 +211,7 @@ const ja = {
             ai: "AI",
             image: "画像",
             persona: "ペルソナ",
-            proactive: "先トーク",
+            proactive: "話しかけ",
             others: "その他",
         },
         prompts: {
@@ -383,10 +383,10 @@ const ja = {
             emptyList: "登録されたペルソナがありません。"
         },
         proactive: {
-            enableInContacts: "連絡先内の先トークを有効化",
-            enableRandom: "ランダム先トークを有効化",
+            enableInContacts: "連絡先内の話しかけを有効化",
+            enableRandom: "ランダム話しかけを有効化",
             countLabel: "作成する人数",
-            intervalLabel: "先トークの間隔（分）",
+            intervalLabel: "話しかけの間隔（分）",
             minPlaceholder: "最小",
             maxPlaceholder: "最大",
         },
@@ -457,7 +457,7 @@ const ja = {
         namePlaceholder: "名前を入力",
         personInfoLabel: "人物情報",
         personInfoPlaceholder: "特徴、背景、関係、記憶などを自由に記述してください。",
-        allowProactive: "先トークを許可",
+        allowProactive: "話しかけを許可",
         additionalSettings: "追加設定",
         stickers: "ステッカー",
         messageReactivity: "メッセージ応答性",
@@ -487,7 +487,7 @@ const ja = {
         shareArisutalk: "連絡先共有 (Arisutalk)",
         shareYejingram: "連絡先共有 (Yejingram)",
         lorebookEditor: {
-            header: 'ロア {{count}}個',
+            header: 'ロアブック {{count}}件',
             add: '追加',
             namePlaceholder: '名前',
             moveUpTitle: '上へ',

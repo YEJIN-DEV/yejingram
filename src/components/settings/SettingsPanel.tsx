@@ -130,7 +130,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
 
     return (
         <>
-            <div className="fixed md:relative top-0 bottom-0 z-40 w-full max-w-sm md:max-w-lg left-0 md:left-auto bg-[var(--color-bg-main)] h-full flex flex-col border-r border-[var(--color-border)]">
+            <div className="fixed md:relative top-0 bottom-0 z-40 w-full left-0 md:left-auto bg-[var(--color-bg-main)] h-full flex flex-col border-r border-[var(--color-border)]">
                 <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)] shrink-0">
                     <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('settings.title')}</h3>
                     <button onClick={onClose} className="p-1 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors"><X className="w-5 h-5 text-[var(--color-icon-tertiary)]" /></button>
