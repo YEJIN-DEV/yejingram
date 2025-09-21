@@ -5,7 +5,8 @@ import type { Message } from "../entities/message/types";
 
 const getInitialParticipantSettings = () => ({ isActive: true, responseProbability: 0.9 });
 
-export const inviteCharacter = (selectedInviteId: number | null, room: any, characterName: string, dispatch: any) => {
+export const inviteCharacter = (selectedInviteId: number | null, room: any, characterName: string, dispatch: any, t: (key: string) => string) => {
+
     if (selectedInviteId && room.groupSettings && room) {
         // Check if the character is already a member
         if (room.memberIds.includes(selectedInviteId)) {
@@ -32,7 +33,7 @@ export const inviteCharacter = (selectedInviteId: number | null, room: any, char
             id: nanoid(),
             roomId: room.id,
             authorId: 0,
-            content: `${invitedUsersName}님이 초대되었습니다.`,
+            content: `${invitedUsersName}${t("main.group.editModal.invite.messageSuffix")}`,
             createdAt: new Date().toISOString(),
             type: 'SYSTEM'
         } as Message;

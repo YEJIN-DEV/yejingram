@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectAllCharacters } from '../../entities/character/selectors';
@@ -14,6 +15,7 @@ interface CreateGroupChatModalProps {
 }
 
 function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
     const [groupName, setGroupName] = useState('');
@@ -69,7 +71,7 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
             <div className="bg-[var(--color-bg-main)] rounded-2xl w-full max-w-md mx-4 shadow-xl" style={{ maxHeight: '90vh' }}>
                 <div className="p-6 border-b border-[var(--color-border)]">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">그룹 채팅 만들기</h3>
+                        <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('main.group.createModal.title')}</h3>
                         <button onClick={onClose} className="p-2 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors">
                             <X className="w-5 h-5 text-[var(--color-icon-tertiary)]" />
                         </button>
@@ -77,17 +79,17 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 120px)' }}>
                     <div>
-                        <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">그룹 채팅 이름</label>
+                        <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">{t('main.group.createModal.nameLabel')}</label>
                         <input
                             type="text"
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
-                            placeholder="그룹 채팅 이름을 입력하세요"
+                            placeholder={t('main.group.createModal.namePlaceholder')}
                             className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:border-[var(--color-focus-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:outline-none"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">캐릭터 초대</label>
+                        <label className="block text-sm font-medium text-[var(--color-text-interface)] mb-2">{t('main.group.createModal.inviteLabel')}</label>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
                             {characters.map((char: Character) => (
                                 <label key={char.id} className="flex items-center p-3 bg-[var(--color-bg-input-secondary)] rounded-xl hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors border border-[var(--color-border-secondary)]">
@@ -115,10 +117,10 @@ function CreateGroupChatModal({ isOpen, onClose }: CreateGroupChatModalProps) {
                         initializeState();
                         onClose();
                     }} className="flex-1 py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-xl transition-colors font-medium">
-                        취소
+                        {t('common.cancel')}
                     </button>
                     <button onClick={handleCreateGroupChat} className="flex-1 py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-xl transition-colors disabled:bg-[var(--color-button-disabled)] disabled:text-[var(--color-icon-tertiary)] font-medium" disabled={!groupName.trim() || selectedParticipantIds.length < 1}>
-                        만들기
+                        {t('main.group.createModal.createButton')}
                     </button>
                 </div>
             </div>

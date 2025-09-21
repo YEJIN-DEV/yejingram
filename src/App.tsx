@@ -9,10 +9,10 @@ import CreateGroupChatModal from './components/modals/CreateGroupChatModal'
 import EditGroupChatModal from './components/modals/EditGroupChatModal'
 import SyncModal from './components/modals/SyncModal'
 import SyncCornerIndicator from './components/modals/SyncCornerIndicator'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { selectEditingCharacterId } from './entities/character/selectors'
-import { selectAllSettings, selectColorTheme } from './entities/setting/selectors'
+import { selectAllSettings, selectColorTheme, selectUILanguage } from './entities/setting/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -20,8 +20,12 @@ import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
 import { useSyncOnChange } from './utils/useSyncOnChange';
 import { selectForceShowSyncModal, selectIsSyncing } from './entities/ui/selectors';
+import i18n from './i18n/i18n'
+import { settingsActions } from './entities/setting/slice'
+import { charactersActions } from './entities/character/slice'
 
 function App() {
+  const dispatch = useDispatch();
   const [roomId, setRoomId] = useState<string | null>(null)
   const room = useSelector((state: RootState) => roomId ? selectRoomById(state, roomId) : null)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -34,6 +38,7 @@ function App() {
   const settings = useSelector(selectAllSettings);
   const isSyncing = useSelector(selectIsSyncing);
   const forceShowSyncModal = useSelector(selectForceShowSyncModal);
+  const uiLanguage = useSelector(selectUILanguage);
 
   const editingCharacterId = useSelector(selectEditingCharacterId);
 
@@ -53,6 +58,18 @@ function App() {
     mql.addEventListener('change', listener)
     return () => mql.removeEventListener('change', listener)
   }, [])
+
+  useEffect(() => {
+    if (uiLanguage !== null) {
+      i18n.changeLanguage(uiLanguage);
+      document.title = i18n.t('pageTitle');
+    } else { // Only run on very first load when uiLanguage is null
+      const lang = i18n.resolvedLanguage as 'ko' | 'en' | 'ja';
+      dispatch(settingsActions.setUILanguage(lang));
+      dispatch(settingsActions.updatePromptNamesToLocale(lang));
+      dispatch(charactersActions.updateDefaultCharacterNameToLocale(lang));
+    }
+  }, [uiLanguage, dispatch]);
 
   useEffect(() => {
     document.documentElement.classList.remove('light', 'dark', 'custom-theme');

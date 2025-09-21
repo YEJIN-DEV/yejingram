@@ -1,5 +1,6 @@
 import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
@@ -30,6 +31,7 @@ const emptyLore = (nextOrder: number, characterId?: number, roomId?: string): Lo
 });
 
 export function LorebookEditor({ characterId, roomId, draft, onDraftChange, roomLorebook }: LorebookEditorProps) {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const characterFromStore = useSelector((state: RootState) => characterId ? selectCharacterById(state, characterId) : undefined);
     const character = draft && draft.id === characterId ? draft : characterFromStore;
@@ -139,9 +141,9 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <h5 className="text-sm font-medium text-[var(--color-text-interface)]">로어 {sorted.length}개</h5>
+                <h5 className="text-sm font-medium text-[var(--color-text-interface)]">{t('characterPanel.lorebookEditor.header', { count: sorted.length })}</h5>
                 <button onClick={addLore} className="py-2 px-3 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg text-sm inline-flex items-center gap-2 transition-colors">
-                    <Plus className="w-4 h-4" /> 추가
+                    <Plus className="w-4 h-4" /> {t('characterPanel.lorebookEditor.add')}
                 </button>
             </div>
 
@@ -153,20 +155,20 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                         <input
                             value={l.name}
                             onChange={e => updateLore(l.id, { name: e.target.value })}
-                            placeholder="이름"
+                            placeholder={t('characterPanel.lorebookEditor.namePlaceholder')}
                             className="min-w-0 flex-1 basis-full sm:basis-auto px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm"
                         />
                         <div className="flex gap-1 w-full justify-end sm:w-auto">
-                            <button onClick={() => moveLore(l.id, -1)} className="p-2 rounded-lg bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-icon-primary)] disabled:opacity-40 transition-colors" disabled={i === 0} title="위로">
+                            <button onClick={() => moveLore(l.id, -1)} className="p-2 rounded-lg bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-icon-primary)] disabled:opacity-40 transition-colors" disabled={i === 0} title={t('characterPanel.lorebookEditor.moveUpTitle')}>
                                 <ChevronUp className="w-4 h-4" />
                             </button>
-                            <button onClick={() => moveLore(l.id, 1)} className="p-2 rounded-lg bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-icon-primary)] disabled:opacity-40 transition-colors" disabled={i === sorted.length - 1} title="아래로">
+                            <button onClick={() => moveLore(l.id, 1)} className="p-2 rounded-lg bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-icon-primary)] disabled:opacity-40 transition-colors" disabled={i === sorted.length - 1} title={t('characterPanel.lorebookEditor.moveDownTitle')}>
                                 <ChevronDown className="w-4 h-4" />
                             </button>
-                            <button onClick={() => setExpandedId(expandedId === l.id ? null : l.id)} className="p-2 rounded-lg bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] transition-colors" title={expandedId === l.id ? '접기' : '편집'}>
+                            <button onClick={() => setExpandedId(expandedId === l.id ? null : l.id)} className="p-2 rounded-lg bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] transition-colors" title={expandedId === l.id ? t('characterPanel.lorebookEditor.collapse') : t('characterPanel.lorebookEditor.edit')}>
                                 <Pencil className="w-4 h-4" />
                             </button>
-                            <button onClick={() => removeLore(l.id)} className="p-2 rounded-lg bg-[var(--color-button-negative)] hover:bg-[var(--color-button-negative)] text-[var(--color-text-accent)] transition-colors" title="삭제">
+                            <button onClick={() => removeLore(l.id)} className="p-2 rounded-lg bg-[var(--color-button-negative)] hover:bg-[var(--color-button-negative)] text-[var(--color-text-accent)] transition-colors" title={t('characterPanel.lorebookEditor.delete')}>
                                 <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
@@ -176,7 +178,7 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                         <div className="p-4 pt-0 space-y-4 border-t border-[var(--color-border)]">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="sm:col-span-2">
-                                    <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">활성화 키</label>
+                                    <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">{t('characterPanel.lorebookEditor.activationKeysLabel')}</label>
                                     <div className="flex flex-col gap-2">
                                         <input
                                             value={l.activationKeys[0] ?? ''}
@@ -185,7 +187,7 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                                                 keys[0] = e.target.value;
                                                 updateLore(l.id, { activationKeys: keys });
                                             }}
-                                            placeholder="키워드1, 키워드2 (쉼표로 구분)"
+                                            placeholder={t('characterPanel.lorebookEditor.activationKeysPlaceholder')}
                                             className={`w-full min-w-0 px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm ${l.alwaysActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             disabled={l.alwaysActive}
                                         />
@@ -197,7 +199,7 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                                                     keys[1] = e.target.value;
                                                     updateLore(l.id, { activationKeys: keys });
                                                 }}
-                                                placeholder="키워드1, 키워드2 (쉼표로 구분)"
+                                                placeholder={t('characterPanel.lorebookEditor.activationKeysPlaceholder')}
                                                 className={`w-full min-w-0 px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm ${l.alwaysActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 disabled={l.alwaysActive}
                                             />
@@ -206,12 +208,12 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                                 </div>
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">프롬프트</label>
+                                <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">{t('characterPanel.lorebookEditor.promptLabel')}</label>
                                 <textarea
                                     value={l.prompt}
                                     onChange={e => updateLore(l.id, { prompt: e.target.value })}
                                     rows={10}
-                                    placeholder="로어 내용"
+                                    placeholder={t('characterPanel.lorebookEditor.promptPlaceholder')}
                                     className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm"
                                 />
                             </div>
@@ -225,7 +227,7 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
                                     </div>
-                                    항상 활성화
+                                    {t('characterPanel.lorebookEditor.alwaysActive')}
                                 </label>
                                 <label className="flex items-center gap-3 text-sm text-[var(--color-text-interface)] cursor-pointer">
                                     <div className="relative">
@@ -240,7 +242,7 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
                                     </div>
-                                    두 키 모두 일치 시 활성화
+                                    {t('characterPanel.lorebookEditor.requireBothKeys')}
                                 </label>
                             </div>
                         </div>
@@ -254,8 +256,8 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                         <div className="w-12 h-12 bg-[var(--color-button-secondary-accent)] rounded-full flex items-center justify-center">
                             <Plus className="w-6 h-6 text-[var(--color-icon-secondary)]" />
                         </div>
-                        <p className="font-medium">아직 로어가 없습니다</p>
-                        <p className="text-xs text-[var(--color-text-informative-secondary)]">상단의 추가 버튼으로 생성하세요</p>
+                        <p className="font-medium">{t('characterPanel.lorebookEditor.emptyTitle')}</p>
+                        <p className="text-xs text-[var(--color-text-informative-secondary)]">{t('characterPanel.lorebookEditor.emptyDescription')}</p>
                     </div>
                 </div>
             )}

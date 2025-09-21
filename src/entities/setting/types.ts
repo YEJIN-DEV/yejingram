@@ -50,6 +50,7 @@ export interface SettingsState {
     colorTheme: 'light' | 'dark' | 'system' | 'custom';
     customThemeBase: 'light' | 'dark';
     customTheme: ThemeOverrides;
+    uiLanguage: 'ko' | 'en' | 'ja' | null;
     isModalOpen: boolean;
     isPromptModalOpen: boolean;
     isCreateGroupChatModalOpen: boolean;
