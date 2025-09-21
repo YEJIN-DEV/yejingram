@@ -62,6 +62,13 @@ const ko = {
         },
     },
 
+    announcements: {
+        title: "공지사항",
+        all: "전체",
+        servicenotes: "서비스 공지사항",
+        patchnotes: "패치 노트",
+    },
+
     main: {
         newMemory: "새로운 기억이 추가되었습니다",
         filePreview: {

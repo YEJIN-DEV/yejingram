@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import Sidebar from './components/sidebar/Sidebar'
 import MainChat from './components/mainchat/MainChat'
+import AnnouncementsPanel from './components/sidebar/AnnouncementsPanel'
 import SettingsPanel from './components/settings/SettingsPanel'
 import PromptModal from './components/settings/PromptModal'
 import CharacterPanel from './components/character/CharacterPanel'
@@ -29,6 +30,7 @@ function App() {
   const [roomId, setRoomId] = useState<string | null>(null)
   const room = useSelector((state: RootState) => roomId ? selectRoomById(state, roomId) : null)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isAnnouncementsPanelOpen, setIsAnnouncementsPanelOpen] = useState(false);
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const [isCharacterPanelOpen, setIsCharacterPanelOpen] = useState(false);
@@ -137,13 +139,21 @@ function App() {
     setIsCharacterPanelOpen(!isCharacterPanelOpen);
   };
 
+  const toggleAnnouncementsPanel = () => {
+    setIsAnnouncementsPanelOpen(!isAnnouncementsPanelOpen);
+  };
+
+  const toggleSettingsPanel = () => {
+    setIsSettingsPanelOpen(!isSettingsPanelOpen);
+  };
+
   const Backdrop = ({ onClick, className }: { onClick: () => void; className?: string; }) => (
     <div onClick={onClick} className={`fixed inset-0 ${className}`} />
   );
 
   // Show global sync modal ONLY on initial state: no room selected and no modal/panel open
   const shouldShowGlobalSyncModal = (forceShowSyncModal || (isSyncing && !roomId &&
-    !isSettingsPanelOpen && !isPromptModalOpen && !isCharacterPanelOpen &&
+    !isAnnouncementsPanelOpen && !isSettingsPanelOpen && !isPromptModalOpen && !isCharacterPanelOpen &&
     !isCreateGroupChatModalOpen && !isEditGroupChatModalOpen));
 
   return (
@@ -154,12 +164,30 @@ function App() {
           roomId={roomId}
           isMobileSidebarOpen={isMobileSidebarOpen}
           setRoomId={(id) => { setRoomId(id); setIsMobileSidebarOpen(false); }}
-          openSettingsModal={() => setIsSettingsPanelOpen(true)}
+          toggleAnnouncementsPanel={() => {
+            toggleAnnouncementsPanel()
+            if (isSettingsPanelOpen) toggleSettingsPanel()
+          }}
+          toggleSettingsPanel={() => {
+            toggleSettingsPanel()
+            if (isAnnouncementsPanelOpen) toggleAnnouncementsPanel()
+          }}
           toggleCharacterPanel={toggleCharacterPanel}
           openCreateGroupChatModal={() => setIsCreateGroupChatModalOpen(true)}
           openEditGroupChatModal={() => setIsEditGroupChatModalOpen(true)}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />
+
+        {/* Announcements Panel - Next to sidebar */}
+        {isAnnouncementsPanelOpen && (
+          <>
+            <AnnouncementsPanel
+              onClose={() => setIsAnnouncementsPanelOpen(false)}
+            />
+            {/* Announcements Panel Backdrop (mobile only) */}
+            <Backdrop onClick={() => setIsAnnouncementsPanelOpen(false)} className="z-30 bg-[var(--color-bg-shadow)]/20 backdrop-blur-sm md:hidden" />
+          </>
+        )}
 
         {/* Settings Panel - Next to sidebar */}
         {isSettingsPanelOpen && (

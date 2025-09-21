@@ -62,6 +62,13 @@ const en = {
         },
     },
 
+    announcements: {
+        title: "Announcements",
+        all: "All",
+        servicenotes: "Service Notes",
+        patchnotes: "Patch Notes",
+    },
+
     main: {
         newMemory: "New memory added",
         filePreview: {

@@ -62,6 +62,13 @@ const ja = {
         },
     },
 
+    announcements: {
+        title: "お知らせ",
+        all: "すべて",
+        servicenotes: "サービスノート",
+        patchnotes: "パッチノート",
+    },
+
     main: {
         newMemory: "新しい記憶が追加されました",
         filePreview: {
