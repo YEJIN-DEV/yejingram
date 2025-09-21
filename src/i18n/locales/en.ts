@@ -23,6 +23,10 @@ const en = {
         file: "File",
     },
 
+    llm: {
+        antiEchoFallback: "That's an interesting point. What do you think?",
+    },
+
     sidebar: {
         tooltipClose: "Close",
         tooltipSettings: "Settings",

@@ -23,6 +23,10 @@ const ko = {
         file: "파일",
     },
 
+    llm: {
+        antiEchoFallback: "그 얘기 흥미로운데, 너는 어떻게 생각해?",
+    },
+
     sidebar: {
         tooltipClose: "닫기",
         tooltipSettings: "설정",

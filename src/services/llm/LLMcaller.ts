@@ -374,7 +374,7 @@ async function LLMSend(
             // Fallback: if still echo-like, send a short probing question to move forward
             finalRes = {
                 reactionDelay: 500,
-                messages: [{ delay: 800, content: '그 얘기 흥미로운데, 너는 어떻게 생각해?' }]
+                messages: [{ delay: 800, content: t('llm.antiEchoFallback') }]
             };
         }
 

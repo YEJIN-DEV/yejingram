@@ -23,6 +23,10 @@ const ja = {
         file: "ファイル",
     },
 
+    llm: {
+        antiEchoFallback: "それは興味深いポイントですね。あなたはどう思いますか？",
+    },
+
     sidebar: {
         tooltipClose: "閉じる",
         tooltipSettings: "設定",
