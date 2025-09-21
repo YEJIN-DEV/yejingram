@@ -13,7 +13,7 @@ import { LorebookEditor } from './LorebookEditor';
 import { extractBasicCharacterInfo } from '../../utils/risuai/risuCharacterCard';
 import { Toggle } from '../Toggle';
 
-const personaCardToCharacter = (card: PersonaChatAppCharacterCard): Character => {
+const personaCardToCharacter = (card: PersonaChatAppCharacterCard, imageUrl: string | null): Character => {
     const { name, prompt, responseTime, thinkingTime, reactivity, tone, proactiveEnabled } = card;
 
     return {
@@ -26,7 +26,7 @@ const personaCardToCharacter = (card: PersonaChatAppCharacterCard): Character =>
         tone: parseInt(tone, 10),
         proactiveEnabled,
         // Fields not in PersonaChatAppCharacterCard are set to default values
-        avatar: null,
+        avatar: imageUrl || null,
         messageCountSinceLastSummary: 0,
         media: [],
         stickers: [],
@@ -149,7 +149,13 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                                     if (jsonData.source !== 'PersonaChatAppCharacterCard') {
                                         throw new Error("Invalid character card format.");
                                     }
-                                    characterFromCard = personaCardToCharacter(jsonData);
+                                    const imageUrl = await new Promise<string>((resolve, reject) => {
+                                        const reader = new FileReader();
+                                        reader.onload = () => resolve(reader.result as string);
+                                        reader.onerror = reject;
+                                        reader.readAsDataURL(file);
+                                    });
+                                    characterFromCard = personaCardToCharacter(jsonData, imageUrl);
                                 }
                                 console.log("불러온 연락처 데이터:", characterFromCard);
                                 setChar(characterFromCard);
