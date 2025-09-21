@@ -411,6 +411,16 @@ const ko = {
                 backupButton: "백업하기",
                 restoreButton: "불러오기",
             },
+            sync: {
+                title: "서버 동기화",
+                clientIdLabel: "클라이언트 ID",
+                clientIdPlaceholder: "예: {{idexample}}",
+                serverAddrLabel: "서버 주소",
+                autoSyncTitle: "자동 동기화 활성화",
+                autoSyncHint: "이 기기에서 발생한 변경 사항을 서버와 자동으로 동기화합니다.",
+                syncNow: "지금 동기화",
+                restoreRemote: "서버로부터 복원",
+            },
             saveButton: "저장",
         },
         alerts: {

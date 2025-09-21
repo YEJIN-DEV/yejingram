@@ -342,29 +342,29 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 {/* Sync to server */}
                                 <div className="space-y-3 pt-4 border-t border-[var(--color-border)]">
                                     <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)]">
-                                        <Cloud className="w-4 h-4 mr-2" /> 서버 동기화
+                                        <Cloud className="w-4 h-4 mr-2" /> {t('settings.others.sync.title')}
                                     </label>
                                     <div className="space-y-2">
-                                        <label className="text-xs text-[var(--color-text-secondary)]">클라이언트 ID</label>
-                                        <input value={localSettings.syncSettings.syncClientId} onChange={e => setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncClientId: e.target.value } }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm" placeholder="예: my-device-1" />
+                                        <label className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.sync.clientIdLabel')}</label>
+                                        <input value={localSettings.syncSettings.syncClientId} onChange={e => setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncClientId: e.target.value } }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm" placeholder={t('settings.others.sync.clientIdPlaceholder', { idexample: "my-device-1" })} />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-[var(--color-text-secondary)]">서버 주소</label>
+                                        <label className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.sync.serverAddrLabel')}</label>
                                         <input value={localSettings.syncSettings.syncBaseUrl} onChange={e => setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncBaseUrl: e.target.value } }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm" placeholder={`http://${window.location.hostname}:3001`} />
                                     </div>
                                     <Toggle
                                         id="settings-sync-enabled-toggle"
-                                        label="자동 동기화 활성화"
-                                        description="이 기기에서 발생한 변경 사항을 서버와 자동으로 동기화합니다."
+                                        label={t('settings.others.sync.autoSyncTitle')}
+                                        description={t('settings.others.sync.autoSyncHint')}
                                         checked={!!localSettings.syncSettings.syncEnabled}
                                         onChange={(checked) => setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncEnabled: checked } }))}
                                     />
                                     <div className="grid grid-cols-2 gap-2">
                                         <button onClick={() => backupStateToServer(localSettings.syncSettings.syncClientId, localSettings.syncSettings.syncBaseUrl)} className="w-full py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg text-sm flex items-center justify-center gap-2" >
-                                            <CloudUpload className="w-4 h-4" /> 지금 동기화
+                                            <CloudUpload className="w-4 h-4" /> {t('settings.others.sync.syncNow')}
                                         </button>
                                         <button onClick={() => restoreStateFromServer(localSettings.syncSettings.syncClientId, localSettings.syncSettings.syncBaseUrl)} className="w-full py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
-                                            <RotateCcw className="w-4 h-4" /> 서버로부터 복원
+                                            <RotateCcw className="w-4 h-4" /> {t('settings.others.sync.restoreRemote')}
                                         </button>
                                     </div>
                                 </div>

@@ -411,6 +411,16 @@ const ja = {
                 backupButton: "バックアップ",
                 restoreButton: "復元",
             },
+            sync: {
+                title: "サーバー同期",
+                clientIdLabel: "クライアント ID",
+                clientIdPlaceholder: "例: {{idexample}}",
+                serverAddrLabel: "サーバーアドレス",
+                autoSyncTitle: "自動同期を有効化",
+                autoSyncHint: "このデバイスで行った変更をサーバーと自動的に同期します。",
+                syncNow: "今すぐ同期",
+                restoreRemote: "サーバーから復元",
+            },
             saveButton: "保存",
         },
         alerts: {

@@ -411,6 +411,16 @@ const en = {
                 backupButton: "Back up",
                 restoreButton: "Restore",
             },
+            sync: {
+                title: "Server Sync",
+                clientIdLabel: "Client ID",
+                clientIdPlaceholder: "e.g., {{idexample}}",
+                serverAddrLabel: "Server Address",
+                autoSyncTitle: "Enable Auto Sync",
+                autoSyncHint: "Automatically sync changes made on this device with the server.",
+                syncNow: "Sync Now",
+                restoreRemote: "Restore from server",
+            },
             saveButton: "Save",
         },
         alerts: {
