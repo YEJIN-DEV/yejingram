@@ -288,7 +288,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
             }
 
             if (msg.sticker) {
-                parts.push({ text: `${header}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
+                parts.push({ text: `${header}[Sent a sticker: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
             }
 
             // Lookahead: if next message is from user(authorId=0) and TEXT, merge its content and skip it
@@ -439,7 +439,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
         { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[] = [{ type: 'text', text: msg.content ? `${header}${msg.content}` : (header ? header : '') }];
         if (msg.file && model !== "grok-3") {
             if (model?.startsWith("claude") && role === 'assistant') {
-                content.push({ type: 'text', text: `${header}[이미지 전송]` });
+                content.push({ type: 'text', text: `${header}[Sent an image]` });
             } else {
                 const mimeType = msg.file.mimeType;
                 if (mimeType.startsWith('image')) {
@@ -461,7 +461,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
             }
         }
         if (msg.sticker) {
-            content.push({ type: 'text', text: `${header}[스티커 전송: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
+            content.push({ type: 'text', text: `${header}[Sent a sticker: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
         }
         return { role, content };
     });
@@ -570,7 +570,7 @@ async function buildOpenAIContents(messages: Message[], isProactive: boolean, mo
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         let text = (msg.content ? `${header}${msg.content}` : (header ? header : ''));
         if (msg.sticker) {
-            text = `[사용자가 "${msg.sticker}" 스티커를 보냄]` + (text ? ` ${text}` : '');
+            text = `[User sent a sticker "${msg.sticker}"]` + (text ? ` ${text}` : '');
         }
 
         const parts: Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }> = [];
