@@ -49,7 +49,7 @@ function parseFilename(kind: AnnouncementKind, name: string, path: string, downl
 async function fetchDirectory(kind: AnnouncementKind): Promise<AnnouncementMeta[]> {
   if (listCache[kind]) return listCache[kind]!;
 
-  const url = `${API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${kind}`;
+  const url = `${API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${kind}/${i18n.resolvedLanguage}`;
   const res = await fetch(url, {
     headers: {
       // unauthenticated, rely on public rate limit
