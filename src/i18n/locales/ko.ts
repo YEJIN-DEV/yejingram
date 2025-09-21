@@ -31,6 +31,7 @@ const ko = {
         tooltipClose: "닫기",
         tooltipSettings: "설정",
         tooltipNewChat: "새 채팅",
+        tooltipAnnouncements: "공지사항",
         searchPlaceholder: "검색...",
         createGroupChat: "그룹 채팅 만들기",
         contacts: "연락처",
@@ -67,6 +68,12 @@ const ko = {
         all: "전체",
         servicenotes: "서비스 공지사항",
         patchnotes: "패치 노트",
+        loading: "불러오는 중…",
+        loadingPreview: "미리보기 불러오는 중…",
+        loadMore: "더 보기",
+        endOfList: "공지사항이 더 이상 없습니다.",
+        noAnnouncements: "아직 공지사항이 없습니다.",
+        failedLoading: "공지사항을 불러오지 못했습니다.",
     },
 
     main: {

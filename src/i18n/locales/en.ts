@@ -31,6 +31,7 @@ const en = {
         tooltipClose: "Close",
         tooltipSettings: "Settings",
         tooltipNewChat: "New chat",
+    tooltipAnnouncements: "Announcements",
         searchPlaceholder: "Search…",
         createGroupChat: "Create group chat",
         contacts: "Contacts",
@@ -67,6 +68,12 @@ const en = {
         all: "All",
         servicenotes: "Service Notes",
         patchnotes: "Patch Notes",
+        loading: "Loading…",
+        loadingPreview: "Loading preview…",
+        loadMore: "Load more",
+        endOfList: "No more announcements.",
+        noAnnouncements: "No announcements yet.",
+        failedLoading: "Failed to load announcements.",
     },
 
     main: {
