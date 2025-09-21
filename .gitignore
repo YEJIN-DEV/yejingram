@@ -1,6 +1,8 @@
 # .env
 .env
 
+# Backend data
+server/data
 # Logs
 logs
 *.log

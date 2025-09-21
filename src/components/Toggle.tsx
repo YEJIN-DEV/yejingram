@@ -46,7 +46,7 @@ interface ToggleProps {
     );
 
     return (
-        <div className={`flex items-center justify-between flex items-center justify-between p-3 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border)]`}>
+        <div className={`flex items-center justify-between p-3 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border)]`}>
             {content}
         </div>
     );

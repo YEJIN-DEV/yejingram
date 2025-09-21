@@ -1,6 +1,6 @@
 import { createEntityAdapter, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona, ThemeOverrides } from './types';
+import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona, ThemeOverrides, Sync } from './types';
 import type { ImageApiConfig, ImageApiProvider, ArtStyle } from './image/types';
 import { initialState as imageSettingsInitialState, initialImageApiConfigs } from './image/slice';
 import { nanoid } from '@reduxjs/toolkit';
@@ -14,6 +14,13 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     openrouter: { apiKey: '', model: '', customModels: [] },
     customOpenAI: { apiKey: '', baseUrl: '', model: '', customModels: [] },
 };
+
+export const initialSyncSettings: Sync = {
+    syncEnabled: false,
+    syncClientId: 'default-client',
+    syncBaseUrl: `http://${window.location.hostname}:3001`,
+};
+
 
 export const initialState: SettingsState = {
     colorTheme: 'light',
@@ -74,6 +81,7 @@ export const initialState: SettingsState = {
     speedup: 2,
     personas: [],
     selectedPersonaId: null,
+    syncSettings: initialSyncSettings
 };
 
 export const settingsAdapter = createEntityAdapter<SettingsState, string>({

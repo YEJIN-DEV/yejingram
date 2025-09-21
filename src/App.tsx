@@ -7,6 +7,8 @@ import PromptModal from './components/settings/PromptModal'
 import CharacterPanel from './components/character/CharacterPanel'
 import CreateGroupChatModal from './components/modals/CreateGroupChatModal'
 import EditGroupChatModal from './components/modals/EditGroupChatModal'
+import SyncModal from './components/modals/SyncModal'
+import SyncCornerIndicator from './components/modals/SyncCornerIndicator'
 import { useSelector } from 'react-redux'
 import { selectRoomById } from './entities/room/selectors'
 import { selectEditingCharacterId } from './entities/character/selectors'
@@ -16,6 +18,8 @@ import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
+import { useSyncOnChange } from './utils/useSyncOnChange';
+import { selectForceShowSyncModal, selectIsSyncing } from './entities/ui/selectors';
 
 function App() {
   const [roomId, setRoomId] = useState<string | null>(null)
@@ -28,6 +32,8 @@ function App() {
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
   const colorTheme = useSelector(selectColorTheme);
   const settings = useSelector(selectAllSettings);
+  const isSyncing = useSelector(selectIsSyncing);
+  const forceShowSyncModal = useSelector(selectForceShowSyncModal);
 
   const editingCharacterId = useSelector(selectEditingCharacterId);
 
@@ -93,6 +99,9 @@ function App() {
     setActiveRoomId(roomId);
   }, [roomId]);
 
+  // Sync on state changes (debounced, minimal deltas)
+  useSyncOnChange();
+
   // 패널 자동 닫힘: "편집 중이었다가" editingCharacterId가 null이 될 때만 닫기
   const prevEditingIdRef = useRef<number | null>(editingCharacterId);
   useEffect(() => {
@@ -115,6 +124,10 @@ function App() {
     <div onClick={onClick} className={`fixed inset-0 ${className}`} />
   );
 
+  // Show global sync modal ONLY on initial state: no room selected and no modal/panel open
+  const shouldShowGlobalSyncModal = (forceShowSyncModal || (isSyncing && !roomId &&
+    !isSettingsPanelOpen && !isPromptModalOpen && !isCharacterPanelOpen &&
+    !isCreateGroupChatModalOpen && !isEditGroupChatModalOpen));
 
   return (
     <>
@@ -164,6 +177,9 @@ function App() {
           isOpen={isEditGroupChatModalOpen}
           onClose={() => setIsEditGroupChatModalOpen(false)}
         />
+
+        {/* Sync indicators: show modal only for pristine initial state, else corner indicator */}
+        {shouldShowGlobalSyncModal ? <SyncModal /> : <SyncCornerIndicator />}
 
         {/* Mobile Sidebar Backdrop */}
         {isMobileSidebarOpen && (

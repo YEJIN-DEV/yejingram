@@ -49,3 +49,21 @@ This project is licensed under the GPL-3.0 License. See the [LICENSE](./LICENSE)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Lucide Icons](https://lucide.dev/)
 - [JSZip](https://stuk.github.io/jszip/)
+
+## Sync Server (optional)
+
+경량 Express 동기화 서버가 포함되어 있습니다. 해시를 기반으로 변경된 엔티티만 송수신하는 방식으로 동기화합니다.
+
+서버 실행:
+
+```
+npm run server
+```
+
+기본 주소: http://hostname:3001
+
+헬스 체크:
+
+```
+GET /api/health -> { ok: true }
+```

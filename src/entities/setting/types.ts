@@ -72,6 +72,7 @@ export interface SettingsState {
     speedup: number;
     personas: Persona[];
     selectedPersonaId: string | null;
+    syncSettings: Sync;
 }
 
 export interface Persona {
@@ -83,4 +84,10 @@ export interface Persona {
 export interface ThemeOverrides {
     light: Record<string, string>;
     dark: Record<string, string>;
+}
+
+export interface Sync {
+    syncEnabled: boolean;
+    syncClientId: string;
+    syncBaseUrl: string;
 }

@@ -1,4 +1,5 @@
 import { configureStore, combineReducers, type Action } from '@reduxjs/toolkit';
+import { syncMiddleware } from '../utils/syncMiddleware';
 import localforage from 'localforage';
 import {
     persistReducer,
@@ -16,9 +17,10 @@ import {
 import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
-import settingsReducer, { initialState as settingsInitialState } from '../entities/setting/slice';
+import settingsReducer, { initialSyncSettings, initialState as settingsInitialState } from '../entities/setting/slice';
 import { initialState as imageSettingsInitialState } from '../entities/setting/image/slice';
 import { applyRules } from '../utils/migration';
+import uiReducer from '../entities/ui/slice';
 
 localforage.config({
     name: 'yejingram',
@@ -49,8 +51,8 @@ export const migrations = {
         state = applyRules(state, {
             add: [{
                 path: 'settings',
-                keys: ['imageSettings', 'colorTheme', 'customThemeBase', 'customTheme'],
-                defaults: { imageSettings: imageSettingsInitialState, colorTheme: 'light', customThemeBase: 'light', customTheme: { light: {}, dark: {} } }
+                keys: ['imageSettings', 'colorTheme', 'customThemeBase', 'customTheme', 'syncSettings'],
+                defaults: { imageSettings: imageSettingsInitialState, colorTheme: 'light', customThemeBase: 'light', customTheme: { light: {}, dark: {} }, syncSettings: initialSyncSettings }
             }],
             move: [
                 {
@@ -88,6 +90,7 @@ const appReducer = combineReducers({
     rooms: roomReducer,
     settings: settingsReducer,
     messages: messageReducer,
+    ui: uiReducer,
 });
 
 export const RESET_ALL = 'app/resetAll' as const;
@@ -110,7 +113,7 @@ export const store = configureStore({
             serializableCheck: {
                 ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
             },
-        }),
+        }).concat(syncMiddleware as any),
 });
 
 export const persistor = persistStore(store);
