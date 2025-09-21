@@ -58,9 +58,10 @@ function App() {
       i18n.changeLanguage(uiLanguage);
       document.title = i18n.t('pageTitle');
     } else { // Only run on very first load when uiLanguage is null
-      dispatch(settingsActions.setUILanguage(i18n.language as 'ko' | 'en' | 'ja'));
-      dispatch(settingsActions.updatePromptNamesToLocale(i18n.language as 'ko' | 'en' | 'ja'));
-      dispatch(charactersActions.updateDefaultCharacterNameToLocale(i18n.language as 'ko' | 'en' | 'ja'));
+      const lang = i18n.resolvedLanguage as 'ko' | 'en' | 'ja';
+      dispatch(settingsActions.setUILanguage(lang));
+      dispatch(settingsActions.updatePromptNamesToLocale(lang));
+      dispatch(charactersActions.updateDefaultCharacterNameToLocale(lang));
     }
   }, [uiLanguage, dispatch]);
 
