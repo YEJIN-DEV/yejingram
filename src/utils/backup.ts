@@ -18,7 +18,7 @@ export function entityStateToArray<T>(
     .filter((v): v is T => v !== undefined);
 }
 
-async function wipeAllState() {
+export async function wipeAllState() {
   persistor.pause();
   await persistor.flush();     // 남은 write 처리
   await persistor.purge();     // ← localforage에 저장된 'yejingram' 스냅샷 제거
@@ -249,8 +249,9 @@ export async function restoreStateFromServer(clientId: string, baseURL: string) 
   store.dispatch(uiActions.forceShowSyncModal());
   store.dispatch(uiActions.syncStart());
   try {
-    // Capture current client's syncSettings to preserve after full restore
-    const prevSyncSettings = store.getState().settings?.syncSettings;
+    // Capture current client's settings to preserve after full restore when server doesn't send settings
+    const prevSettings = store.getState().settings;
+    const prevSyncSettings = prevSettings?.syncSettings;
     const res = await fetch(`${baseURL}/api/sync/${encodeURIComponent(clientId)}`);
     const json = (await res.json()) as { ok: boolean; summary?: any };
     if (!json.ok) throw new Error('failed to get summary');
@@ -278,8 +279,12 @@ export async function restoreStateFromServer(clientId: string, baseURL: string) 
       if (upserts.rooms?.length) store.dispatch(roomsActions.importRooms(upserts.rooms as any));
       if (upserts.messages?.length) store.dispatch(messagesActions.importMessages(upserts.messages as any));
       if (upserts.settings) {
+        // If server provided settings, merge but always preserve client's previous syncSettings
         const merged = mergePreserveSyncSettings(upserts.settings as any, prevSyncSettings);
         store.dispatch(settingsActions.importSettings(merged));
+      } else if (prevSettings) {
+        // If server didn't provide settings, keep user's previous local settings instead of falling back to defaults
+        store.dispatch(settingsActions.importSettings(prevSettings));
       }
       store.dispatch({ type: 'sync/applyDeltaEnd' });
     }

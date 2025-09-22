@@ -6,13 +6,12 @@ import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload,
 import i18n from '../../i18n/i18n';
 import { useTranslation } from 'react-i18next';
 import { ProviderSettings } from './ProviderSettings';
-import { backupStateToFile, restoreStateFromFile, backupStateToServer, restoreStateFromServer } from '../../utils/backup';
+import { backupStateToFile, restoreStateFromFile, backupStateToServer, restoreStateFromServer, wipeAllState } from '../../utils/backup';
 import { settingsActions } from '../../entities/setting/slice';
 import PersonaManager from './PersonaModal';
 import { ImageSettings } from './image/ImageSettings';
 import ThemeSettings from './ThemeSettings';
 import { Toggle } from '../Toggle';
-import { persistor, resetAll, store } from '../../app/store';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;
@@ -128,18 +127,6 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
         dispatch(settingsActions.setUILanguage(language));
         // Apply language immediately and allow detector to cache it in localStorage
         try { i18n.changeLanguage(language); } catch { /* noop */ }
-    };
-
-    const handleDeleteAll = async () => {
-        if (!confirm(t('settings.others.danger.confirm'))) return;
-        try {
-            persistor.pause();
-            await persistor.flush();
-            await persistor.purge();
-            store.dispatch(resetAll());
-        } finally {
-            window.location.reload();
-        }
     };
 
     return (
@@ -395,7 +382,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             <div className="px-3 pb-3 space-y-3">
                                                 <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.reset.desc')}</p>
                                                 <button
-                                                    onClick={handleDeleteAll}
+                                                    onClick={wipeAllState}
                                                     id="delete-all-data-btn"
                                                     className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm flex items-center justify-center gap-2"
                                                 >
