@@ -1,8 +1,10 @@
 import { Loader2, UploadCloud } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { selectIsUploading, selectIsSyncing, selectSyncDeterminate, selectSyncProgress } from '../../entities/ui/selectors';
 
 function SyncCornerIndicator() {
+    const { t } = useTranslation();
     const isUploading = useSelector(selectIsUploading);
     const isSyncing = useSelector(selectIsSyncing);
     const determinate = useSelector(selectSyncDeterminate);
@@ -17,7 +19,7 @@ function SyncCornerIndicator() {
                 {isUploading ? (
                     <>
                         <UploadCloud className="w-4 h-4 text-[var(--color-icon-tertiary)] animate-pulse" />
-                        <span className="text-xs text-[var(--color-text-interface)]">업로드 중…</span>
+                        <span className="text-xs text-[var(--color-text-interface)]">{t('common.uploading')}</span>
                     </>
                 ) : determinate ? (
                     <div className="w-28">
@@ -29,7 +31,7 @@ function SyncCornerIndicator() {
                 ) : (
                     <>
                         <Loader2 className="w-4 h-4 text-[var(--color-icon-tertiary)] animate-spin" />
-                        <span className="text-xs text-[var(--color-text-interface)]">동기화 중…</span>
+                        <span className="text-xs text-[var(--color-text-interface)]">{t('common.syncing')}</span>
                     </>
                 )}
             </div>

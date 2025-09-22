@@ -7,6 +7,8 @@ const ko = {
         cancel: "취소",
         save: "저장",
         unknown: "알 수 없음",
+        syncing: "동기화 중…",
+        uploading: "업로드 중…",
     },
 
     units: {

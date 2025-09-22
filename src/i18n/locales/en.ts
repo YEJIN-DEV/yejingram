@@ -7,6 +7,8 @@ const en = {
         cancel: "Cancel",
         save: "Save",
         unknown: "Unknown",
+    uploading: "Uploading…",
+    syncing: "Syncing…",
     },
 
     units: {
@@ -420,6 +422,7 @@ const en = {
                 autoSyncHint: "Automatically sync changes made on this device with the server.",
                 syncNow: "Sync Now",
                 restoreRemote: "Restore from server",
+                syncing: "Syncing...",
             },
             saveButton: "Save",
         },

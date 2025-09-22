@@ -7,6 +7,8 @@ const ja = {
         cancel: "キャンセル",
         save: "保存",
         unknown: "不明",
+        syncing: "同期中…",
+        uploading: "アップロード中…",
     },
 
     units: {
