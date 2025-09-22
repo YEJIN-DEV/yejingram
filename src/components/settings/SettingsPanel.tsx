@@ -360,10 +360,16 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         onChange={(checked) => setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncEnabled: checked } }))}
                                     />
                                     <div className="grid grid-cols-2 gap-2">
-                                        <button onClick={() => backupStateToServer(localSettings.syncSettings.syncClientId, localSettings.syncSettings.syncBaseUrl)} className="w-full py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg text-sm flex items-center justify-center gap-2" >
+                                        <button onClick={() => {
+                                            dispatch(settingsActions.setSettings(localSettings));
+                                            backupStateToServer(localSettings.syncSettings.syncClientId, localSettings.syncSettings.syncBaseUrl);
+                                        }} className="w-full py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg text-sm flex items-center justify-center gap-2" >
                                             <CloudUpload className="w-4 h-4" /> {t('settings.others.sync.syncNow')}
                                         </button>
-                                        <button onClick={() => restoreStateFromServer(localSettings.syncSettings.syncClientId, localSettings.syncSettings.syncBaseUrl)} className="w-full py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
+                                        <button onClick={() => {
+                                            dispatch(settingsActions.setSettings(localSettings));
+                                            restoreStateFromServer(localSettings.syncSettings.syncClientId, localSettings.syncSettings.syncBaseUrl);
+                                        }} className="w-full py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
                                             <RotateCcw className="w-4 h-4" /> {t('settings.others.sync.restoreRemote')}
                                         </button>
                                     </div>
