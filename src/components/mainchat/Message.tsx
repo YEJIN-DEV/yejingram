@@ -104,12 +104,21 @@ const MessageList: React.FC<MessageListProps> = ({
   const dispatch = useDispatch<AppDispatch>();
   const allCharacters = useSelector((state: RootState) => charactersAdapter.getSelectors().selectAll(state.characters));
   const animatedMessageIds = useRef(new Set<string>());
+  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [expandedStickers, setExpandedStickers] = useState<Set<string>>(new Set());
   const [imageModalOpen, setImageModalOpen] = useState<boolean>(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
   const [regeneratingImageIds, setRegeneratingImageIds] = useState<Set<string>>(new Set());
+  // Mobile gesture helpers
+  const [isCoarsePointer, setIsCoarsePointer] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || !('matchMedia' in window)) return false;
+    return window.matchMedia('(pointer: coarse)').matches;
+  });
+  const hideControlsTimeoutRef = useRef<number | null>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+
+  const CONTROLS_AUTOHIDE_MS = 2000; // 모바일 컨트롤 자동 숨김 시간(ms)
 
   const toggleStickerSize = useCallback((messageId: string) => {
     setExpandedStickers(prev => {
@@ -145,6 +154,65 @@ const MessageList: React.FC<MessageListProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [imageModalOpen]);
+
+  // Detect pointer type changes (desktop/mobile) and cleanup timers on unmount
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('matchMedia' in window)) return;
+    const mql = window.matchMedia('(pointer: coarse)');
+    const handler = (e: MediaQueryListEvent) => setIsCoarsePointer(e.matches);
+
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', handler);
+      return () => {
+        mql.removeEventListener('change', handler);
+      };
+    }
+  }, []);
+
+  // Cleanup auto-hide timer on unmount
+  useEffect(() => {
+    return () => {
+      if (hideControlsTimeoutRef.current) {
+        window.clearTimeout(hideControlsTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const showControlsWithAutoHide = useCallback((messageId: string) => {
+    setActiveMessageId(messageId);
+    if (hideControlsTimeoutRef.current) {
+      window.clearTimeout(hideControlsTimeoutRef.current);
+    }
+    hideControlsTimeoutRef.current = window.setTimeout(() => {
+      setActiveMessageId(null);
+    }, CONTROLS_AUTOHIDE_MS);
+  }, []);
+
+  // Mobile: hide controls when tapping outside the active message
+  useEffect(() => {
+    if (!isCoarsePointer) return; // 모바일(coarse pointer)에서만 동작
+
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!activeMessageId) return;
+      const target = e.target as Element | null;
+      if (!target) return;
+      const container = target.closest('[data-message-id]') as HTMLElement | null;
+      const clickedId = container?.getAttribute('data-message-id');
+      if (clickedId === activeMessageId) return; // 같은 메시지 내부 터치면 유지
+
+      // 외부(또는 다른 메시지) 터치 시 컨트롤 숨김
+      setActiveMessageId(null);
+      if (hideControlsTimeoutRef.current) {
+        window.clearTimeout(hideControlsTimeoutRef.current);
+        hideControlsTimeoutRef.current = null;
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [isCoarsePointer, activeMessageId]);
 
 
   return (
@@ -248,7 +316,7 @@ const MessageList: React.FC<MessageListProps> = ({
               const stickerName = stickerData.name || t('main.message.sticker.defaultName');
 
               return (
-                <div className="inline-block cursor-pointer transition-all duration-300 hover:scale-110 transform" onClick={() => toggleStickerSize(msg.id.toString())}>
+                <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
                   <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`} style={heightStyle} />
                 </div>
               );
@@ -258,10 +326,22 @@ const MessageList: React.FC<MessageListProps> = ({
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
                   <div
                     onClick={() => {
-                      if (msg.type === 'IMAGE' && msg.file?.dataUrl && !isRegenerating) {
+                      if (!(msg.type === 'IMAGE' && msg.file?.dataUrl) || isRegenerating) return;
+                      // Mobile(coarse pointer): single tap shows controls, double-tap opens modal
+                      if (isCoarsePointer) {
+                        // First tap: show controls; second tap on same image: open modal
+                        if (activeMessageId !== msg.id.toString()) {
+                          showControlsWithAutoHide(msg.id.toString());
+                          return;
+                        }
                         setSelectedImageUrl(msg.file.dataUrl);
                         setImageModalOpen(true);
+                        setActiveMessageId(null);
+                        return;
                       }
+                      // Desktop: open modal on single click
+                      setSelectedImageUrl(msg.file.dataUrl);
+                      setImageModalOpen(true);
                     }}
                     className={`relative ${msg.type === 'IMAGE' && !isRegenerating ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
                   >
@@ -282,7 +362,7 @@ const MessageList: React.FC<MessageListProps> = ({
               const hasUrls = urls.length > 0;
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-2`}>
-                  <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-transform duration-200 hover:scale-[1.02] ${isMe
+                  <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-transform duration-200 ${isMe
                     ? 'bg-[var(--color-message-self)] text-[var(--color-text-accent)]'
                     : 'bg-[var(--color-message-other)] text-[var(--color-text-primary)]'
                     } ${cornerClass}`}>
@@ -335,7 +415,7 @@ const MessageList: React.FC<MessageListProps> = ({
               )}
               {msg.type !== 'SYSTEM' && (
                 <div className={`group flex w-full ${bubbleMarginClass} ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-3 md:gap-4 ${editingMessageId === msg.id ? 'flex-1 w-full max-w-none' : 'max-w-[75%]'}`}>
+                  <div className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-3 md:gap-4 ${editingMessageId === msg.id ? 'flex-1 w-full max-w-none' : 'max-w-full'}`}>
 
                     {/* Avatar - for non-me messages at end of group (bottom aligned); placeholder otherwise for consistent indent */}
                     {!isMe && editingMessageId !== msg.id && (
@@ -358,14 +438,27 @@ const MessageList: React.FC<MessageListProps> = ({
                       )}
 
                       {/* Message bubble with hover controls */}
-                      <div className={`relative group/message ${isMe ? 'flex-row-reverse' : ''} flex items-end ${editingMessageId === msg.id ? 'w-full' : ''}`}>
-                        <div className={`message-content-wrapper ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}>
+                      <div
+                        data-message-id={msg.id.toString()}
+                        className={`relative group/message ${isMe ? 'flex-row-reverse' : ''} flex items-end gap-2 ${editingMessageId === msg.id ? 'w-full' : ''} transition-transform duration-200 ${isMe ? 'origin-bottom-right' : 'origin-bottom-left'} ${(msg.type !== 'IMAGE' && editingMessageId !== msg.id) ? 'md:hover:scale-[1.02]' : ''}`}
+                      >
+                        <div
+                          className={`message-content-wrapper ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}
+                          onClick={isCoarsePointer && msg.type !== 'IMAGE' ? () => showControlsWithAutoHide(msg.id.toString()) : undefined}
+                        >
                           {renderMessageContent()}
                         </div>
 
-                        {/* Message controls - Instagram DM style */}
+                        {/* Message controls - inline (wrap with message to keep hover) */}
                         {editingMessageId !== msg.id && (
-                          <div className={`absolute ${isMe ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex items-center space-x-1 opacity-0 group-hover/message:opacity-100 transition-all duration-300 transform ${isMe ? 'translate-x-2' : '-translate-x-2'} group-hover/message:translate-x-0`}>
+                          <div
+                            className={`flex items-center space-x-1 transition-opacity duration-200
+                              ${isCoarsePointer
+                                ? (activeMessageId === msg.id.toString() ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none')
+                                : 'opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto'
+                              }
+                            `}
+                          >
                             {msg.type === 'TEXT' && (
                               <button
                                 data-id={msg.id.toString()}
@@ -380,7 +473,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
                             <button
                               data-id={msg.id.toString()}
-                              onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
+                              onClick={() => { dispatch(messagesActions.removeOne(msg.id)); setActiveMessageId(null); }}
                               className="delete-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-negative)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
                               aria-label={t('main.message.actions.deleteAriaLabel')}
                               title={t('main.message.actions.delete')}
@@ -399,6 +492,7 @@ const MessageList: React.FC<MessageListProps> = ({
                                     .finally(() => {
                                       setIsWaitingForResponse(false);
                                     });
+                                  setActiveMessageId(null);
                                 }}
                                 className="reroll-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
                                 aria-label={t('main.message.actions.rerollAriaLabel')}
