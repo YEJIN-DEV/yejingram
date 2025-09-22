@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
-import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Image, CircleEllipsis, Palette, Languages, Cloud, RotateCcw, CloudUpload } from 'lucide-react';
+import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Image, CircleEllipsis, Palette, Languages, Cloud, RotateCcw, CloudUpload, Trash2, ChevronDown } from 'lucide-react';
 import i18n from '../../i18n/i18n';
 import { useTranslation } from 'react-i18next';
 import { ProviderSettings } from './ProviderSettings';
@@ -12,6 +12,7 @@ import PersonaManager from './PersonaModal';
 import { ImageSettings } from './image/ImageSettings';
 import ThemeSettings from './ThemeSettings';
 import { Toggle } from '../Toggle';
+import { persistor, resetAll, store } from '../../app/store';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;
@@ -127,6 +128,18 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
         dispatch(settingsActions.setUILanguage(language));
         // Apply language immediately and allow detector to cache it in localStorage
         try { i18n.changeLanguage(language); } catch { /* noop */ }
+    };
+
+    const handleDeleteAll = async () => {
+        if (!confirm(t('settings.others.danger.confirm'))) return;
+        try {
+            persistor.pause();
+            await persistor.flush();
+            await persistor.purge();
+            store.dispatch(resetAll());
+        } finally {
+            window.location.reload();
+        }
     };
 
     return (
@@ -366,6 +379,30 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         <button onClick={() => restoreStateFromServer(localSettings.syncSettings.syncClientId, localSettings.syncSettings.syncBaseUrl)} className="w-full py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg text-sm flex items-center justify-center gap-2 border border-[var(--color-border)]">
                                             <RotateCcw className="w-4 h-4" /> {t('settings.others.sync.restoreRemote')}
                                         </button>
+                                    </div>
+                                </div>
+
+                                {/* Danger Zone section (collapsed by default at the very bottom) */}
+                                <div className="pt-4 border-t border-[var(--color-border)]">
+                                    <div className="rounded-lg border border-red-500/30 bg-red-500/5">
+                                        <details className="group">
+                                            <summary className="px-3 py-2 flex items-center justify-between text-sm font-medium cursor-pointer list-none">
+                                                <span className="flex items-center text-red-600">
+                                                    <Trash2 className="w-4 h-4 mr-2" /> {t('settings.others.reset.title')}
+                                                </span>
+                                                <ChevronDown className="w-4 h-4 text-[var(--color-icon-tertiary)] transition-transform group-open:rotate-180" />
+                                            </summary>
+                                            <div className="px-3 pb-3 space-y-3">
+                                                <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.reset.desc')}</p>
+                                                <button
+                                                    onClick={handleDeleteAll}
+                                                    id="delete-all-data-btn"
+                                                    className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm flex items-center justify-center gap-2"
+                                                >
+                                                    <Trash2 className="w-4 h-4" /> {t('settings.others.reset.deleteButton')}
+                                                </button>
+                                            </div>
+                                        </details>
                                     </div>
                                 </div>
                             </div>

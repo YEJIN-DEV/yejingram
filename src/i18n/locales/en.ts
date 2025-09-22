@@ -7,8 +7,8 @@ const en = {
         cancel: "Cancel",
         save: "Save",
         unknown: "Unknown",
-    uploading: "Uploading…",
-    syncing: "Syncing…",
+        uploading: "Uploading…",
+        syncing: "Syncing…",
     },
 
     units: {
@@ -423,6 +423,12 @@ const en = {
                 syncNow: "Sync Now",
                 restoreRemote: "Restore from server",
                 syncing: "Syncing...",
+            },
+            reset: {
+                title: "Delete data",
+                desc: "Permanently remove all contacts, rooms, messages, and settings saved in this app. This action cannot be undone. We recommend backing up first.",
+                deleteButton: "Delete all data",
+                confirm: "Are you sure you want to delete ALL data? This cannot be undone."
             },
             saveButton: "Save",
         },

@@ -423,6 +423,12 @@ const ko = {
                 syncNow: "지금 동기화",
                 restoreRemote: "서버로부터 복원",
             },
+            reset: {
+                title: "데이터 삭제",
+                desc: "앱에 저장된 모든 연락처, 채팅방, 메시지, 설정을 완전히 삭제합니다. 이 작업은 되돌릴 수 없습니다. 진행 전에 백업을 권장합니다.",
+                deleteButton: "모든 데이터 삭제",
+                confirm: "정말 모든 데이터를 삭제할까요? 이 작업은 되돌릴 수 없습니다."
+            },
             saveButton: "저장",
         },
         alerts: {
