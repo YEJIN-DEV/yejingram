@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings, Bot, Plus, X, User } from 'lucide-react';
+import { Settings, Bot, Plus, X, User, Megaphone } from 'lucide-react';
 import { selectAllCharacters } from '../../entities/character/selectors';
 import { useDispatch, useSelector } from 'react-redux';
 import CharacterList from './CharacterList';
@@ -13,14 +13,15 @@ interface SidebarProps {
     roomId: string | null;
     isMobileSidebarOpen: boolean;
     setRoomId: (id: string | null) => void;
-    openSettingsModal: () => void;
+    toggleAnnouncementsPanel: () => void;
+    toggleSettingsPanel: () => void;
     toggleCharacterPanel: () => void;
     openCreateGroupChatModal: () => void;
     openEditGroupChatModal: () => void;
     onCloseMobile?: () => void;
 }
 
-function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, toggleCharacterPanel, openCreateGroupChatModal, openEditGroupChatModal, onCloseMobile }: SidebarProps) {
+function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, toggleAnnouncementsPanel, toggleSettingsPanel, toggleCharacterPanel, openCreateGroupChatModal, openEditGroupChatModal, onCloseMobile }: SidebarProps) {
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const characters = useSelector(selectAllCharacters);
@@ -65,8 +66,16 @@ function Sidebar({ roomId, isMobileSidebarOpen, setRoomId, openSettingsModal, to
                             <Plus className="w-6 h-6 text-[var(--color-icon-primary)]" />
                         </button>
                         <button
+                            id="open-announcements-modal"
+                            onClick={toggleAnnouncementsPanel}
+                            className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] transition-colors"
+                            title={t('sidebar.tooltipAnnouncements')}
+                        >
+                            <Megaphone className="w-6 h-6 text-[var(--color-icon-primary)]" />
+                        </button>
+                        <button
                             id="open-settings-modal"
-                            onClick={openSettingsModal}
+                            onClick={toggleSettingsPanel}
                             className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] transition-colors"
                             title={t('sidebar.tooltipSettings')}
                         >

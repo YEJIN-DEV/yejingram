@@ -33,6 +33,7 @@ const ja = {
         tooltipClose: "閉じる",
         tooltipSettings: "設定",
         tooltipNewChat: "新しいチャット",
+        tooltipAnnouncements: "お知らせ",
         searchPlaceholder: "検索…",
         createGroupChat: "グループチャットを作成",
         contacts: "連絡先",
@@ -62,6 +63,19 @@ const ja = {
             deleteTitle: "ルームを削除",
             deleteConfirm: "このチャットルームを削除しますか？",
         },
+    },
+
+    announcements: {
+        title: "お知らせ",
+        all: "すべて",
+        servicenotes: "サービスノート",
+        patchnotes: "パッチノート",
+        loading: "読み込み中…",
+        loadingPreview: "プレビューを読み込み中…",
+        loadMore: "さらに表示",
+        endOfList: "これ以上お知らせはありません。",
+        noAnnouncements: "まだお知らせはありません。",
+        failedLoading: "お知らせの読み込みに失敗しました。",
     },
 
     main: {
