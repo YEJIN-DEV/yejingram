@@ -35,7 +35,7 @@ type PutBody = {
 // ---- App setup ----
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '100mb' }));
 
 const PORT = Number(process.env.PORT) || 3001;
 const DATA_DIR = path.resolve(process.cwd(), 'server', 'data');
