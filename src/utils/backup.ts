@@ -353,7 +353,31 @@ export async function sendDeltaToServer(clientId: string, payload: DeltaPayload,
   if (!json.ok) throw new Error(json.error || 'sync failed');
   if (json.delta) {
     store.dispatch({ type: 'sync/applyDeltaStart' });
-    const { upserts } = json.delta;
+    const { upserts, deletes } = json.delta;
+    // 1) 먼저 서버가 지워진 것으로 표시한 항목들을 제거합니다.
+    try {
+      if (deletes?.characters && deletes.characters.length > 0) {
+        for (const id of deletes.characters) {
+          // characters slice엔 removeMany가 없어 개별 제거
+          store.dispatch(charactersActions.removeOne(id as any));
+        }
+      }
+      if (deletes?.rooms && deletes.rooms.length > 0) {
+        for (const id of deletes.rooms) {
+          // rooms slice엔 removeMany가 없어 개별 제거
+          store.dispatch(roomsActions.removeOne(id as any));
+        }
+      }
+      if (deletes?.messages && deletes.messages.length > 0) {
+        // messages slice는 removeMany 지원
+        store.dispatch(messagesActions.removeMany(deletes.messages as any));
+      }
+    } catch (e) {
+      // 삭제 처리 중 오류가 발생해도 동기화를 중단하지 않습니다.
+      console.error('apply deletes failed', e);
+    }
+    // 2) 이후 upsert(추가/갱신)를 적용합니다.
+    const { upserts: _ignore } = json.delta;
     if (upserts.characters?.length) store.dispatch(charactersActions.importCharacters(upserts.characters as any));
     if (upserts.rooms?.length) store.dispatch(roomsActions.importRooms(upserts.rooms as any));
     if (upserts.messages?.length) store.dispatch(messagesActions.importMessages(upserts.messages as any));
