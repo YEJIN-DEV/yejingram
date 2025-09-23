@@ -4,6 +4,7 @@ import { store } from '../app/store';
 import { persistor, resetAll } from '../app/store';
 import { settingsActions } from '../entities/setting/slice';
 import { initialApiConfigs } from '../entities/setting/slice';
+import { initialSyncSettings } from '../entities/setting/slice';
 import { initialImageApiConfigs } from '../entities/setting/image/slice';
 import type { ApiProvider } from '../entities/setting/types';
 import type { ImageApiProvider } from '../entities/setting/image/types';
@@ -92,7 +93,8 @@ class ErrorBoundary extends Component<Props, State> {
                 useStructuredOutput: true,
                 speedup: 2,
                 personas: [],
-                selectedPersonaId: null
+                selectedPersonaId: null,
+                syncSettings: initialSyncSettings
             }));
         }
         this.setState({ hasError: false, error: undefined });
