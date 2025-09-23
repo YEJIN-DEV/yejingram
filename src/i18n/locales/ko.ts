@@ -436,6 +436,8 @@ const ko = {
                 autoSyncHint: "이 기기에서 발생한 변경 사항을 서버와 자동으로 동기화합니다.",
                 syncNow: "지금 동기화",
                 restoreRemote: "서버로부터 복원",
+                failed: "동기화에 실패했습니다. 서버 주소와 네트워크를 확인하세요.",
+                restoreFailed: "복원에 실패했습니다. 서버 주소와 네트워크를 확인하세요.",
             },
             reset: {
                 title: "데이터 삭제",

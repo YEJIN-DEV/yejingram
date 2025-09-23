@@ -437,6 +437,8 @@ const en = {
                 syncNow: "Sync Now",
                 restoreRemote: "Restore from server",
                 syncing: "Syncing...",
+                failed: "Sync failed. Please check server address and network.",
+                restoreFailed: "Restore failed. Please check server address and network.",
             },
             reset: {
                 title: "Delete data",
