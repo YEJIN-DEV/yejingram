@@ -13,9 +13,10 @@ interface GroupChatItemProps {
     setRoomId: (id: string | null) => void;
     isSelected: boolean;
     openEditGroupChatModal: () => void;
+    useDoubleClick?: boolean;
 }
 
-function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: GroupChatItemProps) {
+function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal, useDoubleClick = false }: GroupChatItemProps) {
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const allCharacters = useSelector(selectAllCharacters);
@@ -57,7 +58,7 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal }: 
         <div
             className={`relative group cursor-pointer transition-all duration-200 px-4 py-3 select-none ${isSelected ? 'bg-[var(--color-bg-roomlist)] border-l-4 border-[var(--color-focus-border)]' : 'hover:bg-[var(--color-bg-secondary)]'
                 }`}
-            onDoubleClick={handleRoomSelect}
+            {...(useDoubleClick ? { onDoubleClick: handleRoomSelect } : { onClick: handleRoomSelect })}
         >
             <div className="absolute top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 z-10">
                 <button

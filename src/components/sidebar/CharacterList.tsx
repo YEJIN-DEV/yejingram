@@ -36,6 +36,8 @@ function CharacterList({
     let totalUnreadCount = 0;
     const state = useSelector((state: RootState) => state);
 
+    const isMobile = window.innerWidth <= 768;
+
     chatRooms.forEach(room => {
         const last = selectMessagesByRoomId(state, room.id).slice(-1)[0] as Message | undefined;
         if (last && (!lastMessage || last.createdAt > lastMessage.createdAt)) lastMessage = last;
@@ -163,7 +165,7 @@ function CharacterList({
                                 unreadCount={room.unreadCount || 0}
                                 setRoomId={setRoomId}
                                 isSelected={selectedRoomId === room.id}
-                                useDoubleClick={true}
+                                useDoubleClick={isMobile}
                             />
                         </div>
                     ))}

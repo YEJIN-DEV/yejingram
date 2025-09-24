@@ -13,6 +13,7 @@ interface GroupChatListProps {
 
 function GroupChatList({ rooms, setRoomId, selectedRoomId, openCreateGroupChatModal, openEditGroupChatModal }: GroupChatListProps) {
     const { t } = useTranslation();
+    const isMobile = window.innerWidth <= 768;
     if (rooms.length === 0) return null;
 
     return (
@@ -41,6 +42,7 @@ function GroupChatList({ rooms, setRoomId, selectedRoomId, openCreateGroupChatMo
                         setRoomId={setRoomId}
                         isSelected={selectedRoomId === room.id}
                         openEditGroupChatModal={openEditGroupChatModal}
+                        useDoubleClick={isMobile}
                     />
                 ))}
             </div>
