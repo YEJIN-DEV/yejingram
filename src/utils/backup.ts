@@ -8,6 +8,7 @@ import { settingsActions } from '../entities/setting/slice';
 import { lastSavedActions } from '../entities/lastSaved/slice';
 import type { EntityState, EntityId } from '@reduxjs/toolkit';
 import { selectLastSaved } from '../entities/lastSaved/selectors';
+import { uiActions } from '../entities/ui/slice';
 
 export function entityStateToArray<T>(
   // Id extends PropertyKey 대신 Id extends EntityId를 사용합니다.
@@ -70,7 +71,7 @@ export async function backupStateToFile() {
 }
 
 // ---------- 복원 ----------
-export async function restoreStateFromFile(file: File) {
+export async function restoreStateFromFile(file: File, autoSync?: boolean) {
   const text = await file.text();
 
   let parsed: BackupFile;
@@ -80,15 +81,16 @@ export async function restoreStateFromFile(file: File) {
     throw new Error('잘못된 JSON 파일입니다.');
   }
 
-  await restoreStateFromPayload(parsed);
+  await restoreStateFromPayload(parsed, autoSync);
 }
 
-export async function restoreStateFromPayload(payload: BackupFile) {
+export async function restoreStateFromPayload(payload: BackupFile, autoSync = true) {
   if (payload.app !== 'yejingram' || !payload.data) {
     throw new Error('이 앱의 백업 형식이 아닙니다.');
   }
 
-  store.dispatch({ type: 'sync/applyDeltaStart' });
+  if (autoSync) store.dispatch({ type: 'sync/applyDeltaStart' });
+
   await wipeAllState();
   let state = payload.data;
   for (let v = payload.version + 1; v <= persistConfig.version; v++) {
@@ -103,27 +105,95 @@ export async function restoreStateFromPayload(payload: BackupFile) {
   if (messages) store.dispatch(messagesActions.importMessages(entityStateToArray(messages)));
   if (settings) store.dispatch(settingsActions.importSettings(settings));
   if (lastSaved) store.dispatch(lastSavedActions.importLastSaved(lastSaved));
-  store.dispatch({ type: 'sync/applyDeltaEnd' });
+
+  if (autoSync) store.dispatch({ type: 'sync/applyDeltaEnd' });
 }
 
 // ---------- 서버 동기화 ----------
 export async function backupStateToServer(clientId: string, baseURL: string) {
-  fetch(`${baseURL}/api/sync/${clientId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  // 업로드 인디케이터 시작
+  store.dispatch(uiActions.setUploadProgress(0));
+  try {
+    const data = JSON.stringify({
       lastSaved: selectLastSaved(store.getState()),
       backup: buildBackupPayload(),
-    })
-  });
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', `${baseURL}/api/sync/${clientId}`);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.max(0, Math.min(100, Math.floor((event.loaded / event.total) * 100)));
+          store.dispatch(uiActions.setUploadProgress(percent));
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Upload failed: ${xhr.statusText}`));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Upload failed'));
+
+      xhr.send(data);
+    });
+  } finally {
+    // 업로드 인디케이터 종료
+    store.dispatch(uiActions.clearUploadProgress());
+  }
 }
 
 export async function restoreStateFromServer(clientId: string, baseURL: string) {
-  const res = await fetch(`${baseURL}/api/sync/${clientId}`);
-  if (res.ok) {
-    const data = await res.json();
-    if (data) {
+  // 다운로드 진행률을 바이트 기준으로 표시
+  store.dispatch(uiActions.setSyncProgress(0));
+  try {
+    const res = await fetch(`${baseURL}/api/sync/${clientId}`);
+    if (!res.ok) return;
+
+    const totalStr = res.headers.get('content-length');
+    const total = totalStr ? parseInt(totalStr, 10) : 0;
+    const body = res.body as ReadableStream<Uint8Array> | null;
+
+    let jsonText: string | null = null;
+
+    if (body && typeof (body as any).getReader === 'function' && total > 0) {
+      const reader = body.getReader();
+      const decoder = new TextDecoder();
+      let received = 0;
+      let text = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          received += value.byteLength;
+          text += decoder.decode(value, { stream: true });
+          const percent = Math.max(0, Math.min(100, Math.floor((received / total) * 100)));
+          store.dispatch(uiActions.setSyncProgress(percent));
+        }
+      }
+      // flush
+      text += new TextDecoder().decode();
+      jsonText = text;
+    } else {
+      // 총 길이를 알 수 없음
+      store.dispatch(uiActions.clearSyncProgress());
+      const data = await res.json();
+      await restoreStateFromPayload(data);
+      return;
+    }
+
+    if (jsonText) {
+      const data = JSON.parse(jsonText);
       await restoreStateFromPayload(data);
     }
+  } finally {
+    store.dispatch(uiActions.clearSyncProgress());
   }
 }

@@ -1,11 +1,11 @@
 import type { Middleware } from "redux";
-import type { RootState } from "../app/store";
-import { backupStateToServer } from "./backup";
+import { type RootState } from "../app/store";
+import { backupStateToServer } from "../utils/backup";
 import { lastSavedActions } from "../entities/lastSaved/slice";
 
 let applying = false;
 export const syncMiddleware: Middleware<{}, RootState> = store => next => (action: any) => {
-    if (action.type.startsWith('persist/')) {
+    if (action.type === lastSavedActions.markSaved.type || action.type.startsWith('persist/') || action.type.startsWith('ui/')) {
         return next(action);
     }
 
@@ -19,10 +19,7 @@ export const syncMiddleware: Middleware<{}, RootState> = store => next => (actio
     }
 
     const result = next(action);
-    if (
-        action.type !== lastSavedActions.markSaved.type &&
-        !action.type.startsWith('persist/')
-    ) {
+    if (action.type !== lastSavedActions.markSaved.type) {
         store.dispatch(lastSavedActions.markSaved());
     }
     console.log('Dispatching action:', action);

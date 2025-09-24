@@ -1,5 +1,5 @@
 import { configureStore, combineReducers, type Action } from '@reduxjs/toolkit';
-import { syncMiddleware } from '../utils/syncMiddleware';
+import { syncMiddleware } from '../services/syncMiddleware';
 import localforage from 'localforage';
 import {
     persistReducer,

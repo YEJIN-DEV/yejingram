@@ -19,7 +19,7 @@ import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
-import { selectForceShowSyncModal, selectIsSyncing } from './entities/ui/selectors';
+import { selectForceShowSyncModal, selectUI } from './entities/ui/selectors';
 import i18n from './i18n/i18n'
 import { settingsActions } from './entities/setting/slice'
 import { charactersActions } from './entities/character/slice'
@@ -37,7 +37,8 @@ function App() {
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
   const colorTheme = useSelector(selectColorTheme);
   const settings = useSelector(selectAllSettings);
-  const isSyncing = useSelector(selectIsSyncing);
+  const ui = useSelector(selectUI);
+  const isSyncing = (ui.syncProgress ?? 0) > 0;
   const forceShowSyncModal = useSelector(selectForceShowSyncModal);
   const uiLanguage = useSelector(selectUILanguage);
 

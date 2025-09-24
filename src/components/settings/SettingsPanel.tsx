@@ -12,7 +12,6 @@ import PersonaManager from './PersonaModal';
 import { ImageSettings } from './image/ImageSettings';
 import ThemeSettings from './ThemeSettings';
 import { Toggle } from '../Toggle';
-import { selectLastSaved } from '../../entities/lastSaved/selectors';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;
@@ -23,7 +22,6 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const settings = useSelector(selectAllSettings);
-    const lastSaved = useSelector(selectLastSaved);
     const tabContainerRef = useRef<HTMLDivElement>(null);
 
     const [localSettings, setLocalSettings] = useState<SettingsState>(settings);
@@ -40,7 +38,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
             if (!file) return;
 
             try {
-                await restoreStateFromFile(file);
+                await restoreStateFromFile(file, false);
                 alert(t('settings.alerts.backupImported'));
             } catch (err) {
                 console.error(err);
