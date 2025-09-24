@@ -429,7 +429,7 @@ const en = {
             },
             sync: {
                 title: "Server Sync",
-                clientIdLabel: "Client ID",
+                clientIdLabel: "Client ID (only English letters, numbers, underscores, and hyphens allowed)",
                 clientIdPlaceholder: "e.g., {{idexample}}",
                 serverAddrLabel: "Server Address",
                 autoSyncTitle: "Enable Auto Sync",

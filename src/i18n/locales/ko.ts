@@ -429,7 +429,7 @@ const ko = {
             },
             sync: {
                 title: "서버 동기화",
-                clientIdLabel: "클라이언트 ID",
+                clientIdLabel: "클라이언트 ID (영문/숫자/언더스코어/하이픈만 허용)",
                 clientIdPlaceholder: "예: {{idexample}}",
                 serverAddrLabel: "서버 주소",
                 autoSyncTitle: "자동 동기화 활성화",

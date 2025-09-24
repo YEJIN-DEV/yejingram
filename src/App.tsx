@@ -19,7 +19,6 @@ import { setActiveRoomId } from './utils/activeRoomTracker'
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
-import { useSyncOnChange } from './utils/useSyncOnChange';
 import { selectForceShowSyncModal, selectIsSyncing } from './entities/ui/selectors';
 import i18n from './i18n/i18n'
 import { settingsActions } from './entities/setting/slice'
@@ -118,8 +117,8 @@ function App() {
     setActiveRoomId(roomId);
   }, [roomId]);
 
-  // Sync on state changes (debounced, minimal deltas)
-  useSyncOnChange();
+  // // Sync on state changes (debounced, minimal deltas)
+  // useSyncOnChange();
 
   // 패널 자동 닫힘: "편집 중이었다가" editingCharacterId가 null이 될 때만 닫기
   const prevEditingIdRef = useRef<number | null>(editingCharacterId);

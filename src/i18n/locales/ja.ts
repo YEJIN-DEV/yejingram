@@ -429,7 +429,7 @@ const ja = {
             },
             sync: {
                 title: "サーバー同期",
-                clientIdLabel: "クライアント ID",
+                clientIdLabel: "クライアント ID (英数字、アンダースコア、ハイフンのみ許可)",
                 clientIdPlaceholder: "例: {{idexample}}",
                 serverAddrLabel: "サーバーアドレス",
                 autoSyncTitle: "自動同期を有効化",

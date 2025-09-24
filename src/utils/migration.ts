@@ -28,6 +28,10 @@ type Rules = {
 type TargetInfo = { target: any; parent: any; key: string };
 
 function traverseTargets(root: any, path: string): TargetInfo[] {
+    if (path === '' || path == null) {
+        // 빈 경로는 루트 자체를 타겟으로 취급
+        return [{ target: root, parent: null, key: '' }];
+    }
     const parts = path.split('.');
     const results: TargetInfo[] = [];
 

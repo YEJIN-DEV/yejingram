@@ -12,6 +12,7 @@ import PersonaManager from './PersonaModal';
 import { ImageSettings } from './image/ImageSettings';
 import ThemeSettings from './ThemeSettings';
 import { Toggle } from '../Toggle';
+import { selectLastSaved } from '../../entities/lastSaved/selectors';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;
@@ -22,6 +23,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const settings = useSelector(selectAllSettings);
+    const lastSaved = useSelector(selectLastSaved);
     const tabContainerRef = useRef<HTMLDivElement>(null);
 
     const [localSettings, setLocalSettings] = useState<SettingsState>(settings);
@@ -361,7 +363,6 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     />
                                     <div className="grid grid-cols-2 gap-2">
                                         <button onClick={async () => {
-                                            dispatch(settingsActions.setSettings(localSettings));
                                             try {
                                                 await backupStateToServer(localSettings.syncSettings.syncClientId, localSettings.syncSettings.syncBaseUrl);
                                             } catch (err) {
@@ -372,7 +373,6 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             <CloudUpload className="w-4 h-4" /> {t('settings.others.sync.syncNow')}
                                         </button>
                                         <button onClick={async () => {
-                                            dispatch(settingsActions.setSettings(localSettings));
                                             try {
                                                 await restoreStateFromServer(localSettings.syncSettings.syncClientId, localSettings.syncSettings.syncBaseUrl);
                                             } catch (err) {
