@@ -31,7 +31,7 @@ interface MainChatProps {
   room: Room | null;
   isMobileSidebarOpen: boolean;
   onToggleMobileSidebar: () => void;
-  onToggleCharacterPanel: () => void;
+  onToggleCharacterPanel: (characterId: number | null) => void;
   onToggleGroupchatSettings: () => void;
 }
 
@@ -370,7 +370,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
           onOpenAuthorNote={openAuthorNote}
           onOpenRoomMemory={() => setIsRoomMemoryOpen(true)}
           onOpenLoreBook={handleOpenLoreBook}
-          onOpenCharacterPanel={onToggleCharacterPanel}
+          onOpenCharacterPanel={() => onToggleCharacterPanel(character ? character.id : null)}
           onOpenGroupchatSettings={onToggleGroupchatSettings}
         />
 

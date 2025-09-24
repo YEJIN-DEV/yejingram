@@ -18,7 +18,7 @@ interface CharacterListProps {
     character: Character;
     setRoomId: (id: string | null) => void;
     selectedRoomId: string | null;
-    toggleCharacterPanel: () => void;
+    toggleCharacterPanel: (characterId: number | null) => void;
 }
 
 function CharacterList({
@@ -87,8 +87,8 @@ function CharacterList({
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
+                            toggleCharacterPanel(character.id);
                             dispatch(charactersActions.setEditingCharacterId(character.id));
-                            toggleCharacterPanel();
                         }}
                         className="p-1 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-tertiary)]/50 rounded-full text-[var(--color-icon-primary)] hover:text-[var(--color-text-accent)] transition-colors"
                         title={t('sidebar.characters.editTitle')}

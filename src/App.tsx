@@ -135,8 +135,13 @@ function App() {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
   };
 
-  const toggleCharacterPanel = () => {
-    setIsCharacterPanelOpen(!isCharacterPanelOpen);
+  const toggleCharacterPanel = (characterId: number | null) => {
+    // If currently open, but selecting different character, keep open
+    if (isCharacterPanelOpen && editingCharacterId !== characterId) {
+      setIsCharacterPanelOpen(true);
+    } else {
+      setIsCharacterPanelOpen(!isCharacterPanelOpen);
+    }
   };
 
   const toggleAnnouncementsPanel = () => {
@@ -172,7 +177,7 @@ function App() {
             toggleSettingsPanel()
             if (isAnnouncementsPanelOpen) toggleAnnouncementsPanel()
           }}
-          toggleCharacterPanel={toggleCharacterPanel}
+          toggleCharacterPanel={() => toggleCharacterPanel(null)}
           openCreateGroupChatModal={() => setIsCreateGroupChatModalOpen(true)}
           openEditGroupChatModal={() => setIsEditGroupChatModalOpen(true)}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
