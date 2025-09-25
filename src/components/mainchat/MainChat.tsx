@@ -262,6 +262,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
       userMessage[1] = { ...userMessage[1], id: nanoid(), type: 'TEXT', content: processedText || '' } as Message;
     }
 
+    dispatch({ type: 'messages/writingStart' });
     // Immediately show user's message
     for (const msg of userMessage) {
       dispatch(messagesActions.upsertOne(msg));

@@ -9,8 +9,8 @@ export const syncMiddleware: Middleware<{}, RootState> = store => next => (actio
         return next(action);
     }
 
-    if (action.type === 'sync/applyDeltaStart') applying = true;
-    else if (action.type === 'sync/applyDeltaEnd') applying = false;
+    if (action.type === 'sync/applyDeltaStart' || action.type === 'messages/writingStart') applying = true;
+    else if (action.type === 'sync/applyDeltaEnd' || action.type === 'messages/writingEnd') applying = false;
     else if (action.type !== lastSavedActions.markSaved.type) {
         const state = store.getState();
         if (!applying && state.settings.syncSettings.syncEnabled) {
