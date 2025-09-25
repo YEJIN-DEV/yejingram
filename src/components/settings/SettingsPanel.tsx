@@ -365,7 +365,11 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                 await backupStateToServer(localSettings.syncSettings.syncClientId, localSettings.syncSettings.syncBaseUrl);
                                             } catch (err) {
                                                 console.error(err);
-                                                alert(t('settings.others.sync.failed'));
+                                                if (err instanceof Error && err.cause == 'conflict') {
+                                                    alert(t('settings.others.sync.conflict'));
+                                                } else {
+                                                    alert(t('settings.others.sync.failed'));
+                                                }
                                             }
                                         }} className="w-full py-2 px-4 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg text-sm flex items-center justify-center gap-2" >
                                             <CloudUpload className="w-4 h-4" /> {t('settings.others.sync.syncNow')}

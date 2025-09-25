@@ -134,6 +134,8 @@ export async function backupStateToServer(clientId: string, baseURL: string) {
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve();
+        } else if (xhr.status === 409) {
+          reject(new Error('Already backed up to the latest version.', { cause: 'conflict' }));
         } else {
           reject(new Error(`Upload failed: ${xhr.statusText}`));
         }

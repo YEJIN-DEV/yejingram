@@ -439,6 +439,7 @@ const en = {
                 syncing: "Syncing...",
                 failed: "Sync failed. Please check server address and network.",
                 restoreFailed: "Restore failed. Please check server address and network.",
+                conflict: "A newer version is already uploaded to the server.",
             },
             reset: {
                 title: "Delete data",
