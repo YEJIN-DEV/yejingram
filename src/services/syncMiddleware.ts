@@ -2,10 +2,11 @@ import type { Middleware } from "redux";
 import { type RootState } from "../app/store";
 import { backupStateToServer } from "../utils/backup";
 import { lastSavedActions } from "../entities/lastSaved/slice";
-
 let applying = false;
 export const syncMiddleware: Middleware<{}, RootState> = store => next => (action: any) => {
-    if (action.type === lastSavedActions.markSaved.type || action.type.startsWith('persist/') || action.type.startsWith('ui/')) {
+    const blacklist = ['app/resetAll', 'rooms/resetUnread'];
+    const blacklistPrefixes = ['persist/', 'ui/', 'lastSaved/'];
+    if (blacklist.includes(action.type) || blacklistPrefixes.some(prefix => action.type.startsWith(prefix))) {
         return next(action);
     }
 
@@ -19,9 +20,8 @@ export const syncMiddleware: Middleware<{}, RootState> = store => next => (actio
     }
 
     const result = next(action);
-    if (action.type !== lastSavedActions.markSaved.type) {
-        store.dispatch(lastSavedActions.markSaved());
-    }
+
+    store.dispatch(lastSavedActions.markSaved());
     console.log('Dispatching action:', action);
     return result;
 };
