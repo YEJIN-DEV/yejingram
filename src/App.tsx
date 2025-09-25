@@ -16,6 +16,7 @@ import { selectEditingCharacterId } from './entities/character/selectors'
 import { selectAllSettings, selectColorTheme, selectUILanguage } from './entities/setting/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
+import { restoreStateFromServer } from './utils/backup'
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
@@ -37,6 +38,7 @@ function App() {
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
   const colorTheme = useSelector(selectColorTheme);
   const settings = useSelector(selectAllSettings);
+  const { syncEnabled, syncClientId, syncBaseUrl } = settings.syncSettings;
   const ui = useSelector(selectUI);
   const isSyncing = (ui.syncProgress ?? 0) > 0;
   const forceShowSyncModal = useSelector(selectForceShowSyncModal);
@@ -118,8 +120,15 @@ function App() {
     setActiveRoomId(roomId);
   }, [roomId]);
 
-  // // Sync on state changes (debounced, minimal deltas)
-  // useSyncOnChange();
+  const hasRequestedInitialRestoreRef = useRef(false);
+  useEffect(() => {
+    if (syncEnabled && syncClientId && syncBaseUrl && !hasRequestedInitialRestoreRef.current) {
+      hasRequestedInitialRestoreRef.current = true;
+      restoreStateFromServer(syncClientId, syncBaseUrl);
+    } else if (!syncEnabled) {
+      hasRequestedInitialRestoreRef.current = false;
+    }
+  }, []);
 
   // 패널 자동 닫힘: "편집 중이었다가" editingCharacterId가 null이 될 때만 닫기
   const prevEditingIdRef = useRef<number | null>(editingCharacterId);
