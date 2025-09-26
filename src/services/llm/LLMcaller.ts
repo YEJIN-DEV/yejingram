@@ -69,13 +69,14 @@ async function handleApiResponse(
             if (i > 0) {
                 await sleep(messagePart.delay || 1000);
             }
-            if (i === res.messages.length - 1) {
-                dispatch({ type: 'messages/writingEnd' });
-            }
 
             const messages = await createMessageFromPart(messagePart, room.id, char);
             for (const message of messages) {
                 dispatch(messagesActions.upsertOne(message));
+            }
+
+            if (i === res.messages.length - 1) {
+                dispatch({ type: 'messages/writingEnd' });
             }
         }
     }
