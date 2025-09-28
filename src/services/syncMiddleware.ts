@@ -23,6 +23,5 @@ export const syncMiddleware: Middleware<{}, RootState> = store => next => (actio
     const result = next(action);
 
     store.dispatch(lastSavedActions.markSaved());
-    console.log('Dispatching action:', action);
     return result;
 };
