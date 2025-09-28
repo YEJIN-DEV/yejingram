@@ -1,4 +1,5 @@
 import type { Character } from "../../entities/character/types";
+import type { NAIConfig } from "../../entities/setting/image/types";
 import { loadImage } from "../../utils/imageStego";
 
 export function buildGeminiImagePayload(positivePrompt: string, isSelfie: boolean, char: Character) {
@@ -19,9 +20,18 @@ export function buildGeminiImagePayload(positivePrompt: string, isSelfie: boolea
 
 }
 
-export async function buildNovelAIImagePayload(positivePrompt: string, negativePrompt: string, model: string, isSelfie: boolean, char: Character, styleAware: boolean) {
+export async function buildNovelAIImagePayload(positivePrompt: string, negativePrompt: string, model: string, isSelfie: boolean, char: Character, styleAware: boolean, naiConfig: NAIConfig | undefined) {
     function random(min: number, max: number) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    let skipCfgAboveSigma = null;
+    if (naiConfig?.varietyPlus) {
+        if (model === 'nai-diffusion-4-5-full' || model === 'nai-diffusion-4-5-curated') {
+            skipCfgAboveSigma = Math.sqrt(naiConfig?.width || 512 * naiConfig?.height || 768) * 0.05766;
+        } else {
+            skipCfgAboveSigma = Math.sqrt(naiConfig?.width || 512 * naiConfig?.height || 768) * 0.01889;
+        }
     }
 
     let payload: any = {
@@ -31,17 +41,17 @@ export async function buildNovelAIImagePayload(positivePrompt: string, negativeP
         "parameters": {
             "params_version": 3,
             "add_original_image": true,
-            "cfg_rescale": 0,
+            "cfg_rescale": naiConfig?.cfgRescale || 0,
             "controlnet_strength": 1,
             "dynamic_thresholding": false,
             "n_samples": 1,
-            "width": 512,
-            "height": 768,
-            "sampler": "k_dpmpp_sde",
-            "steps": 28,
-            "scale": 5,
+            "width": naiConfig?.width || 512,
+            "height": naiConfig?.height || 768,
+            "sampler": naiConfig?.sampler || "k_dpmpp_2m_sde",
+            "steps": naiConfig?.steps || 28,
+            "scale": naiConfig?.scale || 5,
             "negative_prompt": "",
-            "noise_schedule": "native",
+            "noise_schedule": naiConfig?.noiseSchedule || "native",
             "normalize_reference_strength_multiple": true,
             "ucPreset": 3,
             "uncond_scale": 1,
@@ -72,7 +82,7 @@ export async function buildNovelAIImagePayload(positivePrompt: string, negativeP
             "extra_noise_seed": random(0, 2 ** 32 - 1),
             "prefer_brownian": true,
             "deliberate_euler_ancestral_bug": false,
-            "skip_cfg_above_sigma": null
+            "skip_cfg_above_sigma": skipCfgAboveSigma,
         }
     }
     if (isSelfie && char.avatar) {

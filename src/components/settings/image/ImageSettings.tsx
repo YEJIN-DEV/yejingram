@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe, Code, Clock, Key, Image } from 'lucide-react';
+import { Globe, Code, Clock, Key, Image, ImageUpscale, X, Terminal, SquareTerminal, AudioLines } from 'lucide-react';
 import ArtStyleList from './ArtStyleManagerUI';
 import jsonEditor from 'jsoneditor';
 import 'jsoneditor/dist/jsoneditor.css';
@@ -82,6 +82,20 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
             config: {
               ...prev.imageSettings.config,
               [provider]: { ...currentImageProviderConfig, custom: { ...custom, [key]: value } }
+            }
+          }
+        };
+      } else if (key === 'cfgRescale' || key === 'width' || key === 'height' || key === 'sampler' || key === 'steps' || key === 'scale' || key === 'noiseSchedule' || key === 'varietyPlus') {
+        // For NovelAI naiConfig object
+        const naiConfig = currentImageProviderConfig.naiConfig ?? initialImageApiConfigs.novelai?.naiConfig;
+        return {
+          ...prev,
+          imageSettings: {
+            ...prev.imageSettings,
+            imageProvider: provider,
+            config: {
+              ...prev.imageSettings.config,
+              [provider]: { ...currentImageProviderConfig, naiConfig: { ...naiConfig, [key]: value } }
             }
           }
         };
@@ -277,21 +291,148 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
         </>
       )}
 
-      {/* NovelAI 스타일 인식 토글 - NovelAI가 선택된 경우에만 표시 */}
+      {/* NovelAI 세부 세팅 - NovelAI가 선택된 경우에만 표시 */}
       {imageProvider === 'novelai' && (
-        <Toggle
-          id="style-aware-toggle"
-          label={t('settings.image.novelai.styleAwareLabel')}
-          description={t('settings.image.novelai.styleAwareHelp')}
-          checked={settings.imageSettings.styleAware || false}
-          onChange={checked => setSettings(prev => ({
-            ...prev,
-            imageSettings: {
-              ...prev.imageSettings,
-              styleAware: checked
-            }
-          }))}
-        />
+        <>
+          <Toggle
+            id="style-aware-toggle"
+            label={t('settings.image.novelai.styleAwareLabel')}
+            description={t('settings.image.novelai.styleAwareHelp')}
+            checked={settings.imageSettings.styleAware || false}
+            onChange={checked => setSettings(prev => ({
+              ...prev,
+              imageSettings: {
+                ...prev.imageSettings,
+                styleAware: checked
+              }
+            }))}
+          />
+          <div>
+            <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
+              <ImageUpscale className="w-4 h-4 mr-2" />
+              {t('settings.image.novelai.imageSizeLabel')}
+            </label>
+            <div className="flex space-x-4">
+              <input
+                type="number"
+                min={64}
+                max={2624}
+                onChange={(e) => handleImageModelConfigChange('novelai', 'width', e.target.value)}
+                value={imageConfig.naiConfig?.width || 512}
+                placeholder="Width"
+                className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] border-[var(--color-border)] rounded-xl border focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm font-mono"
+              />
+              <span className="self-center text-[var(--color-text-interface)] font-semibold"><X className="w-4 h-4" /></span>
+              <input
+                type="number"
+                min={64}
+                max={2624}
+                onChange={(e) => handleImageModelConfigChange('novelai', 'height', e.target.value)}
+                value={imageConfig.naiConfig?.height || 768}
+                placeholder="Height"
+                className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] border-[var(--color-border)] rounded-xl border focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm font-mono"
+              />
+            </div>
+            <p className="text-xs text-[var(--color-text-informative-primary)] mt-1">
+              {t('settings.image.novelai.imageSizeHelp')}
+            </p>
+          </div>
+          <div>
+            <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
+              <span className="flex items-center"><Clock className="w-4 h-4 mr-2" />{t('settings.image.novelai.stepsLabel')}</span>
+              <span className="text-[var(--color-button-primary)] font-semibold">{imageConfig.naiConfig?.steps || 28}</span>
+            </label>
+            <input
+              type="range"
+              min={1}
+              max={50}
+              step={1}
+              value={imageConfig.naiConfig?.steps || 28}
+              onChange={(e) => handleImageModelConfigChange('novelai', 'steps', parseInt(e.target.value))}
+              className="w-full accent-[var(--color-button-primary)]"
+            />
+            <p className="text-xs text-[var(--color-text-informative-primary)] mt-1">
+              {t('settings.image.novelai.stepsHelp')}
+            </p>
+          </div>
+          <div>
+            <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
+              <span className="flex items-center"><Terminal className="w-4 h-4 mr-2" />{t('settings.image.novelai.scaleLabel')}</span>
+              <span className="text-[var(--color-button-primary)] font-semibold">{imageConfig.naiConfig?.scale || 5}</span>
+            </label>
+            <input
+              type="range"
+              min={0}
+              max={10}
+              step={0.1}
+              value={imageConfig.naiConfig?.scale || 5}
+              onChange={(e) => handleImageModelConfigChange('novelai', 'scale', parseFloat(e.target.value))}
+              className="w-full accent-[var(--color-button-primary)]"
+            />
+            <p className="text-xs text-[var(--color-text-informative-primary)] mt-1">
+              {t('settings.image.novelai.scaleHelp')}
+            </p>
+          </div>
+          <div>
+            <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
+              <span className="flex items-center"><SquareTerminal className="w-4 h-4 mr-2" />{t('settings.image.novelai.cfgRescaleLabel')}</span>
+              <span className="text-[var(--color-button-primary)] font-semibold">{imageConfig.naiConfig?.cfgRescale || 0}</span>
+            </label>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.02}
+              value={imageConfig.naiConfig?.cfgRescale || 0}
+              onChange={(e) => handleImageModelConfigChange('novelai', 'cfgRescale', parseFloat(e.target.value))}
+              className="w-full accent-[var(--color-button-primary)]"
+            />
+            <p className="text-xs text-[var(--color-text-informative-primary)] mt-1">
+              {t('settings.image.novelai.cfgRescaleHelp')}
+            </p>
+          </div>
+          <div>
+            <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
+              <Code className="w-4 h-4 mr-2" />
+              {t('settings.image.novelai.samplerLabel')}
+            </label>
+            <select
+              value={imageConfig.naiConfig?.sampler || 'k_dpmpp_2m_sde'}
+              onChange={(e) => handleImageModelConfigChange('novelai', 'sampler', e.target.value)}
+              className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] border-[var(--color-border)] rounded-xl border focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm font-mono"
+            >
+              <option value="k_euler">Euler</option>
+              <option value="k_euler_ancestral">Euler Ancestral</option>
+              <option value="k_dpmpp_2s_ancestral">DPM++ 2S Ancestral</option>
+              <option value="k_dpmpp_2m_sde">DPM++ 2M SDE</option>
+              <option value="k_dpmpp_2m">DPM++ 2M</option>
+              <option value="k_dpmpp_sde">DPM++ SDE</option>
+            </select>
+          </div>
+          <div>
+            <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
+              <AudioLines className="w-4 h-4 mr-2" />
+              {t('settings.image.novelai.noiseScheduleLabel')}
+            </label>
+            <select
+              value={imageConfig.naiConfig?.noiseSchedule || 'native'}
+              onChange={(e) => handleImageModelConfigChange('novelai', 'noiseSchedule', e.target.value)}
+              className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] border-[var(--color-border)] rounded-xl border focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm font-mono"
+            >
+              <option value="native">native</option>
+              <option value="karras">karras</option>
+              <option value="exponential">exponential</option>
+              <option value="polyexponential">polyexponential</option>
+            </select>
+          </div>
+          <Toggle
+            id="variety-plus-toggle"
+            label={t('settings.image.novelai.varietyPlusLabel')}
+            description={t('settings.image.novelai.varietyPlusHelp')}
+            checked={imageConfig.naiConfig?.varietyPlus || false}
+            onChange={checked => handleImageModelConfigChange('novelai', 'varietyPlus', checked)}
+          />
+        </>
       )}
 
       {/* 그림체 설정 (ArtStyleManagerUI 연동) */}

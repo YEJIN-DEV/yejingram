@@ -353,6 +353,22 @@ const en = {
             novelai: {
                 styleAwareLabel: "Style-aware mode",
                 styleAwareHelp: "When enabled, recognizes character image styles to generate consistent artwork.",
+                imageSizeLabel: "Image size",
+                width: "Width",
+                height: "Height",
+                imageSizeHelp: "Set the width and height of the image to be generated. (Default: 512x768)",
+                samplerLabel: "Sampler",
+                samplerHelp: "Select the sampler algorithm to use for image generation. (Default: DPM++ 2M SDE)",
+                stepsLabel: "Steps",
+                stepsHelp: "Set the number of steps to use for image generation. (Default: 28)",
+                scaleLabel: "CFG Scale",
+                scaleHelp: "Set the model's focus strength on the prompt. (Default: 5)",
+                varietyPlusLabel: "Variety+",
+                varietyPlusHelp: "Increases the fluidity of prompt interpretation.",
+                noiseScheduleLabel: "Noise Schedule",
+                noiseScheduleHelp: "Sets the noise reduction method. (Default: native)",
+                cfgRescaleLabel: "CFG Rescaling",
+                cfgRescaleHelp: "Adjusts the strength of CFG rescaling. (Default: 0)",
             },
             artStyle: {
                 modal: {

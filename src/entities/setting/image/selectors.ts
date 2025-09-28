@@ -77,3 +77,8 @@ export const selectStyleAware = createSelector(
     [selectImageSettingsState],
     (imageSettings) => imageSettings.styleAware
 );
+
+export const selectNAIConfig = createSelector(
+    [selectImageApiConfig],
+    (getConfig) => getConfig('novelai')?.naiConfig
+);

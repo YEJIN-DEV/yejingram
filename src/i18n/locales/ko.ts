@@ -353,6 +353,22 @@ const ko = {
             novelai: {
                 styleAwareLabel: "스타일 인식 모드",
                 styleAwareHelp: "활성화하면 캐릭터 이미지의 스타일을 인식하여 일관된 그림체로 생성합니다.",
+                imageSizeLabel: "이미지 크기",
+                width: "너비",
+                height: "높이",
+                imageSizeHelp: "생성할 이미지의 너비와 높이를 설정합니다. (기본: 512x768)",
+                samplerLabel: "샘플러",
+                samplerHelp: "이미지 생성에 사용할 샘플러 알고리즘을 선택합니다. (기본: DPM++ 2M SDE)",
+                stepsLabel: "스텝 수",
+                stepsHelp: "이미지 생성에 사용할 스텝 수를 설정합니다. (기본: 28)",
+                scaleLabel: "프롬프트 집중도",
+                scaleHelp: "프롬프트에 대한 모델의 집중도를 설정합니다. (기본: 5)",
+                varietyPlusLabel: "Variety+",
+                varietyPlusHelp: "프롬프트 해석의 유동성을 높입니다.",
+                noiseScheduleLabel: "노이즈 스케줄",
+                noiseScheduleHelp: "노이즈 감소 방식을 설정합니다. (기본: native)",
+                cfgRescaleLabel: "CFG 리스케일링",
+                cfgRescaleHelp: "CFG 리스케일링 강도를 조절합니다. (기본: 0)",
             },
             artStyle: {
                 modal: {

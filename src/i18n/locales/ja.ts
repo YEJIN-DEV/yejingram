@@ -353,6 +353,22 @@ const ja = {
             novelai: {
                 styleAwareLabel: "スタイル認識モード",
                 styleAwareHelp: "有効にすると、キャラクター画像のスタイルを認識して一貫した画風で生成します。",
+                imageSizeLabel: "画像サイズ",
+                width: "幅",
+                height: "高さ",
+                imageSizeHelp: "生成する画像の幅と高さを設定します。 (デフォルト: 512x768)",
+                samplerLabel: "サンプラー",
+                samplerHelp: "画像生成に使用するサンプラーアルゴリズムを選択します。 (デフォルト: DPM++ 2M SDE)",
+                stepsLabel: "ステップ数",
+                stepsHelp: "画像生成に使用するステップ数を設定します。 (デフォルト: 28)",
+                scaleLabel: "プロンプト集中度",
+                scaleHelp: "プロンプトに対するモデルの集中度を設定します。 (デフォルト: 5)",
+                varietyPlusLabel: "Variety+",
+                varietyPlusHelp: "プロンプト解釈の流動性を高めます。",
+                noiseScheduleLabel: "ノイズスケジュール",
+                noiseScheduleHelp: "ノイズ減少方式を設定します。 (デフォルト: native)",
+                cfgRescaleLabel: "CFGリスケーリング",
+                cfgRescaleHelp: "CFGリスケーリングの強度を調整します。 (デフォルト: 0)",
             },
             artStyle: {
                 modal: {

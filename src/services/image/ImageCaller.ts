@@ -1,6 +1,6 @@
 import { store } from "../../app/store";
 import type { Character } from "../../entities/character/types";
-import { selectCurrentArtStyle, selectCurrentImageApiConfig, selectStyleAware } from "../../entities/setting/image/selectors";
+import { selectCurrentArtStyle, selectCurrentImageApiConfig, selectNAIConfig, selectStyleAware } from "../../entities/setting/image/selectors";
 import { unzipToDataUrls } from "../../utils/zip2png";
 import { GEMINI_API_BASE_URL, NAI_DIFFUSION_API_BASE_URL } from "../URLs";
 import { buildGeminiImagePayload, buildNovelAIImagePayload } from "./ImagePromptBuilder";
@@ -28,7 +28,8 @@ export async function callImageGeneration(imageGenerationSetting: { prompt: stri
         url = NAI_DIFFUSION_API_BASE_URL;
         headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
         const styleAware = selectStyleAware(store.getState());
-        payload = await buildNovelAIImagePayload(positivePrompt, negativePrompt, model, imageGenerationSetting.isSelfie, char, styleAware);
+        const naiConfig = selectNAIConfig(store.getState());
+        payload = await buildNovelAIImagePayload(positivePrompt, negativePrompt, model, imageGenerationSetting.isSelfie, char, styleAware, naiConfig);
     } else if (provider === 'gemini') {
         if (!imageConfig.apiKey) throw new Error('Gemini API Key가 설정되지 않았습니다.');
         url = `${GEMINI_API_BASE_URL}${model}:generateContent?key=${imageConfig.apiKey}`;

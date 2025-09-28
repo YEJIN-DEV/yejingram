@@ -10,7 +10,17 @@ export const initialImageApiConfigs: Record<ImageApiProvider, ImageApiConfig> = 
     },
     novelai: {
         apiKey: '',
-        model: 'nai-diffusion-2-1'
+        model: 'nai-diffusion-4-5-full',
+        naiConfig: {
+            cfgRescale: 0,
+            width: 512,
+            height: 768,
+            sampler: 'k_dpmpp_2m_sde',
+            steps: 28,
+            scale: 5,
+            noiseSchedule: 'native',
+            varietyPlus: false,
+        }
     },
     comfy: {
         custom: {
