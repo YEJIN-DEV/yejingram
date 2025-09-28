@@ -429,7 +429,7 @@ const ja = {
             },
             sync: {
                 title: "サーバー同期",
-                clientIdLabel: "クライアント ID",
+                clientIdLabel: "クライアント ID (英数字、アンダースコア、ハイフンのみ許可)",
                 clientIdPlaceholder: "例: {{idexample}}",
                 serverAddrLabel: "サーバーアドレス",
                 autoSyncTitle: "自動同期を有効化",
@@ -438,6 +438,7 @@ const ja = {
                 restoreRemote: "サーバーから復元",
                 failed: "同期に失敗しました。サーバーアドレスとネットワークを確認してください。",
                 restoreFailed: "復元に失敗しました。サーバーアドレスとネットワークを確認してください。",
+                conflict: "サーバーに既に新しいバージョンがアップロードされています。",
             },
             reset: {
                 title: "データを削除",

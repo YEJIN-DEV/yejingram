@@ -16,11 +16,11 @@ import { selectEditingCharacterId } from './entities/character/selectors'
 import { selectAllSettings, selectColorTheme, selectUILanguage } from './entities/setting/selectors'
 import { type RootState } from './app/store'
 import { setActiveRoomId } from './utils/activeRoomTracker'
+import { restoreStateFromServer } from './utils/backup'
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
-import { useSyncOnChange } from './utils/useSyncOnChange';
-import { selectForceShowSyncModal, selectIsSyncing } from './entities/ui/selectors';
+import { selectForceShowSyncModal, selectUI } from './entities/ui/selectors';
 import i18n from './i18n/i18n'
 import { settingsActions } from './entities/setting/slice'
 import { charactersActions } from './entities/character/slice'
@@ -38,7 +38,9 @@ function App() {
   const [isEditGroupChatModalOpen, setIsEditGroupChatModalOpen] = useState(false);
   const colorTheme = useSelector(selectColorTheme);
   const settings = useSelector(selectAllSettings);
-  const isSyncing = useSelector(selectIsSyncing);
+  const { syncEnabled, syncClientId, syncBaseUrl } = settings.syncSettings;
+  const ui = useSelector(selectUI);
+  const isSyncing = (ui.syncProgress ?? 0) > 0;
   const forceShowSyncModal = useSelector(selectForceShowSyncModal);
   const uiLanguage = useSelector(selectUILanguage);
 
@@ -118,8 +120,15 @@ function App() {
     setActiveRoomId(roomId);
   }, [roomId]);
 
-  // Sync on state changes (debounced, minimal deltas)
-  useSyncOnChange();
+  const hasRequestedInitialRestoreRef = useRef(false);
+  useEffect(() => {
+    if (syncEnabled && syncClientId && syncBaseUrl && !hasRequestedInitialRestoreRef.current) {
+      hasRequestedInitialRestoreRef.current = true;
+      restoreStateFromServer(syncClientId, syncBaseUrl);
+    } else if (!syncEnabled) {
+      hasRequestedInitialRestoreRef.current = false;
+    }
+  }, []);
 
   // 패널 자동 닫힘: "편집 중이었다가" editingCharacterId가 null이 될 때만 닫기
   const prevEditingIdRef = useRef<number | null>(editingCharacterId);

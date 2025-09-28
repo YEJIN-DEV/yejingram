@@ -52,7 +52,7 @@ This project is licensed under the GPL-3.0 License. See the [LICENSE](./LICENSE)
 
 ## Sync Server (optional)
 
-경량 Express 동기화 서버가 포함되어 있습니다. 해시를 기반으로 변경된 엔티티만 송수신하는 방식으로 동기화합니다.
+경량 Express 동기화 서버가 포함되어 있습니다. 저장/수정/삭제등의 상태 변화가 발생시 이를 원격 서버와 동기화 합니다.
 
 서버 실행:
 

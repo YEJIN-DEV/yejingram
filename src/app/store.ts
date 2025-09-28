@@ -1,5 +1,5 @@
 import { configureStore, combineReducers, type Action } from '@reduxjs/toolkit';
-import { syncMiddleware } from '../utils/syncMiddleware';
+import { syncMiddleware } from '../services/syncMiddleware';
 import localforage from 'localforage';
 import {
     persistReducer,
@@ -21,6 +21,7 @@ import settingsReducer, { initialSyncSettings, initialState as settingsInitialSt
 import { initialState as imageSettingsInitialState } from '../entities/setting/image/slice';
 import { applyRules } from '../utils/migration';
 import uiReducer from '../entities/ui/slice';
+import lastSavedReducer from '../entities/lastSaved/slice';
 
 localforage.config({
     name: 'yejingram',
@@ -49,11 +50,18 @@ export const migrations = {
     },
     2: (state: any) => {
         state = applyRules(state, {
-            add: [{
-                path: 'settings',
-                keys: ['imageSettings', 'colorTheme', 'customThemeBase', 'customTheme', 'syncSettings'],
-                defaults: { imageSettings: imageSettingsInitialState, colorTheme: 'light', customThemeBase: 'light', customTheme: { light: {}, dark: {} }, syncSettings: initialSyncSettings }
-            }],
+            add: [
+                {
+                    path: 'settings',
+                    keys: ['imageSettings', 'colorTheme', 'customThemeBase', 'customTheme', 'syncSettings'],
+                    defaults: { imageSettings: imageSettingsInitialState, colorTheme: 'light', customThemeBase: 'light', customTheme: { light: {}, dark: {} }, syncSettings: initialSyncSettings }
+                },
+                {
+                    path: '',
+                    keys: ['lastSaved'],
+                    defaults: { lastSaved: { value: new Date().getTime() } }
+                }
+            ],
             move: [
                 {
                     from: 'settings.imageApiConfigs',
@@ -81,7 +89,7 @@ export const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
     version: 2,
-    whitelist: ['characters', 'rooms', 'messages', 'settings'],
+    whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved'],
     migrate: createMigrate(migrations, { debug: true }),
 };
 
@@ -91,6 +99,7 @@ const appReducer = combineReducers({
     settings: settingsReducer,
     messages: messageReducer,
     ui: uiReducer,
+    lastSaved: lastSavedReducer,
 });
 
 export const RESET_ALL = 'app/resetAll' as const;

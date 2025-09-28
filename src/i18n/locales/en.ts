@@ -429,7 +429,7 @@ const en = {
             },
             sync: {
                 title: "Server Sync",
-                clientIdLabel: "Client ID",
+                clientIdLabel: "Client ID (only English letters, numbers, underscores, and hyphens allowed)",
                 clientIdPlaceholder: "e.g., {{idexample}}",
                 serverAddrLabel: "Server Address",
                 autoSyncTitle: "Enable Auto Sync",
@@ -439,6 +439,7 @@ const en = {
                 syncing: "Syncing...",
                 failed: "Sync failed. Please check server address and network.",
                 restoreFailed: "Restore failed. Please check server address and network.",
+                conflict: "A newer version is already uploaded to the server.",
             },
             reset: {
                 title: "Delete data",
