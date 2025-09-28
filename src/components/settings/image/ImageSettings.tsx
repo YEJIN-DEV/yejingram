@@ -408,6 +408,9 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
               <option value="k_dpmpp_2m">DPM++ 2M</option>
               <option value="k_dpmpp_sde">DPM++ SDE</option>
             </select>
+            <p className="text-xs text-[var(--color-text-informative-primary)] mt-1">
+              {t('settings.image.novelai.samplerHelp')}
+            </p>
           </div>
           <div>
             <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
@@ -424,6 +427,9 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
               <option value="exponential">exponential</option>
               <option value="polyexponential">polyexponential</option>
             </select>
+            <p className="text-xs text-[var(--color-text-informative-primary)] mt-1">
+              {t('settings.image.novelai.noiseScheduleHelp')}
+            </p>
           </div>
           <Toggle
             id="variety-plus-toggle"
