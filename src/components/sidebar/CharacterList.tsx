@@ -127,12 +127,20 @@ function CharacterList({
                                     )}
                                 </div>
                                 <div className="flex items-center justify-between mt-1">
-                                    <p className="text-[var(--color-text-secondary)] text-sm truncate flex-1 mr-2">
+                                    <div className="flex items-center flex-1 mr-2 min-w-0 space-x-1">
+                                        <span className="text-[var(--color-text-secondary)] text-sm truncate block min-w-0">
+                                            {getMessageDisplayText(lastMessage, t)}
+                                        </span>
+                                        {chatRooms.length > 1 && (
+                                            <span className="text-[var(--color-text-informative-secondary)] text-sm flex-shrink-0">· {t('sidebar.characters.numOfRoom', { count: chatRooms.length })}</span>
+                                        )}
+                                    </div>
+                                    {/* <p className="text-[var(--color-text-secondary)] text-sm truncate flex-1 mr-2">
                                         {getMessageDisplayText(lastMessage, t)}
                                         {chatRooms.length > 1 && (
                                             <span className="text-[var(--color-text-informative-secondary)]"> · {t('sidebar.characters.numOfRoom', { count: chatRooms.length })}</span>
                                         )}
-                                    </p>
+                                    </p> */}
                                     <div className="flex items-center space-x-1 flex-shrink-0">
                                         {lastMessage && typeof lastMessage === 'object' && 'createdAt' in lastMessage && (lastMessage as Message).createdAt && (
                                             <span className="text-xs text-[var(--color-text-informative-secondary)]">

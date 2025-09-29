@@ -458,8 +458,14 @@ function ChatHeader({
   onOpenGroupchatSettings
 }: ChatHeaderProps) {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const onlineStatus = useCharacterOnlineStatus(character?.id ?? -1);
+  const textSampleSpanRef = useRef<HTMLSpanElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const avatarDivRef = useRef<HTMLDivElement>(null);
+  const buttonsDivRef = useRef<HTMLDivElement>(null);
+  const [charsCount, setCharsCount] = useState(0);
+
   const getHeaderAvatar = () => {
     if (room.type === 'Group') {
       return (
@@ -486,11 +492,43 @@ function ChatHeader({
     return room.name;
   };
 
+  useEffect(() => {
+    function calculate() {
+      if (!textSampleSpanRef.current || !headerRef.current || !avatarDivRef.current || !buttonsDivRef.current) return;
+
+      const rect = textSampleSpanRef.current.getBoundingClientRect();
+      const charWidth = rect.width / textSampleSpanRef.current.innerText.length;
+
+      const targetWidth = headerRef.current.clientWidth - avatarDivRef.current.clientWidth - buttonsDivRef.current.clientWidth - 48 - 6; // 48 for padding, 6 for margin
+
+      setCharsCount(Math.floor(targetWidth / charWidth));
+    }
+
+    calculate();
+    window.addEventListener('resize', calculate);
+    return () => window.removeEventListener('resize', calculate);
+  }, []);
+
+
   const getHeaderSubtitle = () => {
     if (room.type === 'Group') {
-      return memberChars && memberChars.length > 0
-        ? memberChars.map(char => char?.name).filter(Boolean).join(', ')
-        : t('main.group.participantsCount', { count: room.memberIds.length });
+      const THRESHOLD = (charsCount || 20) - (i18n.resolvedLanguage !== 'en' ? 8 : 14);
+      if (!(memberChars && memberChars.length > 0)) { return t('main.group.noParticipants') }
+      let concatedNames = '';
+      let totalLength = 0;
+      let memberCounts = memberChars.length;
+      for (const char of memberChars) {
+        if (!char) continue;
+        totalLength += char.name.length;
+        if (totalLength > THRESHOLD) {
+          concatedNames += t('main.group.participantsOverflowCount', { count: memberCounts });
+          break;
+        }
+        concatedNames += (concatedNames ? ', ' : '') + char.name;
+        totalLength += 2; // for ', '
+        memberCounts--;
+      }
+      return concatedNames;
     }
     if (room.type === 'Direct') {
       return room.name;
@@ -520,7 +558,7 @@ function ChatHeader({
   };
 
   return (
-    <header className="px-6 py-4 bg-[var(--color-bg-main)] border-b border-[var(--color-border)] flex items-center justify-between">
+    <header ref={headerRef} className="px-6 py-4 bg-[var(--color-bg-main)] border-b border-[var(--color-border)] flex items-center justify-between">
       <div className="flex items-center space-x-4">
         <button
           id="mobile-sidebar-toggle"
@@ -529,7 +567,7 @@ function ChatHeader({
         >
           <Menu className="h-5 w-5 text-[var(--color-icon-primary)]" />
         </button>
-        <div className="relative">
+        <div ref={avatarDivRef} className="relative">
           {getHeaderAvatar()}
         </div>
         <div className="flex-1">
@@ -582,6 +620,7 @@ function ChatHeader({
                       <Edit2 className={getEditButtonSize()} />
                     </button>
                   </div>
+                  <span ref={textSampleSpanRef} className="text-sm opacity-0 absolute">{t('main.hiddenRefText')}</span>
                   <p className="text-sm text-[var(--color-text-secondary)] flex items-center mt-1">
                     {getHeaderSubtitle()}
                   </p>
@@ -591,7 +630,7 @@ function ChatHeader({
           )}
         </div>
       </div>
-      <div className="flex items-center space-x-2">
+      <div ref={buttonsDivRef} className="flex items-center space-x-2">
         <button className="p-2 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-icon-primary)]" title={t('main.tooltips.authorNote')} onClick={onOpenAuthorNote}>
           <StickyNote className="w-5 h-5" />
         </button>

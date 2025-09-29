@@ -79,6 +79,7 @@ const ja = {
     },
 
     main: {
+        hiddenRefText: "日本語文字列テキスト比率確認用",
         newMemory: "新しい記憶が追加されました",
         filePreview: {
             alt: "ファイルプレビュー",
@@ -128,7 +129,8 @@ const ja = {
             deleteTitle: "削除",
         },
         group: {
-            participantsCount: "{{count}}人",
+            noParticipants: "参加者がいません",
+            participantsOverflowCount: " 外 {{count}}人",
             createModal: {
                 title: "グループチャットを作成",
                 nameLabel: "グループ名",

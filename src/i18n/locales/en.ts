@@ -79,6 +79,7 @@ const en = {
     },
 
     main: {
+        hiddenRefText: "Hidden reference text for English string ratio check",
         newMemory: "New memory added",
         filePreview: {
             alt: "File preview",
@@ -128,7 +129,8 @@ const en = {
             deleteTitle: "Delete",
         },
         group: {
-            participantsCount: "{{count}} people",
+            noParticipants: "No participants",
+            participantsOverflowCount: " and {{count}} others",
             createModal: {
                 title: "Create group chat",
                 nameLabel: "Group name",

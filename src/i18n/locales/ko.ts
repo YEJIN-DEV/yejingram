@@ -79,6 +79,7 @@ const ko = {
     },
 
     main: {
+        hiddenRefText: "한글 문자열 텍스트 비율 확인용",
         newMemory: "새로운 기억이 추가되었습니다",
         filePreview: {
             alt: "파일 미리보기",
@@ -128,7 +129,8 @@ const ko = {
             deleteTitle: "삭제",
         },
         group: {
-            participantsCount: "{{count}}명의 참여자",
+            noParticipants: "참여자가 없습니다",
+            participantsOverflowCount: " 외 {{count}}명",
             createModal: {
                 title: "그룹 채팅 만들기",
                 nameLabel: "그룹 이름",
