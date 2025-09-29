@@ -160,6 +160,9 @@
   --color-preview-accent-from: oklch(62.7% 0.265 303.9);
   /* blue-500 */
   --color-preview-accent-to: oklch(62.3% 0.214 259.815);
+
+  /* Invert When Darkmode */
+  --invert-filter: invert(0);
 }
 
 .dark {
@@ -333,6 +336,9 @@
   --color-preview-accent-from: #8b5cf6;
   /* blue-500 */
   --color-preview-accent-to: #3b82f6;
+
+  /* Invert When Darkmode */
+  --invert-filter: invert(1);
 }
 
 /* Instagram 스타일 Inter 폰트 설정 */

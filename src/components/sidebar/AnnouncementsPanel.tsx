@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import AnnouncementModal from '../modals/AnnouncementModal';
 import type { AnnouncementMeta } from '../../services/announcements';
 import { fetchAnnouncementContent, fetchAnnouncementsList, formatDate } from '../../services/announcements';
+import GitHubLogo from '../../assets/github-mark.svg';
 
 interface AnnouncementsPanelProps {
     onClose: () => void;
@@ -213,7 +214,10 @@ function AnnouncementsPanel({ onClose }: AnnouncementsPanelProps) {
             <div className="fixed md:relative top-0 bottom-0 z-40 w-full md:max-w-2xl left-0 md:left-auto bg-[var(--color-bg-main)] h-full flex flex-col border-r border-[var(--color-border)]">
                 <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)] shrink-0">
                     <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('announcements.title')}</h3>
-                    <button onClick={onClose} className="p-1 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors"><X className="w-5 h-5 text-[var(--color-icon-tertiary)]" /></button>
+                    <div className="flex items-center space-x-2">
+                        <a href="https://github.com/YEJIN-DEV/yejingram" target="_blank" rel="noopener noreferrer"><img src={GitHubLogo} alt="GitHub" className="w-6 h-6" style={{ filter: 'var(--invert-filter)' }} /></a>
+                        <button onClick={onClose} className="p-1 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors"><X className="w-5 h-5 text-[var(--color-icon-tertiary)]" /></button>
+                    </div>
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto flex-1" ref={scrollRef}>
                     {/* Tab Navigation */}
