@@ -34,7 +34,7 @@ function AnnouncementModal({ isOpen, title, date, content, onClose }: Announceme
             }}
         >
             <div
-                className="bg-[var(--color-bg-main)] rounded-2xl w-full max-w-2xl mx-4 shadow-xl border border-[var(--color-border)]"
+                className="bg-[var(--color-bg-main)] rounded-2xl w-full max-w-5xl mx-4 shadow-xl border border-[var(--color-border)]"
                 style={{ maxHeight: '90vh' }}
                 role="dialog"
                 aria-modal="true"
