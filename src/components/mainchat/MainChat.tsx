@@ -309,7 +309,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
     };
   }, [room?.id]);
 
-  if (!room || !character) {
+  if (!room || (!character && room?.type !== 'Group')) {
     return (
       <div className="flex-1 flex items-center justify-center bg-[var(--color-bg-secondary)]">
         <button
