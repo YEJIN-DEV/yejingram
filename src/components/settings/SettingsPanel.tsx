@@ -400,7 +400,11 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             <div className="px-3 pb-3 space-y-3">
                                                 <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.reset.desc')}</p>
                                                 <button
-                                                    onClick={wipeAllState}
+                                                    onClick={() => {
+                                                        if (confirm(t('settings.others.reset.confirm'))) {
+                                                            wipeAllState();
+                                                        }
+                                                    }}
                                                     id="delete-all-data-btn"
                                                     className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm flex items-center justify-center gap-2"
                                                 >

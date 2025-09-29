@@ -17,8 +17,8 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
 
 export const initialSyncSettings: Sync = {
     syncEnabled: false,
-    syncClientId: 'default-client',
-    syncBaseUrl: `http://${window.location.hostname}:3001`,
+    syncClientId: '',
+    syncBaseUrl: '',
 };
 
 
