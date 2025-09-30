@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
-import { Globe, FilePenLine, User, MessageSquarePlus, Shuffle, Download, Upload, FastForward, X, Image, CircleEllipsis, Palette, Languages, Cloud, RotateCcw, CloudUpload, Trash2, ChevronDown } from 'lucide-react';
+import { Globe, FilePenLine, User, Download, Upload, FastForward, X, Image, CircleEllipsis, Palette, Languages, Cloud, RotateCcw, CloudUpload, Trash2, ChevronDown } from 'lucide-react';
 import i18n from '../../i18n/i18n';
 import { useTranslation } from 'react-i18next';
 import { ProviderSettings } from './ProviderSettings';
@@ -25,7 +25,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
     const tabContainerRef = useRef<HTMLDivElement>(null);
 
     const [localSettings, setLocalSettings] = useState<SettingsState>(settings);
-    const [activeTab, setActiveTab] = useState<'ai' | 'image' | 'persona' | 'proactive' | 'others'>('ai');
+    const [activeTab, setActiveTab] = useState<'ai' | 'image' | 'persona' | 'others'>('ai');
 
     const importBackup = () => {
         const input = document.createElement("input");
@@ -174,7 +174,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             <User className="w-4 h-4 inline mr-2" />
                             {t('settings.tabs.persona')}
                         </button>
-                        <button
+                        {/* <button
                             onClick={() => setActiveTab('proactive')}
                             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'proactive'
                                 ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
@@ -183,7 +183,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         >
                             <MessageSquarePlus className="w-4 h-4 inline mr-2" />
                             {t('settings.tabs.proactive')}
-                        </button>
+                        </button> */}
                         <button
                             onClick={() => setActiveTab('others')}
                             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'others'
@@ -225,7 +225,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
 
                         {activeTab === 'persona' && <PersonaManager />}
 
-                        {activeTab === 'proactive' && (
+                        {/* {activeTab === 'proactive' && (
                             <div className="space-y-4">
                                 <Toggle
                                     id="settings-proactive-toggle"
@@ -262,7 +262,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 )}
 
                             </div>
-                        )}
+                        )} */}
 
                         {activeTab === 'others' && (
                             <div className="space-y-4">

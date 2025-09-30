@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, Upload, Download, MessageSquarePlus, ChevronDown } from 'lucide-react';
+import { Image, Upload, Download, ChevronDown } from 'lucide-react';
 import { selectEditingCharacterId, selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
 import type { RootState } from '../../app/store';
@@ -11,7 +11,6 @@ import { StickerManager } from './StickerManager';
 import { decodeText, encodeText } from '../../utils/imageStego';
 import { LorebookEditor } from './LorebookEditor';
 import { extractBasicCharacterInfo } from '../../utils/risuai/risuCharacterCard';
-import { Toggle } from '../Toggle';
 
 const personaCardToCharacter = (card: PersonaChatAppCharacterCard, imageUrl: string | null): Character => {
     const { name, prompt, responseTime, thinkingTime, reactivity, tone, proactiveEnabled } = card;
@@ -55,7 +54,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
     const { t } = useTranslation();
     const editingId = useSelector(selectEditingCharacterId);
     const editingCharacter = useSelector((state: RootState) => editingId ? selectCharacterById(state, editingId) : null);
-    const proactiveChatEnabled = useSelector((state: RootState) => state.settings.proactiveChatEnabled)
+    // const proactiveChatEnabled = useSelector((state: RootState) => state.settings.proactiveChatEnabled)
 
     const [char, setChar] = useState<Character>(newCharacterDefault);
     const [activeTab, setActiveTab] = useState<'basicInfo' | 'lorebook' | 'backup'>('basicInfo');
@@ -246,7 +245,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                             </div>
                             <textarea id="character-prompt" placeholder={t('characterPanel.personInfoPlaceholder')} value={char.prompt} onChange={e => handleInputChange('prompt', e.target.value)} className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" rows={6}></textarea>
                         </div>
-                        {proactiveChatEnabled && (
+                        {/* {proactiveChatEnabled && (
 
                             <Toggle
                                 id="character-proactive-toggle"
@@ -256,7 +255,7 @@ function CharacterPanel({ onClose }: CharacterPanelProps) {
                                 icon={<MessageSquarePlus className="w-4 h-4" />}
                             />
 
-                        )}
+                        )} */}
 
                         <details className="group/additional border-t border-[var(--color-border)] pt-4">
                             <summary className="flex items-center justify-between cursor-pointer list-none">
