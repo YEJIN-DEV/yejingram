@@ -538,7 +538,7 @@ export async function buildClaudeApiPayload(
             }],
             temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature,
             top_k: selectPrompts(store.getState()).topK,
-            ...(model.startsWith("claude-opus-4-1") ? {} : { top_p: selectPrompts(store.getState()).topP }),
+            ...((model.startsWith("claude-opus-4-1") || model.startsWith("claude-sonnet-4-5")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
             max_tokens: selectPrompts(store.getState()).maxResponseTokens,
         };
 
