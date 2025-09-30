@@ -436,27 +436,26 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
     // Add messages
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         const content: ({ type: string; text: string; } |
-        { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[] = [{ type: 'text', text: msg.content ? `${header}${msg.content}` : (header ? header : '') }];
+        { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[] 
+        = msg.content ? [{ type: 'text', text:`${header}${msg.content}` }] : [];
         if (msg.file && model !== "grok-3") {
-            if (model?.startsWith("claude") && role === 'assistant') {
-                content.push({ type: 'text', text: `${header}[Sent an image]` });
-            } else {
-                const mimeType = msg.file.mimeType;
-                if (mimeType.startsWith('image')) {
-                    if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
-                        throw new Error(`Unsupported image type: ${mimeType} `);
-                    }
-                    const base64Data = msg.file.dataUrl.split(',')[1];
-                    if (mimeType && base64Data) {
-                        content.push({
-                            type: 'image',
-                            source: {
-                                data: base64Data,
-                                media_type: mimeType,
-                                type: 'base64'
-                            }
-                        });
-                    }
+            const mimeType = msg.file.mimeType;
+            if (mimeType.startsWith('image')) {
+                if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/gif' && mimeType !== 'image/webp') {
+                    throw new Error(`Unsupported image type: ${mimeType} `);
+                }
+                const base64Data = msg.file.dataUrl.split(',')[1];
+                if (mimeType && base64Data) {
+                    content.push({
+                        type: 'image',
+                        source: {
+                            data: base64Data,
+                            media_type: mimeType,
+                            type: 'base64'
+                        }
+                    });
+                    content.push({ type: 'text', text: `[${_speaker}: Sent an image]` });
+                    role = 'user';
                 }
             }
         }
