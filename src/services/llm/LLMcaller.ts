@@ -14,7 +14,10 @@ import { calcReactionDelay, sleep } from "../../utils/reactionDelay";
 import { nanoid } from "@reduxjs/toolkit";
 import toast from 'react-hot-toast';
 import { callImageGeneration } from "../image/ImageCaller";
+import { LLMJSONParser } from 'ai-json-fixer';
 import { CLAUDE_API_BASE_URL, GEMINI_API_BASE_URL, GROK_API_BASE_URL, OPENAI_API_BASE_URL, VERTEX_AI_API_BASE_URL } from "../URLs";
+
+const llmParser = new LLMJSONParser();
 
 // Remove leading speaker/meta tags like [From: XXX] or [Name: XXX] from model output
 function sanitizeOutputContent(text?: string): string | undefined {
@@ -246,7 +249,7 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
     function processApiMessage(targetData: string): ChatResponse {
         const rawResponseText = sanitizeOutputContent(targetData) ?? '';
         if (settings.useStructuredOutput) {
-            const parsed = JSON.parse(rawResponseText);
+            const parsed = llmParser.parse(rawResponseText);
             parsed.reactionDelay = Math.max(0, parsed.reactionDelay || 0);
             return parsed;
         } else {
