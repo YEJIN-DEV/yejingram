@@ -249,23 +249,28 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
     function processApiMessage(targetData: string): ChatResponse {
         const rawResponseText = sanitizeOutputContent(targetData) ?? '';
         if (settings.useStructuredOutput) {
-            const parsed = llmParser.parse(rawResponseText);
-            parsed.reactionDelay = Math.max(0, parsed.reactionDelay || 0);
-            return parsed;
-        } else {
-            const lines = rawResponseText.split('\n').filter((line: string) => line.trim() !== '');
-            const formattedMessages = lines.map((line: string) => ({
-                delay: calcReactionDelay({
-                    inChars: messages[messages.length - 1]?.content?.length || 0,
-                    outChars: line.length,
-                    device: "mobile",
-                }, {
-                    speedup: settings.speedup
-                }),
-                content: line,
-            }));
-            return { reactionDelay: 0, messages: formattedMessages };
+            try {
+                const parsed = llmParser.parse(rawResponseText);
+                parsed.reactionDelay = Math.max(0, parsed?.reactionDelay || 0);
+                return parsed;
+            } catch {
+                // If parsing fails, fallback to plain text
+                console.warn("Failed to parse structured output, falling back to plain text.");
+            }
         }
+        const lines = rawResponseText.split('\n').filter((line: string) => line.trim() !== '');
+        const formattedMessages = lines.map((line: string) => ({
+            delay: calcReactionDelay({
+                inChars: messages[messages.length - 1]?.content?.length || 0,
+                outChars: line.length,
+                device: "mobile",
+            }, {
+                speedup: settings.speedup
+            }),
+            content: line,
+        }));
+        return { reactionDelay: 0, messages: formattedMessages };
+        
     }
 
     if (apiProvider === 'gemini' || apiProvider === 'vertexai') {
