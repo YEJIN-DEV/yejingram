@@ -293,7 +293,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
 
             // Lookahead: if next message is from user(authorId=0) and TEXT, merge its content and skip it
             const next = msgs[i + 1];
-            if (next && next.authorId === 0 && next.type === 'TEXT') {
+            if (msgs[i].type != 'TEXT' && next && next.type === 'TEXT' && next.authorId === 0) {
                 if (next.content) {
                     parts[0] = { text: next.content };
                 }
