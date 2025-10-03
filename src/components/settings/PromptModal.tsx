@@ -414,10 +414,10 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         onChange={handleFileChange}
                     />
                     <button onClick={handleBackup} className="py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center gap-2 border border-[var(--color-border)]">
-                        <Download className="w-4 h-4" /> {t('settings.prompts.actions.backup')}
+                        <Upload className="w-4 h-4" /> {t('settings.prompts.actions.backup')}
                     </button>
                     <button onClick={handleImportClick} className="py-2 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors text-sm flex items-center gap-2 border border-[var(--color-border)]">
-                        <Upload className="w-4 h-4" /> {t('settings.prompts.actions.import')}
+                        <Download className="w-4 h-4" /> {t('settings.prompts.actions.import')}
                     </button>
                     <div className="flex-grow"></div>
                     <button onClick={onClose} className="py-2.5 px-4 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded-lg transition-colors">{t('common.cancel')}</button>
