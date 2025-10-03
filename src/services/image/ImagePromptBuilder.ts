@@ -2,12 +2,12 @@ import type { Character } from "../../entities/character/types";
 import type { NAIConfig } from "../../entities/setting/image/types";
 import { loadImage } from "../../utils/imageStego";
 
-export function buildGeminiImagePayload(positivePrompt: string, isSelfie: boolean, char: Character) {
+export function buildGeminiImagePayload(positivePrompt: string, isIncludingChar: boolean, char: Character) {
     return {
         contents: [{
             parts: [
-                { "text": `${positivePrompt}${isSelfie && char.avatar ? `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` : ''}` },
-                ...(isSelfie && char.avatar ? [{ "inline_data": { "mime_type": char.avatar.split(',')[0].split(':')[1].split(';')[0], "data": char.avatar.split(',')[1] } }] : []),
+                { "text": `${positivePrompt}${isIncludingChar && char.avatar ? `IMPORTANT: PROVIDED PICTURE IS THE TOP PRIORITY. 1) IF THE APPEARANCE OF PROMPT IS NOT MATCHING WITH THE PICTURE, IGNORE ALL OF THE PROMPT RELATED TO ${char.name}'S APPEARANCE FEATURES. 2) FOLLOW THE STYLE OF PROVIDED PICTURE STRICTLY.` : ''}` },
+                ...(isIncludingChar && char.avatar ? [{ "inline_data": { "mime_type": char.avatar.split(',')[0].split(':')[1].split(';')[0], "data": char.avatar.split(',')[1] } }] : []),
             ]
         }],
         safetySettings: [
@@ -20,7 +20,7 @@ export function buildGeminiImagePayload(positivePrompt: string, isSelfie: boolea
 
 }
 
-export async function buildNovelAIImagePayload(positivePrompt: string, negativePrompt: string, model: string, isSelfie: boolean, char: Character, styleAware: boolean, naiConfig: NAIConfig | undefined) {
+export async function buildNovelAIImagePayload(positivePrompt: string, negativePrompt: string, model: string, isIncludingChar: boolean, char: Character, styleAware: boolean, naiConfig: NAIConfig | undefined) {
     function random(min: number, max: number) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
@@ -85,7 +85,7 @@ export async function buildNovelAIImagePayload(positivePrompt: string, negativeP
             "skip_cfg_above_sigma": skipCfgAboveSigma,
         }
     }
-    if (isSelfie && char.avatar) {
+    if (isIncludingChar && char.avatar) {
         const resized = await resizeToNAI(char.avatar, "#ffffff");
         payload.parameters['director_reference_descriptions'] = [
             {

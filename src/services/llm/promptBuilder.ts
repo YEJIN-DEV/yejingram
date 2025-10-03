@@ -389,9 +389,9 @@ export async function buildGeminiApiPayload(
                         type: "OBJECT",
                         properties: {
                             prompt: { type: "STRING" },
-                            isSelfie: { type: "BOOLEAN" }
+                            isIncludingChar: { type: "BOOLEAN" }
                         },
-                        required: ["prompt", "isSelfie"]
+                        required: ["prompt", "isIncludingChar"]
                     };
                 }
             }
@@ -436,7 +436,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
     // Add messages
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         const content: ({ type: string; text: string; } |
-        { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[] 
+        { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[]
         = msg.content ? [{ type: 'text', text:`${header}${msg.content}` }] : [];
         if (msg.file && model !== "grok-3") {
             const mimeType = msg.file.mimeType;
@@ -662,9 +662,9 @@ export async function buildOpenAIApiPayload(
                     type: ['object', 'null'],
                     properties: {
                         prompt: { type: 'string' },
-                        isSelfie: { type: 'boolean' }
+                        isIncludingChar: { type: 'boolean' }
                     },
-                    required: ['prompt', 'isSelfie'],
+                    required: ['prompt', 'isIncludingChar'],
                     additionalProperties: false
                 };
                 items.required.push('imageGenerationSetting');

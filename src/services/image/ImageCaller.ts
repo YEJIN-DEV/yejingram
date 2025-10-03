@@ -5,7 +5,7 @@ import { unzipToDataUrls } from "../../utils/zip2png";
 import { GEMINI_API_BASE_URL, NAI_DIFFUSION_API_BASE_URL } from "../URLs";
 import { buildGeminiImagePayload, buildNovelAIImagePayload } from "./ImagePromptBuilder";
 
-export async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
+export async function callImageGeneration(imageGenerationSetting: { prompt: string; isIncludingChar: boolean }, char: Character) {
     const imageConfig = selectCurrentImageApiConfig(store.getState());
     const artStyle = selectCurrentArtStyle(store.getState());
 
@@ -29,11 +29,11 @@ export async function callImageGeneration(imageGenerationSetting: { prompt: stri
         headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
         const styleAware = selectStyleAware(store.getState());
         const naiConfig = selectNAIConfig(store.getState());
-        payload = await buildNovelAIImagePayload(positivePrompt, negativePrompt, model, imageGenerationSetting.isSelfie, char, styleAware, naiConfig);
+        payload = await buildNovelAIImagePayload(positivePrompt, negativePrompt, model, imageGenerationSetting.isIncludingChar, char, styleAware, naiConfig);
     } else if (provider === 'gemini') {
         if (!imageConfig.apiKey) throw new Error('Gemini API Key가 설정되지 않았습니다.');
         url = `${GEMINI_API_BASE_URL}${model}:generateContent?key=${imageConfig.apiKey}`;
-        payload = buildGeminiImagePayload(positivePrompt, imageGenerationSetting.isSelfie, char);
+        payload = buildGeminiImagePayload(positivePrompt, imageGenerationSetting.isIncludingChar, char);
     } else if (provider === 'comfy') {
         const customCfg = imageConfig.custom;
         if (!customCfg?.baseUrl) {

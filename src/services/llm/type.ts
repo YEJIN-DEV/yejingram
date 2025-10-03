@@ -4,7 +4,7 @@ export interface MessagePart {
     sticker?: string;   // 스티커 (옵션)
     imageGenerationSetting?: {
         prompt: string;   // 프롬프트
-        isSelfie: boolean; // 셀카 여부
+        isIncludingChar: boolean; // 셀카 여부
     }; // 이미지 생성 설정 (옵션)
 }
 
