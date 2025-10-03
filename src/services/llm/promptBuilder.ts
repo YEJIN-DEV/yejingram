@@ -291,9 +291,9 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
                 parts.push({ text: `${header}[Sent a sticker: "${(msg as any).sticker?.name || (msg as any).sticker}"]` });
             }
 
-            // Lookahead: if next message is from user(authorId=0) and TEXT, merge its content and skip it
+            // Lookahead: if current message is not TEXT and next message is TEXT, merge its content and skip it
             const next = msgs[i + 1];
-            if (msgs[i].type != 'TEXT' && next && next.type === 'TEXT' && next.authorId === 0) {
+            if (msgs[i].type != 'TEXT' && next && next.type === 'TEXT') {
                 if (next.content) {
                     parts[0] = { text: next.content };
                 }
