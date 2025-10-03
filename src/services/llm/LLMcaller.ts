@@ -302,14 +302,26 @@ async function LLMSend(
     persona: Persona | null,
     char: Character,
     setTypingCharacterId: (id: number | null) => void,
-    t: (key: string) => string
+    t: (key: string) => string,
+    isContinuation = false
 ) {
     const state = store.getState();
     const dispatch = store.dispatch;
 
     const api = selectCurrentApiConfig(state);
     const settings = selectAllSettings(state);
-    const messages = selectMessagesByRoomId(state, room.id);
+    const messages = structuredClone(selectMessagesByRoomId(state, room.id))
+
+    if (isContinuation) {
+        messages.push({
+            id: nanoid(),
+            roomId: room.id,
+            authorId: char.id,
+            createdAt: new Date().toISOString(),
+            type: 'SYSTEM',
+            content: `[The reply is too short. Since ${persona?.name || 'User'} has not yet responded, continue ${char.name}'s reply.]`
+        });
+    }
 
     // --- Anti-echo detection helpers ---
     function normalize(text: string) {
@@ -400,14 +412,14 @@ async function LLMSend(
 }
 
 
-export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void, t: (key: string) => string) {
+export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void, t: (key: string) => string, isContinuation = false) {
     const state = store.getState();
     const persona = selectSelectedPersona(state);
     const memberChars = room.memberIds.map(id => selectCharacterById(state, id));
 
     for (const char of memberChars) {
         if (char) {
-            await LLMSend(room, persona, char, setTypingCharacterId, t);
+            await LLMSend(room, persona, char, setTypingCharacterId, t, isContinuation);
         }
     }
 }

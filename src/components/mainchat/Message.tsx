@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
 import type { Message as MessageType } from '../../entities/message/types';
-import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare, Loader2 } from 'lucide-react';
+import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare, Loader2, StepForward } from 'lucide-react';
 import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
@@ -482,24 +482,43 @@ const MessageList: React.FC<MessageListProps> = ({
                             </button>
 
                             {!isMe && i === messages.length - 1 && !isWaitingForResponse && (
-                              <button
-                                data-id={msg.id.toString()}
-                                onClick={() => {
-                                  console.log('Reroll message', msg.id)
-                                  dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
-                                  setIsWaitingForResponse(true);
-                                  SendMessage(room, setTypingCharacterId, t)
-                                    .finally(() => {
-                                      setIsWaitingForResponse(false);
-                                    });
-                                  setActiveMessageId(null);
-                                }}
-                                className="reroll-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
-                                aria-label={t('main.message.actions.rerollAriaLabel')}
-                                title={t('main.message.actions.reroll')}
-                              >
-                                <RefreshCw className="w-4 h-4" />
-                              </button>
+                              <>
+                                <button
+                                  data-id={msg.id.toString()}
+                                  onClick={() => {
+                                    console.log('Reroll message', msg.id)
+                                    dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
+                                    setIsWaitingForResponse(true);
+                                    SendMessage(room, setTypingCharacterId, t)
+                                      .finally(() => {
+                                        setIsWaitingForResponse(false);
+                                      });
+                                    setActiveMessageId(null);
+                                  }}
+                                  className="reroll-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
+                                  aria-label={t('main.message.actions.rerollAriaLabel')}
+                                  title={t('main.message.actions.reroll')}
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                </button>
+                                <button
+                                  data-id={msg.id.toString()}
+                                  onClick={() => {
+                                    console.log('Continue response', msg.id)
+                                    setIsWaitingForResponse(true);
+                                    SendMessage(room, setTypingCharacterId, t, true) // continue=true
+                                      .finally(() => {
+                                        setIsWaitingForResponse(false);
+                                      });
+                                    setActiveMessageId(null);
+                                  }}
+                                  className="continue-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:translate-x-1"
+                                  aria-label={t('main.message.actions.continueAriaLabel')}
+                                  title={t('main.message.actions.continue')}
+                                >
+                                  <StepForward className="w-4 h-4" />
+                                </button>
+                              </>
                             )}
 
                             {!isMe && msg.type === 'IMAGE' && msg.imageGenerationSetting && (
