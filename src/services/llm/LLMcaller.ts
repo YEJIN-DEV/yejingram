@@ -178,10 +178,10 @@ async function callApi(
             }, extraSystemInstruction);
             break;
         case 'claude':
-            payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
+            payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
             break;
         case 'grok':
-            payload = await buildClaudeApiPayload('grok', room, persona, character, messages, isProactive, settings.useStructuredOutput, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
+            payload = await buildClaudeApiPayload('grok', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
             break;
         case 'openai':
         case 'customOpenAI':
@@ -270,7 +270,7 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
             content: line,
         }));
         return { reactionDelay: 0, messages: formattedMessages };
-        
+
     }
 
     if (apiProvider === 'gemini' || apiProvider === 'vertexai') {

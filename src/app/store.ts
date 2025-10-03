@@ -79,6 +79,12 @@ export const migrations = {
                     keepSource: false
                 }
             ],
+            delete: [
+                {
+                    path: 'settings.prompts',
+                    keys: ['image_response_generation']
+                }
+            ]
         });
         return state;
     }

@@ -48,9 +48,6 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
             const t = item?.type?.trim();
             if (t) set.add(t as PromptType);
         });
-        // 이미지 생성 프롬프트는 항상 포함
-        const ig = localPrompts.image_response_generation?.type?.trim();
-        if (ig) set.add(ig as PromptType);
         return set;
     }, [localPrompts]);
 
@@ -108,21 +105,14 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
     };
 
     const setPromptToDefault = (
-        key: number | "image_response_generation"
+        index: number
     ) => {
         if (confirm(t('settings.prompts.confirmReset'))) {
-            if (typeof key === 'number') {
-                setLocalPrompts(prev => {
-                    const main = [...prev.main];
-                    main[key] = initialState.prompts.main[key] || { name: t('settings.prompts.newPromptName'), type: 'plain', role: 'system', content: '' };
-                    return { ...prev, main };
-                });
-            } else {
-                setLocalPrompts(prev => ({
-                    ...prev,
-                    [key]: initialState.prompts[key]
-                }));
-            }
+            setLocalPrompts(prev => {
+                const main = [...prev.main];
+                main[index] = initialState.prompts.main[index] || { name: t('settings.prompts.newPromptName'), type: 'plain', role: 'system', content: '' };
+                return { ...prev, main };
+            });
         }
     };
 
@@ -164,7 +154,6 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
         // basic validation for new structure
         if (!p.main || !Array.isArray(p.main)) return null;
         if (!p.main.every(isPromptItem)) return null;
-        if (!isPromptItem(p.image_response_generation)) return null;
         // Merge new fields with defaults if missing
         const withDefaults = {
             ...initialState.prompts,
@@ -183,6 +172,7 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
         try {
             const text = await file.text();
             const json = JSON.parse(text);
+            delete json.image_response_generation; // Remove deprecated field
             const parsed = extractPrompts(json);
             if (!parsed) {
                 alert(t('settings.prompts.alerts.invalidFile'));
@@ -330,58 +320,6 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         <button type="button" onClick={addNewPrompt} className="py-2 px-4 text-sm bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] rounded-lg text-[var(--color-text-accent)]">+ {t('settings.prompts.addNew')}</button>
                     </div>
 
-                    <h4 className="text-base font-semibold text-[var(--color-image-response)] border-b border-[var(--color-image-response)]/50 pb-2 mt-6">{t('settings.prompts.image.title')}</h4>
-                    <details className="group bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border)]">
-                        <summary className="flex items-center justify-between cursor-pointer list-none p-4">
-                            <span className="text-base font-medium text-[var(--color-text-primary)]">{localPrompts.image_response_generation.name || t('settings.prompts.image.fallbackTitle')}</span>
-                            <ChevronDown className="w-5 h-5 text-[var(--color-icon-secondary)] transition-transform duration-300 group-open:rotate-180" />
-                        </summary>
-                        <div className="content-wrapper">
-                            <div className="content-inner p-4 border-t border-[var(--color-border)]">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <button onClick={() => setPromptToDefault('image_response_generation')} className="py-1 px-3 bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] rounded text-xs flex items-center gap-1 border border-[var(--color-border)]">
-                                        <RotateCcw className="w-3 h-3" /> {t('settings.prompts.resetToDefault')}
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                                    <div className="flex flex-col">
-                                        <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">{t('settings.prompts.fields.name')}</label>
-                                        <input value={localPrompts.image_response_generation.name}
-                                            onChange={e => setLocalPrompts(prev => ({ ...prev, image_response_generation: { ...prev.image_response_generation, name: e.target.value } }))}
-                                            className="w-full p-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm" placeholder={t('settings.prompts.fields.namePlaceholder')} />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">{t('settings.prompts.fields.type')} <span className="text-[11px] text-[var(--color-text-informative-secondary)]">{t('settings.prompts.fields.typeFixed')}</span></label>
-                                        <select
-                                            value={localPrompts.image_response_generation.type}
-                                            disabled
-                                            aria-disabled
-                                            className="w-full p-2 bg-[var(--color-bg-input-primary)] text-[var(--color-text-interface)] rounded border border-[var(--color-border)] text-sm cursor-not-allowed"
-                                        >
-                                            <option value={localPrompts.image_response_generation.type}>{getTypeLabel(localPrompts.image_response_generation.type)}</option>
-                                        </select>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1">{t('settings.prompts.fields.role')}</label>
-                                        <select value={localPrompts.image_response_generation.role}
-                                            onChange={e => setLocalPrompts(prev => ({ ...prev, image_response_generation: { ...prev.image_response_generation, role: e.target.value as PromptRole } }))}
-                                            className="w-full p-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm">
-                                            <option value="system">system</option>
-                                            <option value="assistant">assistant</option>
-                                            <option value="user">user</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-[var(--color-text-tertiary)] mb-1 block">{t('settings.prompts.fields.content')}</label>
-                                    <textarea
-                                        value={localPrompts.image_response_generation.content}
-                                        onChange={e => setLocalPrompts(prev => ({ ...prev, image_response_generation: { ...prev.image_response_generation, content: e.target.value } }))}
-                                        className="w-full h-64 p-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg text-sm font-mono border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)]" />
-                                </div>
-                            </div>
-                        </div>
-                    </details>
                     <h4 className="text-base font-semibold text-[var(--color-preview-accent-from)] border-b border-[var(--color-preview-border)]/40 pb-2 mt-6">{t('settings.prompts.tokens.title')}</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div className="flex flex-col">

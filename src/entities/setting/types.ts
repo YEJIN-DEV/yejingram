@@ -38,7 +38,6 @@ export interface PromptItem {
 
 export interface Prompts {
     main: PromptItem[];
-    image_response_generation: PromptItem;
     maxContextTokens: number;
     maxResponseTokens: number;
     temperature: number;

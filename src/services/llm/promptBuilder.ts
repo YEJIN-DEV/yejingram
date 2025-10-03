@@ -90,13 +90,15 @@ const OpenAIStructuredOutputSchema: OpenAIStructuredSchema = {
     }
 };
 
-function shouldIncludePromptItem(item: PromptItem, useStructuredOutput: boolean, room?: Room | null): boolean {
+function shouldIncludePromptItem(item: PromptItem, useStructuredOutput: boolean, room?: Room | null, useImageResponse?: boolean): boolean {
     if (item.type === 'plain-structured' && !useStructuredOutput) {
         return false;
     } else if (item.type === 'plain-unstructured' && useStructuredOutput) {
         return false;
     } else if (item.type === 'plain-group' && room?.type !== 'Group') {
         return false;
+    } else if (item.type === 'image-generation') {
+        return !!(useImageResponse && useStructuredOutput);
     } else if (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt') {
         // 새로운 타입들은 항상 포함 (또는 특정 조건 추가 가능)
         return true;
@@ -209,21 +211,22 @@ function buildGroupDescription(
     return { participantDetails: getParticipantDetails(), participantCount: room.memberIds.length + 1 }; // Include the current user
 }
 
-function buildSystemPrompt(persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, messages?: Message[], useStructuredOutput?: boolean): string {
+function buildSystemPrompt(persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, messages?: Message[], useStructuredOutput?: boolean, useImageResponse?: boolean): string {
     // Keep only prompts whose role is 'system', in main array sequence.
     const { main } = selectPrompts(store.getState());
     const lines: string[] = [];
     const { userName, userDescription, groupValues, roomMemories } = getCommonPromptData(persona, character, room);
     for (const item of main) {
         if (item && item.role === 'system' && typeof item.content === 'string' && item.content.trim().length > 0) {
-            if (shouldIncludePromptItem(item, useStructuredOutput || false, room)) {
+            if (shouldIncludePromptItem(item, useStructuredOutput || false, room, useImageResponse)) {
                 lines.push(replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues }));
             }
-        } else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
+        }
+        else if (item && item.type === 'extraSystemInstruction' && extraSystemInstruction) {
             lines.push(replacePlaceholders(extraSystemInstruction, { userName, userDescription, character, roomMemories, ...groupValues }));
         } else if (item && (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt')) {
             const content = getPromptItemContent(item, character, room, messages || [], persona);
-            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, room)) {
+            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, room, useImageResponse)) {
                 lines.push(replacePlaceholders(content, { userName, userDescription, character, roomMemories, ...groupValues }));
             }
         }
@@ -231,7 +234,7 @@ function buildSystemPrompt(persona?: Persona | null, character?: Character, extr
     return lines.join('\n\n');
 }
 
-function buildGeminiContents(messages: Message[], isProactive: boolean, persona: Persona, character: Character, room: Room, useStructuredOutput?: boolean) {
+function buildGeminiContents(messages: Message[], isProactive: boolean, persona: Persona, character: Character, room: Room, useStructuredOutput?: boolean, useImageResponse?: boolean) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
@@ -309,7 +312,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
 
     for (const item of main) {
         if (item && item.role !== 'system' && item.content && item.content.trim().length > 0) {
-            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom, useImageResponse)) {
                 const role = item.role == 'assistant' ? 'model' : 'user';
                 if (role) {
                     contents.push({
@@ -322,7 +325,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
             contents.push(...messageContents);
         } else if (item && (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt')) {
             const content = getPromptItemContent(item, character, currentRoom, messages, persona);
-            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom, useImageResponse)) {
                 const role = item.role || 'user';
                 const geminiRole = role === 'assistant' ? 'model' : 'user';
                 contents.push({
@@ -364,8 +367,8 @@ export async function buildGeminiApiPayload(
     let trimmedMessages = [...messages];
 
     while (true) {
-        const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput);
-        const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput);
+        const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
+        const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput, useImageResponse);
 
         const generationConfig: GeminiGenerationConfig = {
             temperature: selectPrompts(store.getState()).temperature,
@@ -424,7 +427,7 @@ export async function buildGeminiApiPayload(
     }
 }
 
-function buildClaudeContents(messages: Message[], isProactive: boolean, persona?: Persona, model?: string, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean) {
+function buildClaudeContents(messages: Message[], isProactive: boolean, persona?: Persona, model?: string, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean, useImageResponse?: boolean) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
@@ -437,7 +440,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
     const messageContents = buildMessageContents(messages, persona, currentRoom, (msg, _speaker, header, role) => {
         const content: ({ type: string; text: string; } |
         { type: 'image'; source: { data: string; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; type: 'base64'; }; })[]
-        = msg.content ? [{ type: 'text', text:`${header}${msg.content}` }] : [];
+            = msg.content ? [{ type: 'text', text: `${header}${msg.content}` }] : [];
         if (msg.file && model !== "grok-3") {
             const mimeType = msg.file.mimeType;
             if (mimeType.startsWith('image')) {
@@ -467,7 +470,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
 
     for (const item of main) {
         if (item && item.role !== 'system' && item.content && item.content.trim().length > 0) {
-            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom, useImageResponse)) {
                 const role = item.role;
 
                 if (role) {
@@ -487,7 +490,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
             messagesPart.push(...messageContents);
         } else if (item && (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt')) {
             const content = getPromptItemContent(item, character, currentRoom, messages, persona);
-            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom, useImageResponse)) {
                 const role = item.role === 'system' ? 'assistant' : item.role || 'assistant';
                 messagesPart.push({
                     role,
@@ -518,6 +521,7 @@ export async function buildClaudeApiPayload(
     messages: Message[],
     isProactive: boolean,
     useStructuredOutput: boolean,
+    useImageResponse: boolean | undefined,
     model: string,
     apiKey: string,
     extraSystemInstruction?: string
@@ -526,8 +530,8 @@ export async function buildClaudeApiPayload(
     let trimmedMessages = [...messages];
 
     while (true) {
-        const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput);
-        const contents = buildClaudeContents(trimmedMessages, isProactive, persona, model, character, extraSystemInstruction, room, useStructuredOutput);
+        const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
+        const contents = buildClaudeContents(trimmedMessages, isProactive, persona, model, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse);
 
         const payload: ClaudeApiPayload = {
             model: model,
@@ -556,7 +560,7 @@ export async function buildClaudeApiPayload(
 }
 
 // OpenAI (Chat Completions) payload builders
-async function buildOpenAIContents(messages: Message[], isProactive: boolean, model: string, persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean) {
+async function buildOpenAIContents(messages: Message[], isProactive: boolean, model: string, persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean, useImageResponse?: boolean) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
@@ -592,14 +596,14 @@ async function buildOpenAIContents(messages: Message[], isProactive: boolean, mo
 
     for (const item of main) {
         if (item && item.role === 'system' && item.content && item.content.trim().length > 0) {
-            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom, useImageResponse)) {
                 items.push({
                     role: 'system',
                     content: replacePlaceholders(item.content, { userName, userDescription, character, roomMemories, ...groupValues })
                 });
             }
         } else if (item && item.role !== 'system' && item.content && item.content.trim().length > 0) {
-            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+            if (shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom, useImageResponse)) {
                 const role = item.role;
 
                 if (role) {
@@ -619,7 +623,7 @@ async function buildOpenAIContents(messages: Message[], isProactive: boolean, mo
             items.push(...messageContents);
         } else if (item && (item.type === 'lorebook' || item.type === 'authornote' || item.type === 'memory' || item.type === 'userDescription' || item.type === 'characterPrompt')) {
             const content = getPromptItemContent(item, character, currentRoom, messages, persona);
-            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom)) {
+            if (content && content.trim().length > 0 && shouldIncludePromptItem(item, useStructuredOutput || false, currentRoom, useImageResponse)) {
                 const role = item.role || 'system';
                 items.push({
                     role,
@@ -652,7 +656,7 @@ export async function buildOpenAIApiPayload(
     let trimmedMessages = [...messages];
 
     while (true) {
-        const history = await buildOpenAIContents(trimmedMessages, isProactive, model, persona, character, extraSystemInstruction, room, useStructuredOutput);
+        const history = await buildOpenAIContents(trimmedMessages, isProactive, model, persona, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse);
         const JSONSchema = structuredClone(OpenAIStructuredOutputSchema);
 
         if (useImageResponse) {
