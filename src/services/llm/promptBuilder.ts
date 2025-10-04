@@ -366,39 +366,59 @@ export async function buildGeminiApiPayload(
     const maxTokens = selectPrompts(store.getState()).maxContextTokens;
     let trimmedMessages = [...messages];
 
-    while (true) {
-        const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
-        const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput, useImageResponse);
+    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
 
-        const generationConfig: GeminiGenerationConfig = {
-            temperature: selectPrompts(store.getState()).temperature,
-            topP: selectPrompts(store.getState()).topP,
-        };
+    const generationConfig: GeminiGenerationConfig = {
+        temperature: selectPrompts(store.getState()).temperature,
+        topP: selectPrompts(store.getState()).topP,
+    };
 
-        const topK = selectPrompts(store.getState()).topK;
+    const topK = selectPrompts(store.getState()).topK;
 
-        if (topK) {
-            generationConfig.topK = topK;
-        }
+    if (topK) {
+        generationConfig.topK = topK;
+    }
 
-        if (useStructuredOutput) {
-            generationConfig.responseMimeType = "application/json";
-            generationConfig.responseSchema = structuredClone(GeminiStructuredOutputSchema);
-            if (useImageResponse) {
-                const schema = generationConfig.responseSchema!;
-                const items = schema.properties!.messages.items!;
-                if (items.properties) {
-                    items.properties.imageGenerationSetting = {
-                        type: "OBJECT",
-                        properties: {
-                            prompt: { type: "STRING" },
-                            isIncludingChar: { type: "BOOLEAN" }
-                        },
-                        required: ["prompt", "isIncludingChar"]
-                    };
-                }
+    if (useStructuredOutput) {
+        generationConfig.responseMimeType = "application/json";
+        generationConfig.responseSchema = structuredClone(GeminiStructuredOutputSchema);
+        if (useImageResponse) {
+            const schema = generationConfig.responseSchema!;
+            const items = schema.properties!.messages.items!;
+            if (items.properties) {
+                items.properties.imageGenerationSetting = {
+                    type: "OBJECT",
+                    properties: {
+                        prompt: { type: "STRING" },
+                        isIncludingChar: { type: "BOOLEAN" }
+                    },
+                    required: ["prompt", "isIncludingChar"]
+                };
             }
         }
+    }
+
+    const payload_promptOnly: GeminiApiPayload = {
+        contents: [
+            { role: 'user', parts: [{ text: 'placeholder' }] }
+        ],
+        systemInstruction: {
+            parts: [{ text: systemPrompt }]
+        },
+        generationConfig: generationConfig,
+        safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ]
+    };
+    
+    const tokenCountForPromptOnly = await CountTokens({ payload: payload_promptOnly }, provider, model, auth);
+    console.debug("Total tokens for system prompt only:", tokenCountForPromptOnly);
+
+    while (true) {
+        const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput, useImageResponse);
 
         const payload: GeminiApiPayload = {
             contents: contents,
@@ -422,7 +442,11 @@ export async function buildGeminiApiPayload(
         } else if (trimmedMessages.length <= 1) {
             throw new Error("Cannot trim messages further to meet token limit.");
         } else {
-            trimmedMessages.shift(); // Remove the oldest message
+            // Estimate tokens per message
+            const avgTokensPerMessage = (tokenCount - tokenCountForPromptOnly) / trimmedMessages.length;
+            const tokensToRemove = tokenCount - maxTokens;
+            const messagesToRemove = Math.ceil(tokensToRemove / avgTokensPerMessage);
+            trimmedMessages.splice(0, messagesToRemove); // Remove the n-number of oldest messages 
         }
     }
 }
@@ -529,8 +553,25 @@ export async function buildClaudeApiPayload(
     const maxTokens = selectPrompts(store.getState()).maxContextTokens;
     let trimmedMessages = [...messages];
 
+    const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
+
+    const payload_promptOnly: ClaudeApiPayload = {
+        model: model,
+        messages: [{ role: 'user', content: [{ type: 'text', text: 'placeholder' }] }],
+        system: [{
+            type: "text",
+            text: systemPrompt
+        }],
+        temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature,
+        top_k: selectPrompts(store.getState()).topK,
+        ...((model.startsWith("claude-opus-4-1") || model.startsWith("claude-sonnet-4-5")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
+        max_tokens: selectPrompts(store.getState()).maxResponseTokens,
+    };
+
+    const tokenCountForPromptOnly = await CountTokens({ payload: payload_promptOnly }, provider, model, { apiKey });
+    console.debug("Total tokens for system prompt only:", tokenCountForPromptOnly);
+
     while (true) {
-        const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
         const contents = buildClaudeContents(trimmedMessages, isProactive, persona, model, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse);
 
         const payload: ClaudeApiPayload = {
@@ -554,7 +595,11 @@ export async function buildClaudeApiPayload(
         } else if (trimmedMessages.length <= 1) {
             throw new Error("Cannot trim messages further to meet token limit.");
         } else {
-            trimmedMessages.shift(); // Remove the oldest message
+            // Estimate tokens per message
+            const avgTokensPerMessage = (tokenCount - tokenCountForPromptOnly) / trimmedMessages.length;
+            const tokensToRemove = tokenCount - maxTokens;
+            const messagesToRemove = Math.ceil(tokensToRemove / avgTokensPerMessage);
+            trimmedMessages.splice(0, messagesToRemove); // Remove the n-number of oldest messages
         }
     }
 }
@@ -688,6 +733,15 @@ export async function buildOpenAIApiPayload(
             response_format,
         };
 
+        // Calculate token count for system prompt only (up to first user message)
+        const payload_promptOnly = structuredClone(payload);
+        const firstUserIndex = payload_promptOnly.messages.findIndex(msg => msg.role === 'user');
+        if (firstUserIndex !== -1) {
+            payload_promptOnly.messages = payload_promptOnly.messages.slice(0, firstUserIndex);
+        }
+        const tokenCountForPromptOnly = await CountTokens({ content: payload_promptOnly.messages }, 'openai', model);
+        console.debug("Total tokens for system prompt only:", tokenCountForPromptOnly);
+
         const tokenCount = await CountTokens({ content: history }, 'openai', model);
         console.debug("Total tokens after trimming:", tokenCount);
 
@@ -696,7 +750,11 @@ export async function buildOpenAIApiPayload(
         } else if (trimmedMessages.length <= 1) {
             throw new Error("Cannot trim messages further to meet token limit.");
         } else {
-            trimmedMessages.shift(); // Remove the oldest message
+            // Estimate tokens per message
+            const avgTokensPerMessage = (tokenCount - tokenCountForPromptOnly) / trimmedMessages.length;
+            const tokensToRemove = tokenCount - maxTokens;
+            const messagesToRemove = Math.ceil(tokensToRemove / avgTokensPerMessage);
+            trimmedMessages.splice(0, messagesToRemove); // Remove the n-number of oldest messages
         }
     }
 }
