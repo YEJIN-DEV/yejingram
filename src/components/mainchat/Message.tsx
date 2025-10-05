@@ -501,23 +501,25 @@ const MessageList: React.FC<MessageListProps> = ({
                                 >
                                   <RefreshCw className="w-4 h-4" />
                                 </button>
-                                <button
-                                  data-id={msg.id.toString()}
-                                  onClick={() => {
-                                    console.log('Continue response', msg.id)
-                                    setIsWaitingForResponse(true);
-                                    SendMessage(room, setTypingCharacterId, t, true) // continue=true
-                                      .finally(() => {
-                                        setIsWaitingForResponse(false);
-                                      });
-                                    setActiveMessageId(null);
-                                  }}
-                                  className="continue-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:translate-x-1"
-                                  aria-label={t('main.message.actions.continueAriaLabel')}
-                                  title={t('main.message.actions.continue')}
-                                >
-                                  <StepForward className="w-4 h-4" />
-                                </button>
+                                {room?.type !== 'Group' && (
+                                  <button
+                                    data-id={msg.id.toString()}
+                                    onClick={() => {
+                                      console.log('Continue response', msg.id)
+                                      setIsWaitingForResponse(true);
+                                      SendMessage(room, setTypingCharacterId, t, true) // continue=true
+                                        .finally(() => {
+                                          setIsWaitingForResponse(false);
+                                        });
+                                      setActiveMessageId(null);
+                                    }}
+                                    className="continue-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:translate-x-1"
+                                    aria-label={t('main.message.actions.continueAriaLabel')}
+                                    title={t('main.message.actions.continue')}
+                                  >
+                                    <StepForward className="w-4 h-4" />
+                                  </button>
+                                )}
                               </>
                             )}
 
