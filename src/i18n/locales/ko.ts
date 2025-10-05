@@ -373,6 +373,7 @@ const ko = {
                 noiseScheduleHelp: "노이즈 감소 방식을 설정합니다. (기본: native)",
                 cfgRescaleLabel: "CFG 리스케일링",
                 cfgRescaleHelp: "CFG 리스케일링 강도를 조절합니다. (기본: 0)",
+                characterReferenceWarning: "NAI 4.0은 Character Reference가 지원되지 않습니다.\n추후 Vibe Transfer로 보완할 예정입니다.",
             },
             artStyle: {
                 modal: {

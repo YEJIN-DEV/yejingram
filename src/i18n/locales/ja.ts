@@ -373,6 +373,7 @@ const ja = {
                 noiseScheduleHelp: "ノイズ減少方式を設定します。 (デフォルト: native)",
                 cfgRescaleLabel: "CFGリスケーリング",
                 cfgRescaleHelp: "CFGリスケーリングの強度を調整します。 (デフォルト: 0)",
+                characterReferenceWarning: "NAI 4.0はCharacter Referenceをサポートしていません。\n将来的にVibe Transferで補完予定です。",
             },
             artStyle: {
                 modal: {

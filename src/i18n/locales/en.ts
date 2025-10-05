@@ -373,6 +373,7 @@ const en = {
                 noiseScheduleHelp: "Sets the noise reduction method. (Default: native)",
                 cfgRescaleLabel: "CFG Rescaling",
                 cfgRescaleHelp: "Adjusts the strength of CFG rescaling. (Default: 0)",
+                characterReferenceWarning: "NAI 4.0 does not support Character Reference.\nIt will be supplemented with Vibe Transfer in the future.",
             },
             artStyle: {
                 modal: {
