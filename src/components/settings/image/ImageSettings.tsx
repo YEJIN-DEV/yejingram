@@ -294,19 +294,23 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
       {/* NovelAI 세부 세팅 - NovelAI가 선택된 경우에만 표시 */}
       {imageProvider === 'novelai' && (
         <>
-          <Toggle
-            id="style-aware-toggle"
-            label={t('settings.image.novelai.styleAwareLabel')}
-            description={t('settings.image.novelai.styleAwareHelp')}
-            checked={settings.imageSettings.styleAware || false}
-            onChange={checked => setSettings(prev => ({
-              ...prev,
-              imageSettings: {
-                ...prev.imageSettings,
-                styleAware: checked
-              }
-            }))}
-          />
+          {(imageConfig.model || '').startsWith('nai-diffusion-4-5') ? (
+            <Toggle
+              id="style-aware-toggle"
+              label={t('settings.image.novelai.styleAwareLabel')}
+              description={t('settings.image.novelai.styleAwareHelp')}
+              checked={settings.imageSettings.styleAware || false}
+              onChange={checked => setSettings(prev => ({
+                ...prev,
+                imageSettings: {
+                  ...prev.imageSettings,
+                  styleAware: checked
+                }
+              }))}
+            />
+          ) : (
+            <p className="text-sm whitespace-pre-line text-[var(--color-textual-button-negative)]"> {t('settings.image.novelai.characterReferenceWarning')} </p>
+          )}
           <div>
             <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2">
               <ImageUpscale className="w-4 h-4 mr-2" />

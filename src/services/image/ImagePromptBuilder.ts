@@ -85,7 +85,7 @@ export async function buildNovelAIImagePayload(positivePrompt: string, negativeP
             "skip_cfg_above_sigma": skipCfgAboveSigma,
         }
     }
-    if (isIncludingChar && char.avatar) {
+    if (model.startsWith("nai-diffustion-4-5") && isIncludingChar && char.avatar) {
         const resized = await resizeToNAI(char.avatar, "#ffffff");
         payload.parameters['director_reference_descriptions'] = [
             {
