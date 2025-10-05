@@ -29,25 +29,6 @@ localforage.config({
 });
 
 export const migrations = {
-    1: (state: any) => {
-        state = applyRules(state, {
-            add: [
-                {
-                    path: 'settings.prompts',
-                    keys: ['maxContextTokens', 'maxResponseTokens', 'temperature', 'topP', 'topK'],
-                    defaults: settingsInitialState.prompts
-                }
-            ],
-            delete: [
-                {
-                    path: 'settings.apiConfigs.*',
-                    keys: ['temperature', 'maxTokens', 'topP', 'topK']
-                }
-            ]
-        });
-
-        return state;
-    },
     2: (state: any) => {
         state = applyRules(state, {
             add: [
@@ -60,7 +41,12 @@ export const migrations = {
                     path: '',
                     keys: ['lastSaved'],
                     defaults: { lastSaved: { value: new Date().getTime() } }
-                }
+                },
+                {
+                    path: 'settings.prompts',
+                    keys: ['maxContextTokens', 'maxResponseTokens', 'temperature', 'topP', 'topK'],
+                    defaults: settingsInitialState.prompts
+                }, 
             ],
             move: [
                 {
@@ -83,6 +69,10 @@ export const migrations = {
                 {
                     path: 'settings.prompts',
                     keys: ['image_response_generation']
+                },
+                {
+                    path: 'settings.apiConfigs.*',
+                    keys: ['temperature', 'maxTokens', 'topP', 'topK']
                 }
             ]
         });

@@ -147,8 +147,8 @@
             "type": "chat"
         }
     ],
-    "maxContextTokens": 8192,
-    "maxResponseTokens": 8192,
+    "maxContextTokens": 16384,
+    "maxResponseTokens": 2048,
     "temperature": 1.25,
     "topP": 0.95,
     "topK": 40

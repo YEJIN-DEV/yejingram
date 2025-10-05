@@ -118,6 +118,7 @@ const settingsSlice = createSlice({
                 '캐릭터 연기': { ko: '캐릭터 연기', en: 'Character Acting', ja: 'キャラクター演技' },
                 '메시지 작성(구조화)': { ko: '메시지 작성(구조화)', en: 'Message Composition (Structured)', ja: 'メッセージ作成（構造化）' },
                 '메시지 작성(비구조화)': { ko: '메시지 작성(비구조화)', en: 'Message Composition (Unstructured)', ja: 'メッセージ作成（非構造化）' },
+                '이미지 응답 생성(구조화)': { ko: '이미지 응답 생성(구조화)', en: 'Image Response Generation (Structured)', ja: '画像応答生成（構造化）' },
                 '메모리 생성(구조화)': { ko: '메모리 생성(구조화)', en: 'Memory Creation (Structured)', ja: 'メモリ生成（構造化）' },
                 '출력 형식(구조화)': { ko: '출력 형식(구조화)', en: 'Output Format (Structured)', ja: '出力形式（構造化）' },
                 '출력 형식(비구조화)': { ko: '출력 형식(비구조화)', en: 'Output Format (Unstructured)', ja: '出力形式（非構造化）' },
@@ -128,7 +129,6 @@ const settingsSlice = createSlice({
                 '추가 시스템 지시': { ko: '추가 시스템 지시', en: 'Additional System Instructions', ja: '追加システム指示' },
                 '작가의 노트': { ko: '작가의 노트', en: "Author's Note", ja: '著者のノート' },
                 '채팅 기록': { ko: '채팅 기록', en: 'Chat History', ja: 'チャット履歴' },
-                '이미지 응답 생성': { ko: '이미지 응답 생성', en: 'Image Response Generation', ja: '画像応答生成' },
             };
             state.prompts.main = state.prompts.main.map(prompt => {
                 if (nameMap[prompt.name]) {
