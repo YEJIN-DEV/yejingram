@@ -350,7 +350,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     </div>
                                     <div>
                                         <label className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.sync.serverAddrLabel')}</label>
-                                        <input value={localSettings.syncSettings.syncBaseUrl} onChange={e => setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncBaseUrl: e.target.value } }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm" placeholder={`http://${window.location.hostname}:3001`} />
+                                        <input value={localSettings.syncSettings.syncBaseUrl} onChange={e => setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncBaseUrl: e.target.value } }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm" placeholder={`http://your-host:3001`} />
                                     </div>
                                     <Toggle
                                         id="settings-sync-enabled-toggle"
