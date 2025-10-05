@@ -1,4 +1,5 @@
 import { configureStore, combineReducers, type Action } from '@reduxjs/toolkit';
+import { syncMiddleware } from '../services/syncMiddleware';
 import localforage from 'localforage';
 import {
     persistReducer,
@@ -9,23 +10,83 @@ import {
     PERSIST,
     PURGE,
     REGISTER,
+    createMigrate,
+    type MigrationManifest,
 } from 'redux-persist';
 
 import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
-import settingsReducer from '../entities/setting/slice';
+import settingsReducer, { initialSyncSettings, initialState as settingsInitialState } from '../entities/setting/slice';
+import { initialState as imageSettingsInitialState } from '../entities/setting/image/slice';
+import { applyRules } from '../utils/migration';
+import uiReducer from '../entities/ui/slice';
+import lastSavedReducer from '../entities/lastSaved/slice';
 
 localforage.config({
     name: 'yejingram',
     storeName: 'persist',
 });
 
-const persistConfig = {
+export const migrations = {
+    2: (state: any) => {
+        state = applyRules(state, {
+            add: [
+                {
+                    path: 'settings',
+                    keys: ['imageSettings', 'colorTheme', 'customThemeBase', 'customTheme', 'syncSettings'],
+                    defaults: { imageSettings: imageSettingsInitialState, colorTheme: 'light', customThemeBase: 'light', customTheme: { light: {}, dark: {} }, syncSettings: initialSyncSettings }
+                },
+                {
+                    path: '',
+                    keys: ['lastSaved'],
+                    defaults: { lastSaved: { value: new Date().getTime() } }
+                },
+                {
+                    path: 'settings.prompts',
+                    keys: ['maxContextTokens', 'maxResponseTokens', 'temperature', 'topP', 'topK'],
+                    defaults: settingsInitialState.prompts
+                }, 
+            ],
+            move: [
+                {
+                    from: 'settings.imageApiConfigs',
+                    to: 'settings.imageSettings.config',
+                    keys: ['gemini', 'novelai'],
+                    overwrite: true,
+                    keepSource: false
+                },
+                {
+                    from: 'settings',
+                    to: 'settings.imageSettings',
+                    keys: ['imageApiProvider'],
+                    rename: { imageApiProvider: 'imageProvider' },
+                    overwrite: true,
+                    keepSource: false
+                }
+            ],
+            delete: [
+                {
+                    path: 'settings.prompts',
+                    keys: ['image_response_generation']
+                },
+                {
+                    path: 'settings.apiConfigs.*',
+                    keys: ['temperature', 'maxTokens', 'topP', 'topK']
+                }
+            ]
+        });
+        return state;
+    }
+} as MigrationManifest;
+
+
+export const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
-    version: 0,
-    whitelist: ['characters', 'rooms', 'messages', 'settings'],
+    version: 2,
+    whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved'],
+    migrate: createMigrate(migrations, { debug: true }),
 };
 
 const appReducer = combineReducers({
@@ -33,6 +94,8 @@ const appReducer = combineReducers({
     rooms: roomReducer,
     settings: settingsReducer,
     messages: messageReducer,
+    ui: uiReducer,
+    lastSaved: lastSavedReducer,
 });
 
 export const RESET_ALL = 'app/resetAll' as const;
@@ -55,7 +118,7 @@ export const store = configureStore({
             serializableCheck: {
                 ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
             },
-        }),
+        }).concat(syncMiddleware as any),
 });
 
 export const persistor = persistStore(store);

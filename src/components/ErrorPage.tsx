@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, RefreshCw, Download, Upload, Settings } from 'lucide-react';
 import ErrorPage_EVA from './ErrorPage_EVA';
 
@@ -11,6 +12,7 @@ interface ErrorPageProps {
 }
 
 const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, onBackup, onRestore }) => {
+    const { t } = useTranslation();
     const [resetApi, setResetApi] = useState(false);
     const [resetPrompts, setResetPrompts] = useState(false);
     const [resetUser, setResetUser] = useState(false);
@@ -132,12 +134,8 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                     <AlertTriangle className="w-8 h-8 text-red-500" />
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                                        오류가 발생했습니다
-                                    </h1>
-                                    <p className="text-gray-600 text-sm">
-                                        복구 옵션을 선택해주세요
-                                    </p>
+                                    <h1 className="text-2xl font-bold text-gray-800 mb-1">{t('errorPage.title')}</h1>
+                                    <p className="text-gray-600 text-sm">{t('errorPage.subtitle')}</p>
                                 </div>
                             </div>
 
@@ -154,10 +152,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                         </div>
 
                         <div className="px-8 py-6">
-                            <p className="text-gray-600 mb-6 leading-relaxed">
-                                애플리케이션에서 예기치 않은 오류가 발생했습니다.
-                                아래에서 초기화할 설정을 선택하고 복구를 진행하세요.
-                            </p>
+                            <p className="text-gray-600 mb-6 leading-relaxed">{t('errorPage.intro')}</p>
 
                             {/* Error details */}
                             {error && (
@@ -166,7 +161,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                         onClick={() => setIsExpanded(!isExpanded)}
                                         className="flex items-center space-x-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
                                     >
-                                        <span>오류 세부 정보</span>
+                                        <span>{t('errorPage.detailsToggle')}</span>
                                         <div className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
                                             ▼
                                         </div>
@@ -174,7 +169,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                     {isExpanded && (
                                         <div className="mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
                                             <pre className="text-xs text-gray-700 overflow-auto max-h-32">
-                                                {error.message}
+                                                {`${error.message}\n${error.stack}`}
                                             </pre>
                                         </div>
                                     )}
@@ -185,7 +180,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                             <div className="mb-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                                     <Settings className="w-5 h-5 mr-2 text-blue-500" />
-                                    초기화 옵션
+                                    {t('errorPage.resetOptions')}
                                 </h3>
                                 <div className="space-y-3">
                                     <CheckboxItem
@@ -193,7 +188,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                         onChange={(e) => setResetApi(e.target.checked)}
                                         icon={<div className="w-4 h-4 bg-green-500 rounded"></div>}
                                     >
-                                        API 설정 초기화
+                                        {t('errorPage.resetApi')}
                                     </CheckboxItem>
 
                                     <CheckboxItem
@@ -201,7 +196,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                         onChange={(e) => setResetPrompts(e.target.checked)}
                                         icon={<div className="w-4 h-4 bg-blue-500 rounded"></div>}
                                     >
-                                        프롬프트 초기화
+                                        {t('errorPage.resetPrompts')}
                                     </CheckboxItem>
 
                                     <CheckboxItem
@@ -209,7 +204,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                         onChange={(e) => setResetUser(e.target.checked)}
                                         icon={<div className="w-4 h-4 bg-purple-500 rounded"></div>}
                                     >
-                                        사용자 정보 초기화
+                                        {t('errorPage.resetUser')}
                                     </CheckboxItem>
 
                                     <CheckboxItem
@@ -217,7 +212,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                         onChange={(e) => setResetOther(e.target.checked)}
                                         icon={<div className="w-4 h-4 bg-orange-500 rounded"></div>}
                                     >
-                                        기타 설정 초기화
+                                        {t('errorPage.resetOther')}
                                     </CheckboxItem>
 
                                     <CheckboxItem
@@ -225,7 +220,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                         onChange={(e) => setResetDatabase(e.target.checked)}
                                         icon={<div className="w-4 h-4 bg-red-500 rounded"></div>}
                                     >
-                                        저장된 데이터베이스 초기화
+                                        {t('errorPage.resetDatabase')}
                                     </CheckboxItem>
                                 </div>
                             </div>
@@ -238,7 +233,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                         className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                                     >
                                         <Download className="w-4 h-4" />
-                                        <span>백업</span>
+                                        <span>{t('errorPage.backup')}</span>
                                     </button>
 
                                     <button
@@ -246,7 +241,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                         className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                                     >
                                         <Upload className="w-4 h-4" />
-                                        <span>복구</span>
+                                        <span>{t('errorPage.restore')}</span>
                                     </button>
                                 </div>
 
@@ -255,7 +250,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onResetOptions, onReset, o
                                     className="w-full flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                     <RefreshCw className="w-5 h-5" />
-                                    <span>선택 초기화 및 새로고침</span>
+                                    <span>{t('errorPage.resetAndReload')}</span>
                                 </button>
                             </div>
                         </div>

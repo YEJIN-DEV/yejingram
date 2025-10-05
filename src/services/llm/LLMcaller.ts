@@ -1,26 +1,23 @@
-import { store, type AppDispatch } from "../app/store";
-import { selectCharacterById, selectAllCharacters } from "../entities/character/selectors";
-import type { Message } from "../entities/message/types";
-import type { Room } from "../entities/room/types";
-import { selectAllSettings, selectCurrentApiConfig, selectCurrentImageApiConfig, selectSelectedPersona } from "../entities/setting/selectors";
-import { messagesActions } from "../entities/message/slice";
-import { roomsActions } from "../entities/room/slice";
+import { store, type AppDispatch } from "../../app/store";
+import { selectCharacterById, selectAllCharacters } from "../../entities/character/selectors";
+import type { Message } from "../../entities/message/types";
+import type { Room } from "../../entities/room/types";
+import { selectAllSettings, selectCurrentApiConfig, selectSelectedPersona } from "../../entities/setting/selectors";
+import { messagesActions } from "../../entities/message/slice";
+import { roomsActions } from "../../entities/room/slice";
 import type { ChatResponse, MessagePart } from "./type";
-import { selectMessagesByRoomId } from "../entities/message/selectors";
-import type { Character } from "../entities/character/types";
-import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload, buildGeminiImagePayload, buildNovelAIImagePayload } from "./promptBuilder";
-import type { ApiConfig, Persona, SettingsState } from "../entities/setting/types";
-import { calcReactionDelay, sleep } from "../utils/reactionDelay";
+import { selectMessagesByRoomId } from "../../entities/message/selectors";
+import type { Character } from "../../entities/character/types";
+import { buildGeminiApiPayload, buildClaudeApiPayload, buildOpenAIApiPayload } from "./promptBuilder";
+import type { ApiConfig, Persona, SettingsState } from "../../entities/setting/types";
+import { calcReactionDelay, sleep } from "../../utils/reactionDelay";
 import { nanoid } from "@reduxjs/toolkit";
 import toast from 'react-hot-toast';
-import { unzipToDataUrls } from "../utils/zip2png";
+import { callImageGeneration } from "../image/ImageCaller";
+import { LLMJSONParser } from 'ai-json-fixer';
+import { CLAUDE_API_BASE_URL, GEMINI_API_BASE_URL, GROK_API_BASE_URL, OPENAI_API_BASE_URL, VERTEX_AI_API_BASE_URL } from "../URLs";
 
-const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
-const VERTEX_AI_API_BASE_URL = "https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
-const CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1/messages";
-const OPENAI_API_BASE_URL = "https://api.openai.com/v1/chat/completions";
-const GROK_API_BASE_URL = "https://api.x.ai/v1/chat/completions";
-const NAI_DIFFUSION_API_BASE_URL = "https://image.novelai.net/ai/generate-image";
+const llmParser = new LLMJSONParser();
 
 // Remove leading speaker/meta tags like [From: XXX] or [Name: XXX] from model output
 function sanitizeOutputContent(text?: string): string | undefined {
@@ -46,7 +43,8 @@ async function handleApiResponse(
     room: Room,
     char: Character,
     dispatch: AppDispatch,
-    setTypingCharacterId: (id: number | null) => void
+    setTypingCharacterId: (id: number | null) => void,
+    t: (key: string) => string
 ) {
     // If structured output included a newMemory field, append it to the character
     if (res && 'newMemory' in res) {
@@ -58,7 +56,7 @@ async function handleApiResponse(
                 if (!exists) {
                     dispatch(roomsActions.addRoomMemory({ roomId: room.id, value: trimmed }));
                     // Toast 알림으로 새로운 메모리 추가를 알림
-                    toast.success(`새로운 기억이 추가되었습니다:\n"${trimmed}"`, {
+                    toast.success(`${t('main.newMemory')}:\n"${trimmed}"`, {
                         duration: 5000,
                     });
                 }
@@ -74,29 +72,44 @@ async function handleApiResponse(
             if (i > 0) {
                 await sleep(messagePart.delay || 1000);
             }
-            const message = await createMessageFromPart(messagePart, room.id, char);
-            dispatch(messagesActions.upsertOne(message));
+
+            const messages = await createMessageFromPart(messagePart, room.id, char);
+            for (const message of messages) {
+                dispatch(messagesActions.upsertOne(message));
+            }
+
+            if (i === res.messages.length - 1) {
+                dispatch({ type: 'messages/writingEnd' });
+            }
         }
     }
 }
 
-async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Promise<Message> {
-    let message = {
-        id: nanoid(),
-        roomId: roomId,
-        authorId: char.id,
-        content: messagePart.content,
-        createdAt: new Date().toISOString(),
-        type: messagePart.imageGenerationSetting ? 'IMAGE' : messagePart.sticker ? 'STICKER' : 'TEXT',
-    } as Message;
+async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Promise<Message[]> {
+    let message: Message[] = [];
+
+    if (messagePart.content) {
+        message.push({
+            id: nanoid(),
+            roomId: roomId,
+            authorId: char.id,
+            createdAt: new Date().toISOString(),
+            type: 'TEXT',
+            content: messagePart.content,
+        });
+    }
 
     if (messagePart.sticker) {
         const foundSticker = char.stickers?.find(s => s.id == messagePart.sticker || s.name === messagePart.sticker);
         if (foundSticker) {
-            message = {
-                ...message,
-                sticker: foundSticker
-            };
+            message.push({
+                id: nanoid(),
+                roomId: roomId,
+                authorId: char.id,
+                createdAt: new Date().toISOString(),
+                type: 'STICKER',
+                sticker: foundSticker,
+            });
         }
     }
 
@@ -104,88 +117,31 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
         const imageResponse = await callImageGeneration(messagePart.imageGenerationSetting, char);
         const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
         if (inlineDataBody) {
-            message = {
-                ...message,
+            message.push({
+                id: nanoid(),
+                roomId: roomId,
+                authorId: char.id,
+                createdAt: new Date().toISOString(),
+                type: 'IMAGE',
                 file: {
                     dataUrl: `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`,
                     mimeType: inlineDataBody.mimeType,
                     name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
-                }
-            };
+                },
+                imageGenerationSetting: messagePart.imageGenerationSetting
+            });
         } else {
-            throw new Error('이미지 생성에 실패했습니다:', imageResponse.candidates[0].finishReason ?? '');
+            throw new Error('Failed to generate image:', imageResponse.candidates[0].finishReason ?? '');
         }
     }
 
     return message;
 }
 
-async function callImageGeneration(imageGenerationSetting: { prompt: string; isSelfie: boolean }, char: Character) {
-    // 이미지 생성 API 호출
-    const imageConfig = selectCurrentImageApiConfig(store.getState());
-    const imageApiProvider = imageConfig.model.startsWith('nai-') ? 'novelai' : 'gemini';
-    let url: string;
-    let headers: { 'Content-Type': string; 'Authorization'?: string } = { 'Content-Type': 'application/json' };
-    let payload: object = {};
-    if (imageApiProvider === 'novelai') {
-        url = NAI_DIFFUSION_API_BASE_URL;
-        headers = { ...headers, 'Authorization': `Bearer ${imageConfig.apiKey}` };
-        payload = buildNovelAIImagePayload(imageGenerationSetting.prompt, imageConfig.model);
-    } else { // gemini
-        url = `${GEMINI_API_BASE_URL}${imageConfig.model}:generateContent?key=${imageConfig.apiKey}`;
-        payload = buildGeminiImagePayload(imageGenerationSetting.prompt, imageGenerationSetting.isSelfie, char);
-    }
-
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(payload)
-        });
-
-        if (imageApiProvider === 'gemini') {
-            const data = await response.json();
-
-            if (!response.ok) {
-                console.error("API Error:", data);
-                const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
-                throw new Error(errorMessage);
-            }
-
-            return data;
-        } else { // novelai
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("NovelAI API Error:", errorData);
-                const errorMessage = errorData?.message || `API 요청 실패: ${response.statusText}`;
-                throw new Error(errorMessage);
-            } else {
-                const imageData = await unzipToDataUrls(await response.arrayBuffer());
-                return {
-                    candidates: [{
-                        content: {
-                            parts: [{
-                                inlineData: {
-                                    mimeType: imageData.mimeType,
-                                    data: imageData.data
-                                }
-                            }]
-                        },
-                        finishReason: 'stop'
-                    }]
-                };
-            }
-        }
-
-    } catch (error: unknown) {
-        console.error(`이미지 생성 API 호출 중 오류 발생:`, error);
-        throw error;
-    }
-}
 
 function handleError(error: unknown, roomId: string, charId: number, dispatch: AppDispatch) {
     console.error("Error in LLMSend:", error);
-    const errorMessage = `답변이 생성되지 않았습니다. (이유: ${error instanceof Error ? error.message : String(error)})`;
+    const errorMessage = `Failed to generate response. (Reason: ${error instanceof Error ? error.message : String(error)})`;
     const errorResponse: Message = {
         id: nanoid(),
         roomId: roomId,
@@ -212,16 +168,24 @@ async function callApi(
 
     switch (apiProvider) {
         case 'gemini':
+            payload = await buildGeminiApiPayload('gemini', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, { apiKey: apiConfig.apiKey! }, extraSystemInstruction);
+            break;
         case 'vertexai':
-            payload = buildGeminiApiPayload(room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, extraSystemInstruction);
+            payload = await buildGeminiApiPayload('vertexai', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, {
+                apiKey: apiConfig.accessToken!,
+                location: apiConfig.location!,
+                projectId: apiConfig.projectId!
+            }, extraSystemInstruction);
             break;
         case 'claude':
+            payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
+            break;
         case 'grok':
-            payload = buildClaudeApiPayload(apiConfig.model, room, persona, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
+            payload = await buildClaudeApiPayload('grok', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
             break;
         case 'openai':
         case 'customOpenAI':
-            payload = buildOpenAIApiPayload(apiConfig.model, room, persona, character, messages, isProactive, settings.useStructuredOutput, extraSystemInstruction);
+            payload = await buildOpenAIApiPayload(room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, extraSystemInstruction);
             break;
     }
     let url: string;
@@ -267,14 +231,14 @@ async function callApi(
 
         if (!response.ok) {
             console.error("API Error:", data);
-            const errorMessage = (data as any)?.error?.message || `API 요청 실패: ${response.statusText}`;
+            const errorMessage = (data as any)?.error?.message || `API request failed: ${response.statusText}`;
             throw new Error(errorMessage);
         }
 
         return parseApiResponse(data, settings, messages);
 
     } catch (error: unknown) {
-        console.error(`${apiProvider} API 호출 중 오류 발생:`, error);
+        console.error(`${apiProvider} error occured while requesting:`, error);
         throw error;
     }
 }
@@ -285,42 +249,47 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
     function processApiMessage(targetData: string): ChatResponse {
         const rawResponseText = sanitizeOutputContent(targetData) ?? '';
         if (settings.useStructuredOutput) {
-            const parsed = JSON.parse(rawResponseText);
-            parsed.reactionDelay = Math.max(0, parsed.reactionDelay || 0);
-            return parsed;
-        } else {
-            const lines = rawResponseText.split('\n').filter((line: string) => line.trim() !== '');
-            const formattedMessages = lines.map((line: string) => ({
-                delay: calcReactionDelay({
-                    inChars: messages[messages.length - 1]?.content.length || 0,
-                    outChars: line.length,
-                    device: "mobile",
-                }, {
-                    speedup: settings.speedup
-                }),
-                content: line,
-            }));
-            return { reactionDelay: 0, messages: formattedMessages };
+            try {
+                const parsed = llmParser.parse(rawResponseText);
+                parsed.reactionDelay = Math.max(0, parsed?.reactionDelay || 0);
+                return parsed;
+            } catch {
+                // If parsing fails, fallback to plain text
+                console.warn("Failed to parse structured output, falling back to plain text.");
+            }
         }
+        const lines = rawResponseText.split('\n').filter((line: string) => line.trim() !== '');
+        const formattedMessages = lines.map((line: string) => ({
+            delay: calcReactionDelay({
+                inChars: messages[messages.length - 1]?.content?.length || 0,
+                outChars: line.length,
+                device: "mobile",
+            }, {
+                speedup: settings.speedup
+            }),
+            content: line,
+        }));
+        return { reactionDelay: 0, messages: formattedMessages };
+
     }
 
     if (apiProvider === 'gemini' || apiProvider === 'vertexai') {
         if (data.candidates && data.candidates.length > 0 && data.candidates[0].content?.parts[0]?.text) {
             return processApiMessage(data.candidates[0].content?.parts[0]?.text);
         } else {
-            throw new Error(data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || '알 수 없는 이유');
+            throw new Error(data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || 'Unknown reason');
         }
     } else if (apiProvider === 'claude') { // Claude
         if (data.content && data.content.length > 0 && data.content[0]?.text) {
             return processApiMessage(data.content[0]?.text);
         } else {
-            throw new Error(data.stop_reason || '알 수 없는 이유');
+            throw new Error(data.stop_reason || 'Unknown reason');
         }
     } else { // OpenAI-compatible
         const text = data?.choices?.[0]?.message?.content;
         if (!text) {
             const t2 = data?.choices?.[0]?.delta?.content; // for stream chunks if ever used
-            if (!t2) throw new Error('응답 본문이 비어있습니다.');
+            if (!t2) throw new Error('Empty response body');
             return processApiMessage(t2);
         }
         return processApiMessage(text);
@@ -333,13 +302,26 @@ async function LLMSend(
     persona: Persona | null,
     char: Character,
     setTypingCharacterId: (id: number | null) => void,
+    t: (key: string) => string,
+    isContinuation = false
 ) {
     const state = store.getState();
     const dispatch = store.dispatch;
 
     const api = selectCurrentApiConfig(state);
     const settings = selectAllSettings(state);
-    const messages = selectMessagesByRoomId(state, room.id);
+    const messages = structuredClone(selectMessagesByRoomId(state, room.id))
+
+    if (isContinuation) {
+        messages.push({
+            id: nanoid(),
+            roomId: room.id,
+            authorId: char.id,
+            createdAt: new Date().toISOString(),
+            type: 'SYSTEM',
+            content: `[The reply is too short. Since ${persona?.name || 'User'} has not yet responded, continue ${char.name}'s reply.]`
+        });
+    }
 
     // --- Anti-echo detection helpers ---
     function normalize(text: string) {
@@ -417,11 +399,11 @@ async function LLMSend(
             // Fallback: if still echo-like, send a short probing question to move forward
             finalRes = {
                 reactionDelay: 500,
-                messages: [{ delay: 800, content: '그 얘기 흥미로운데, 너는 어떻게 생각해?' }]
+                messages: [{ delay: 800, content: t('llm.antiEchoFallback') }]
             };
         }
 
-        await handleApiResponse(finalRes, room, char, dispatch, setTypingCharacterId);
+        await handleApiResponse(finalRes, room, char, dispatch, setTypingCharacterId, t);
     } catch (error) {
         handleError(error, room.id, char.id, dispatch);
     } finally {
@@ -430,19 +412,19 @@ async function LLMSend(
 }
 
 
-export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
+export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void, t: (key: string) => string, isContinuation = false) {
     const state = store.getState();
     const persona = selectSelectedPersona(state);
     const memberChars = room.memberIds.map(id => selectCharacterById(state, id));
 
     for (const char of memberChars) {
         if (char) {
-            await LLMSend(room, persona, char, setTypingCharacterId);
+            await LLMSend(room, persona, char, setTypingCharacterId, t, isContinuation);
         }
     }
 }
 
-export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void) {
+export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id: number | null) => void, t: (key: string) => string) {
     const state = store.getState();
     const persona = selectSelectedPersona(state);
     const allCharacters = selectAllCharacters(state);
@@ -478,6 +460,6 @@ export async function SendGroupChatMessage(room: Room, setTypingCharacterId: (id
         if (i > 0) {
             await sleep(responseDelay + (Math.random() * 300 - 150));
         }
-        await LLMSend(room, persona, character, setTypingCharacterId);
+        await LLMSend(room, persona, character, setTypingCharacterId, t);
     }
 }

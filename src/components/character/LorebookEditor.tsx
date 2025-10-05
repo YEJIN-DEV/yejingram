@@ -1,5 +1,6 @@
 import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
 import { charactersActions } from '../../entities/character/slice';
@@ -30,6 +31,7 @@ const emptyLore = (nextOrder: number, characterId?: number, roomId?: string): Lo
 });
 
 export function LorebookEditor({ characterId, roomId, draft, onDraftChange, roomLorebook }: LorebookEditorProps) {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const characterFromStore = useSelector((state: RootState) => characterId ? selectCharacterById(state, characterId) : undefined);
     const character = draft && draft.id === characterId ? draft : characterFromStore;
@@ -139,44 +141,44 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <h5 className="text-sm font-medium text-gray-700">로어 {sorted.length}개</h5>
-                <button onClick={addLore} className="py-2 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm inline-flex items-center gap-2 transition-colors">
-                    <Plus className="w-4 h-4" /> 추가
+                <h5 className="text-sm font-medium text-[var(--color-text-interface)]">{t('characterPanel.lorebookEditor.header', { count: sorted.length })}</h5>
+                <button onClick={addLore} className="py-2 px-3 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-lg text-sm inline-flex items-center gap-2 transition-colors">
+                    <Plus className="w-4 h-4" /> {t('characterPanel.lorebookEditor.add')}
                 </button>
             </div>
 
             {sorted.map((l, i) => (
-                <div key={l.id} className="bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div key={l.id} className="bg-[var(--color-bg-main)] border border-[var(--color-border)] rounded-lg shadow-sm">
                     <div className="flex flex-wrap items-center gap-2 p-4">
-                        <GripVertical className="w-4 h-4 text-gray-400" />
-                        <span className="text-xs text-gray-500 w-8 font-medium">#{i + 1}</span>
+                        <GripVertical className="w-4 h-4 text-[var(--color-icon-secondary)]" />
+                        <span className="text-xs text-[var(--color-text-secondary)] w-8 font-medium">#{i + 1}</span>
                         <input
                             value={l.name}
                             onChange={e => updateLore(l.id, { name: e.target.value })}
-                            placeholder="이름"
-                            className="min-w-0 flex-1 basis-full sm:basis-auto px-3 py-2 bg-gray-50 text-gray-900 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm"
+                            placeholder={t('characterPanel.lorebookEditor.namePlaceholder')}
+                            className="min-w-0 flex-1 basis-full sm:basis-auto px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm"
                         />
                         <div className="flex gap-1 w-full justify-end sm:w-auto">
-                            <button onClick={() => moveLore(l.id, -1)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-40 transition-colors" disabled={i === 0} title="위로">
+                            <button onClick={() => moveLore(l.id, -1)} className="p-2 rounded-lg bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-icon-primary)] disabled:opacity-40 transition-colors" disabled={i === 0} title={t('characterPanel.lorebookEditor.moveUpTitle')}>
                                 <ChevronUp className="w-4 h-4" />
                             </button>
-                            <button onClick={() => moveLore(l.id, 1)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-40 transition-colors" disabled={i === sorted.length - 1} title="아래로">
+                            <button onClick={() => moveLore(l.id, 1)} className="p-2 rounded-lg bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-icon-primary)] disabled:opacity-40 transition-colors" disabled={i === sorted.length - 1} title={t('characterPanel.lorebookEditor.moveDownTitle')}>
                                 <ChevronDown className="w-4 h-4" />
                             </button>
-                            <button onClick={() => setExpandedId(expandedId === l.id ? null : l.id)} className="p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors" title={expandedId === l.id ? '접기' : '편집'}>
+                            <button onClick={() => setExpandedId(expandedId === l.id ? null : l.id)} className="p-2 rounded-lg bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] transition-colors" title={expandedId === l.id ? t('characterPanel.lorebookEditor.collapse') : t('characterPanel.lorebookEditor.edit')}>
                                 <Pencil className="w-4 h-4" />
                             </button>
-                            <button onClick={() => removeLore(l.id)} className="p-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors" title="삭제">
+                            <button onClick={() => removeLore(l.id)} className="p-2 rounded-lg bg-[var(--color-button-negative)] hover:bg-[var(--color-button-negative)] text-[var(--color-text-accent)] transition-colors" title={t('characterPanel.lorebookEditor.delete')}>
                                 <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
 
                     {expandedId === l.id && (
-                        <div className="p-4 pt-0 space-y-4 border-t border-gray-200">
+                        <div className="p-4 pt-0 space-y-4 border-t border-[var(--color-border)]">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="sm:col-span-2">
-                                    <label className="text-sm font-medium text-gray-700 mb-2 block">활성화 키</label>
+                                    <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">{t('characterPanel.lorebookEditor.activationKeysLabel')}</label>
                                     <div className="flex flex-col gap-2">
                                         <input
                                             value={l.activationKeys[0] ?? ''}
@@ -185,8 +187,8 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                                                 keys[0] = e.target.value;
                                                 updateLore(l.id, { activationKeys: keys });
                                             }}
-                                            placeholder="키워드1, 키워드2 (쉼표로 구분)"
-                                            className={`w-full min-w-0 px-3 py-2 bg-gray-50 text-gray-900 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm ${l.alwaysActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            placeholder={t('characterPanel.lorebookEditor.activationKeysPlaceholder')}
+                                            className={`w-full min-w-0 px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm ${l.alwaysActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             disabled={l.alwaysActive}
                                         />
                                         {l.multiKey && (
@@ -197,8 +199,8 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                                                     keys[1] = e.target.value;
                                                     updateLore(l.id, { activationKeys: keys });
                                                 }}
-                                                placeholder="키워드1, 키워드2 (쉼표로 구분)"
-                                                className={`w-full min-w-0 px-3 py-2 bg-gray-50 text-gray-900 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm ${l.alwaysActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                placeholder={t('characterPanel.lorebookEditor.activationKeysPlaceholder')}
+                                                className={`w-full min-w-0 px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm ${l.alwaysActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 disabled={l.alwaysActive}
                                             />
                                         )}
@@ -206,28 +208,28 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                                 </div>
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-gray-700 mb-2 block">프롬프트</label>
+                                <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">{t('characterPanel.lorebookEditor.promptLabel')}</label>
                                 <textarea
                                     value={l.prompt}
                                     onChange={e => updateLore(l.id, { prompt: e.target.value })}
                                     rows={10}
-                                    placeholder="로어 내용"
-                                    className="w-full px-3 py-2 bg-gray-50 text-gray-900 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-sm"
+                                    placeholder={t('characterPanel.lorebookEditor.promptPlaceholder')}
+                                    className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm"
                                 />
                             </div>
 
                             <div className="flex flex-col gap-3 mt-2">
-                                <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
+                                <label className="flex items-center gap-3 text-sm text-[var(--color-text-interface)] cursor-pointer">
                                     <div className="relative">
                                         <input type="checkbox" checked={!!l.alwaysActive} onChange={e => updateLore(l.id, { alwaysActive: e.target.checked })} className="sr-only peer" />
-                                        <div className="w-5 h-5 bg-gray-200 border border-gray-300 rounded peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-colors"></div>
-                                        <svg className="absolute top-0.5 left-0.5 w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                                        <div className="w-5 h-5 bg-[var(--color-button-secondary-accent)] border border-[var(--color-border-strong)] rounded peer-checked:bg-[var(--color-focus-border)] peer-checked:border-[var(--color-focus-border)] transition-colors"></div>
+                                        <svg className="absolute top-0.5 left-0.5 w-3 h-3 text-[var(--color-text-accent)] opacity-0 peer-checked:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
                                     </div>
-                                    항상 활성화
+                                    {t('characterPanel.lorebookEditor.alwaysActive')}
                                 </label>
-                                <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
+                                <label className="flex items-center gap-3 text-sm text-[var(--color-text-interface)] cursor-pointer">
                                     <div className="relative">
                                         <input
                                             type="checkbox"
@@ -235,12 +237,12 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
                                             onChange={e => setMultiKey(l.id, e.target.checked)}
                                             className="sr-only peer"
                                         />
-                                        <div className="w-5 h-5 bg-gray-200 border border-gray-300 rounded peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-colors"></div>
-                                        <svg className="absolute top-0.5 left-0.5 w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                                        <div className="w-5 h-5 bg-[var(--color-button-secondary-accent)] border border-[var(--color-border-strong)] rounded peer-checked:bg-[var(--color-focus-border)] peer-checked:border-[var(--color-focus-border)] transition-colors"></div>
+                                        <svg className="absolute top-0.5 left-0.5 w-3 h-3 text-[var(--color-text-accent)] opacity-0 peer-checked:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
                                     </div>
-                                    두 키 모두 일치 시 활성화
+                                    {t('characterPanel.lorebookEditor.requireBothKeys')}
                                 </label>
                             </div>
                         </div>
@@ -249,13 +251,13 @@ export function LorebookEditor({ characterId, roomId, draft, onDraftChange, room
             ))}
 
             {sorted.length === 0 && (
-                <div className="text-center text-sm text-gray-500 border-2 border-dashed border-gray-200 rounded-lg p-8 bg-gray-50">
+                <div className="text-center text-sm text-[var(--color-icon-tertiary)] border-2 border-dashed border-[var(--color-border)] rounded-lg p-8 bg-[var(--color-bg-secondary)]">
                     <div className="flex flex-col items-center gap-2">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                            <Plus className="w-6 h-6 text-gray-400" />
+                        <div className="w-12 h-12 bg-[var(--color-button-secondary-accent)] rounded-full flex items-center justify-center">
+                            <Plus className="w-6 h-6 text-[var(--color-icon-secondary)]" />
                         </div>
-                        <p className="font-medium">아직 로어가 없습니다</p>
-                        <p className="text-xs text-gray-400">상단의 추가 버튼으로 생성하세요</p>
+                        <p className="font-medium">{t('characterPanel.lorebookEditor.emptyTitle')}</p>
+                        <p className="text-xs text-[var(--color-text-informative-secondary)]">{t('characterPanel.lorebookEditor.emptyDescription')}</p>
                     </div>
                 </div>
             )}

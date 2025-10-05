@@ -3,6 +3,16 @@ import { createSelector } from '@reduxjs/toolkit';
 
 const selectSettingsState = (state: RootState) => state.settings;
 
+export const selectColorTheme = createSelector(
+    [selectSettingsState],
+    (settings) => settings.colorTheme || 'light'
+);
+
+export const selectUILanguage = createSelector(
+    [selectSettingsState],
+    (settings) => settings.uiLanguage
+);
+
 export const selectIsSettingsPanelOpen = createSelector(
     [selectSettingsState],
     (settings) => settings.isModalOpen
@@ -50,21 +60,6 @@ export const selectApiConfigs = createSelector(
 
 export const selectCurrentApiConfig = createSelector(
     [selectApiProvider, selectApiConfigs],
-    (provider, configs) => configs[provider]
-);
-
-export const selectImageApiProvider = createSelector(
-    [selectSettingsState],
-    (settings) => settings.imageApiProvider
-);
-
-export const selectImageApiConfigs = createSelector(
-    [selectSettingsState],
-    (settings) => settings.imageApiConfigs
-);
-
-export const selectCurrentImageApiConfig = createSelector(
-    [selectImageApiProvider, selectImageApiConfigs],
     (provider, configs) => configs[provider]
 );
 

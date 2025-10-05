@@ -1,19 +1,20 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
 import type { Message as MessageType } from '../../entities/message/types';
-// Lucide Icons
-import { Calendar, Edit3, Trash2, RefreshCw } from 'lucide-react';
+import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare, Loader2, StepForward } from 'lucide-react';
 import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
 import { Avatar } from '../../utils/Avatar';
-import { SendMessage } from '../../services/LLMcaller';
+import { SendMessage } from '../../services/llm/LLMcaller';
 import type { Room } from '../../entities/room/types';
 import { inviteCharacter } from '../../utils/inviteCharacter';
 import { UrlPreview } from './chatcontents/UrlPreviewProps';
 import { renderFile } from './FilePreview';
+import { callImageGeneration } from '../../services/image/ImageCaller';
 
 // Helper function for date formatting
 const formatDateSeparator = (date: Date): string => {
@@ -40,7 +41,7 @@ const renderTextWithLinks = (text: string, isMe: boolean) => {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className={`underline hover:opacity-80 ${isMe ? 'text-blue-200 hover:text-blue-100' : 'text-blue-600 hover:text-blue-800'
+          className={`underline hover:opacity-80 ${isMe ? 'text-[var(--color-message-url-self)] hover:text-[var(--color-message-url-self-hover)]' : 'text-[var(--color-message-url-other)] hover:text-[var(--color-message-url-other-hover)]'
             }`}
         >
           {part}
@@ -99,12 +100,25 @@ const MessageList: React.FC<MessageListProps> = ({
   setTypingCharacterId,
   setIsWaitingForResponse
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const allCharacters = useSelector((state: RootState) => charactersAdapter.getSelectors().selectAll(state.characters));
   const animatedMessageIds = useRef(new Set<string>());
+  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [expandedStickers, setExpandedStickers] = useState<Set<string>>(new Set());
+  const [imageModalOpen, setImageModalOpen] = useState<boolean>(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  const [regeneratingImageIds, setRegeneratingImageIds] = useState<Set<string>>(new Set());
+  // Mobile gesture helpers
+  const [isCoarsePointer, setIsCoarsePointer] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || !('matchMedia' in window)) return false;
+    return window.matchMedia('(pointer: coarse)').matches;
+  });
+  const hideControlsTimeoutRef = useRef<number | null>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+
+  const CONTROLS_AUTOHIDE_MS = 2000; // 모바일 컨트롤 자동 숨김 시간(ms)
 
   const toggleStickerSize = useCallback((messageId: string) => {
     setExpandedStickers(prev => {
@@ -123,6 +137,82 @@ const MessageList: React.FC<MessageListProps> = ({
     // This effect might be more complex if actual animation triggers are needed
     // For now, just ensuring the ref is cleared or managed
   }, [messages]);
+
+  // Effect to handle ESC key for image modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && imageModalOpen) {
+        setImageModalOpen(false);
+      }
+    };
+
+    if (imageModalOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [imageModalOpen]);
+
+  // Detect pointer type changes (desktop/mobile) and cleanup timers on unmount
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('matchMedia' in window)) return;
+    const mql = window.matchMedia('(pointer: coarse)');
+    const handler = (e: MediaQueryListEvent) => setIsCoarsePointer(e.matches);
+
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', handler);
+      return () => {
+        mql.removeEventListener('change', handler);
+      };
+    }
+  }, []);
+
+  // Cleanup auto-hide timer on unmount
+  useEffect(() => {
+    return () => {
+      if (hideControlsTimeoutRef.current) {
+        window.clearTimeout(hideControlsTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const showControlsWithAutoHide = useCallback((messageId: string) => {
+    setActiveMessageId(messageId);
+    if (hideControlsTimeoutRef.current) {
+      window.clearTimeout(hideControlsTimeoutRef.current);
+    }
+    hideControlsTimeoutRef.current = window.setTimeout(() => {
+      setActiveMessageId(null);
+    }, CONTROLS_AUTOHIDE_MS);
+  }, []);
+
+  // Mobile: hide controls when tapping outside the active message
+  useEffect(() => {
+    if (!isCoarsePointer) return; // 모바일(coarse pointer)에서만 동작
+
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!activeMessageId) return;
+      const target = e.target as Element | null;
+      if (!target) return;
+      const container = target.closest('[data-message-id]') as HTMLElement | null;
+      const clickedId = container?.getAttribute('data-message-id');
+      if (clickedId === activeMessageId) return; // 같은 메시지 내부 터치면 유지
+
+      // 외부(또는 다른 메시지) 터치 시 컨트롤 숨김
+      setActiveMessageId(null);
+      if (hideControlsTimeoutRef.current) {
+        window.clearTimeout(hideControlsTimeoutRef.current);
+        hideControlsTimeoutRef.current = null;
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [isCoarsePointer, activeMessageId]);
 
 
   return (
@@ -168,33 +258,48 @@ const MessageList: React.FC<MessageListProps> = ({
             animatedMessageIds.current.add(msg.id.toString());
           }
 
-          // Placeholder for message content rendering
           const renderMessageContent = () => {
             if (editingMessageId === msg.id) { // Use msg.id for editing
-              // Editing state - Instagram DM Style
+              // Editing state - Enhanced style with CSS variables for dark mode
               return (
-                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  <textarea
-                    data-id={msg.id.toString()}
-                    className="edit-message-textarea w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 focus:scale-105"
-                    rows={5}
-                    defaultValue={msg.content || ''}
-                  ></textarea>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <button onClick={() => {
-                      setEditingMessageId(null);
-                    }} data-id={msg.id.toString()} className="cancel-edit-btn text-sm text-gray-500 hover:text-gray-700 bg-gray-100 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105 hover:bg-gray-200" >취소</button>
-                    <button onClick={() => {
-                      const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
-                      if (textarea) {
-                        const newContent = textarea.value;
-                        dispatch(messagesActions.updateOne({
-                          id: msg.id,
-                          changes: { content: newContent }
-                        }));
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-3`}>
+                  <div className="relative w-full">
+                    <textarea
+                      data-id={msg.id.toString()}
+                      className="edit-message-textarea w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-2xl border border-[var(--color-border-strong)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-base resize-y min-h-40 md:min-h-48 transition-all duration-300 shadow-lg hover:shadow-xl placeholder-[var(--color-text-informative-secondary)]"
+                      rows={5}
+                      defaultValue={msg.content || ''}
+                      placeholder={t('main.message.edit.placeholder')}
+                      autoFocus
+                    ></textarea>
+                    <div className="absolute bottom-3 right-3 text-xs text-[var(--color-text-informative-secondary)]">
+                      {t('main.message.edit.linebreakHint')}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="text-xs text-[var(--color-text-informative-secondary)]">
+                      {t('main.message.edit.editing')}
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button onClick={() => {
                         setEditingMessageId(null);
-                      }
-                    }} data-id={msg.id.toString()} className="save-edit-btn text-sm text-white bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105">저장</button>
+                      }} data-id={msg.id.toString()} className="cancel-edit-btn text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-interface)] bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] px-5 py-2.5 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 border border-[var(--color-border)]">
+                        {t('common.cancel')}
+                      </button>
+                      <button onClick={() => {
+                        const textarea = document.querySelector(`textarea[data-id="${msg.id}"]`) as HTMLTextAreaElement;
+                        if (textarea) {
+                          const newContent = textarea.value;
+                          dispatch(messagesActions.updateOne({
+                            id: msg.id,
+                            changes: { content: newContent }
+                          }));
+                          setEditingMessageId(null);
+                        }
+                      }} data-id={msg.id.toString()} className="save-edit-btn text-sm text-[var(--color-text-accent)] bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] px-6 py-2.5 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg">
+                        {t('common.save')}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -208,44 +313,48 @@ const MessageList: React.FC<MessageListProps> = ({
               const heightStyle = isExpanded ? { maxHeight: '400px' } : { maxHeight: '120px' };
 
               const imgSrc = stickerData.data;
-              const stickerName = stickerData.name || '스티커';
-              const stickerElement = (
-                <div className="inline-block cursor-pointer transition-all duration-300 hover:scale-110 transform" onClick={() => toggleStickerSize(msg.id.toString())}>
+              const stickerName = stickerData.name || t('main.message.sticker.defaultName');
+
+              return (
+                <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
                   <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`} style={heightStyle} />
                 </div>
               );
-
-              const hasTextMessage = msg.content && msg.content.trim();
-
-              if (hasTextMessage) {
-                return (
-                  <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
-                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-900'
-                      } ${cornerClass}`}>
-                      <div className="break-words">{msg.content}</div>
-                    </div>
-                    {stickerElement}
-                  </div>
-                );
-              } else {
-                return stickerElement;
-              }
             } else if ((msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.type === 'VIDEO' || msg.type === 'FILE') && msg.file?.dataUrl) {
-              const hasTextContent = msg.content && msg.content.trim();
-
+              const isRegenerating = regeneratingImageIds.has(msg.id.toString());
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}>
-                  {renderFile(msg.file, false)}
-                  {hasTextContent && (
-                    <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-900'
-                      } ${cornerClass}`}>
-                      <div className="break-words">{renderTextWithLinks(msg.content || '', isMe)}</div>
-                    </div>
-                  )}
+                  <div
+                    onClick={() => {
+                      if (!(msg.type === 'IMAGE' && msg.file?.dataUrl) || isRegenerating) return;
+                      // Mobile(coarse pointer): single tap shows controls, double-tap opens modal
+                      if (isCoarsePointer) {
+                        // First tap: show controls; second tap on same image: open modal
+                        if (activeMessageId !== msg.id.toString()) {
+                          showControlsWithAutoHide(msg.id.toString());
+                          return;
+                        }
+                        setSelectedImageUrl(msg.file.dataUrl);
+                        setImageModalOpen(true);
+                        setActiveMessageId(null);
+                        return;
+                      }
+                      // Desktop: open modal on single click
+                      setSelectedImageUrl(msg.file.dataUrl);
+                      setImageModalOpen(true);
+                    }}
+                    className={`relative ${msg.type === 'IMAGE' && !isRegenerating ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+                  >
+                    {renderFile(msg.file, false, t)}
+                    {isRegenerating && (
+                      <div className="absolute inset-0 bg-[var(--color-bg-shadow)]/50 flex items-center justify-center rounded-lg">
+                        <div className="flex flex-col items-center text-[var(--color-text-accent)]">
+                          <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                          <span className="text-sm font-medium">{t('main.message.actions.imageRerolling')}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             } else if (msg.type === 'TEXT') {
@@ -253,9 +362,9 @@ const MessageList: React.FC<MessageListProps> = ({
               const hasUrls = urls.length > 0;
               return (
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-2`}>
-                  <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-all duration-200 hover:scale-[1.02] ${isMe
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-900'
+                  <div className={`px-4 py-3 rounded-2xl text-base leading-relaxed max-w-md transition-transform duration-200 ${isMe
+                    ? 'bg-[var(--color-message-self)] text-[var(--color-text-accent)]'
+                    : 'bg-[var(--color-message-other)] text-[var(--color-text-primary)]'
                     } ${cornerClass}`}>
                     <div className="break-words">{renderTextWithLinks(msg.content || '', isMe)}</div>
                   </div>
@@ -277,19 +386,28 @@ const MessageList: React.FC<MessageListProps> = ({
             <React.Fragment key={msg.id}>
               {showDateSeparator && (
                 <div className="flex justify-center my-6">
-                  <div className="flex items-center text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-200 hover:scale-105">
-                    <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                  <div className="flex items-center text-sm text-[var(--color-icon-tertiary)] bg-[var(--color-bg-input-primary)] px-4 py-2 rounded-full transition-all duration-300 hover:bg-[var(--color-bg-secondary-accent)] hover:scale-105">
+                    <Calendar className="w-4 h-4 mr-2 text-[var(--color-icon-secondary)]" />
                     {formatDateSeparator(new Date(msg.createdAt))}
                   </div>
                 </div>
               )}
               {msg.type === 'SYSTEM' && (
                 <div className="flex justify-center my-4">
-                  <div className="flex flex-col items-center text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full animate-fadeIn">
+                  <div className="flex flex-col items-center text-sm text-[var(--color-icon-tertiary)] bg-[var(--color-button-secondary)] px-4 py-2 rounded-full animate-fadeIn">
                     {msg.content}
                     {msg.leaveCharId && (
-                      <span className=" text-gray-400 underline items-center" onClick={() => inviteCharacter(msg.leaveCharId ?? null, room, allCharacters.find(c => c.id === msg.leaveCharId)?.name || 'Unknown', dispatch)}>
-                        채팅방으로 초대하기
+                      <span
+                        className=" text-[var(--color-text-informative-secondary)] underline items-center"
+                        onClick={() => inviteCharacter(
+                          msg.leaveCharId ?? null,
+                          room,
+                          allCharacters.find(c => c.id === msg.leaveCharId)?.name || t('common.unknown'),
+                          dispatch,
+                          t
+                        )}
+                      >
+                        {t('main.message.system.inviteCta')}
                       </span>
                     )}
                   </div>
@@ -297,7 +415,7 @@ const MessageList: React.FC<MessageListProps> = ({
               )}
               {msg.type !== 'SYSTEM' && (
                 <div className={`group flex w-full ${bubbleMarginClass} ${needsAnimation ? 'animate-slideUp' : ''} ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-3 md:gap-4 ${editingMessageId === msg.id ? 'flex-1 w-full max-w-none' : 'max-w-[75%]'}`}>
+                  <div className={`flex items-end ${isMe ? 'flex-row-reverse' : ''} gap-3 md:gap-4 ${editingMessageId === msg.id ? 'flex-1 w-full max-w-none' : 'max-w-full'}`}>
 
                     {/* Avatar - for non-me messages at end of group (bottom aligned); placeholder otherwise for consistent indent */}
                     {!isMe && editingMessageId !== msg.id && (
@@ -314,71 +432,160 @@ const MessageList: React.FC<MessageListProps> = ({
                     <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}>
                       {/* Sender name for group messages */}
                       {showSenderName && !isMe && (
-                        <p className="text-sm text-gray-500 mb-1 px-1 animate-fadeIn">
+                        <p className="text-sm text-[var(--color-icon-tertiary)] mb-1 px-1 animate-fadeIn">
                           <SenderName authorId={msg.authorId} />
                         </p>
                       )}
 
                       {/* Message bubble with hover controls */}
-                      <div className={`relative group/message ${isMe ? 'flex-row-reverse' : ''} flex items-end ${editingMessageId === msg.id ? 'w-full' : ''}`}>
-                        <div className={`message-content-wrapper ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}>
+                      <div
+                        data-message-id={msg.id.toString()}
+                        className={`relative group/message ${isMe ? 'flex-row-reverse' : ''} flex items-end gap-2 ${editingMessageId === msg.id ? 'w-full' : ''} transition-transform duration-200 ${isMe ? 'origin-bottom-right' : 'origin-bottom-left'} ${(msg.type !== 'IMAGE' && editingMessageId !== msg.id) ? 'md:hover:scale-[1.02]' : ''}`}
+                      >
+                        <div
+                          className={`message-content-wrapper ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}
+                          onClick={isCoarsePointer && msg.type !== 'IMAGE' ? () => showControlsWithAutoHide(msg.id.toString()) : undefined}
+                        >
                           {renderMessageContent()}
                         </div>
 
-                        {/* Message controls - Instagram DM style */}
-                        <div className={`absolute ${isMe ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex items-center space-x-1 opacity-0 group-hover/message:opacity-100 transition-all duration-300 transform ${isMe ? 'translate-x-2' : '-translate-x-2'} group-hover/message:translate-x-0`}>
-                          {msg.type === 'TEXT' && (
-                            <button
-                              data-id={msg.id.toString()}
-                              onClick={() => { setEditingMessageId(msg.id) }}
-                              className="edit-msg-btn p-2 text-gray-400 hover:text-gray-600 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
-                              aria-label="메시지 편집"
-                              title="편집"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                          )}
-
-                          <button
-                            data-id={msg.id.toString()}
-                            onClick={() => { dispatch(messagesActions.removeOne(msg.id)) }}
-                            className="delete-msg-btn p-2 text-gray-400 hover:text-red-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
-                            aria-label="메시지 삭제"
-                            title="삭제"
+                        {/* Message controls - inline (wrap with message to keep hover) */}
+                        {editingMessageId !== msg.id && (
+                          <div
+                            className={`flex items-center space-x-1 transition-opacity duration-200
+                              ${isCoarsePointer
+                                ? (activeMessageId === msg.id.toString() ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none')
+                                : 'opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto'
+                              }
+                            `}
                           >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                            {msg.type === 'TEXT' && (
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={() => { setEditingMessageId(msg.id) }}
+                                className="edit-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-icon-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
+                                aria-label={t('main.message.actions.editAriaLabel')}
+                                title={t('main.message.actions.edit')}
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            )}
 
-                          {!isMe && msg.type === 'TEXT' && i === messages.length - 1 && !isWaitingForResponse && (
                             <button
                               data-id={msg.id.toString()}
-                              onClick={() => {
-                                console.log('Reroll message', msg.id)
-                                dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
-                                setIsWaitingForResponse(true);
-                                SendMessage(room, setTypingCharacterId)
-                                  .finally(() => {
-                                    setIsWaitingForResponse(false);
-                                  });
-                              }}
-                              className="reroll-msg-btn p-2 text-gray-400 hover:text-blue-500 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
-                              aria-label="다시 생성"
-                              title="다시 생성"
+                              onClick={() => { dispatch(messagesActions.removeOne(msg.id)); setActiveMessageId(null); }}
+                              className="delete-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-negative)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
+                              aria-label={t('main.message.actions.deleteAriaLabel')}
+                              title={t('main.message.actions.delete')}
                             >
-                              <RefreshCw className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
-                          )}
-                        </div>
+
+                            {!isMe && i === messages.length - 1 && !isWaitingForResponse && (
+                              <>
+                                <button
+                                  data-id={msg.id.toString()}
+                                  onClick={() => {
+                                    console.log('Reroll message', msg.id)
+                                    dispatch(messagesActions.removeMany(messages.slice(groupInfo.startIndex, groupInfo.endIndex + 1).map(m => m.id)))
+                                    setIsWaitingForResponse(true);
+                                    SendMessage(room, setTypingCharacterId, t)
+                                      .finally(() => {
+                                        setIsWaitingForResponse(false);
+                                      });
+                                    setActiveMessageId(null);
+                                  }}
+                                  className="reroll-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180"
+                                  aria-label={t('main.message.actions.rerollAriaLabel')}
+                                  title={t('main.message.actions.reroll')}
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                </button>
+                                {room?.type !== 'Group' && (
+                                  <button
+                                    data-id={msg.id.toString()}
+                                    onClick={() => {
+                                      console.log('Continue response', msg.id)
+                                      setIsWaitingForResponse(true);
+                                      SendMessage(room, setTypingCharacterId, t, true) // continue=true
+                                        .finally(() => {
+                                          setIsWaitingForResponse(false);
+                                        });
+                                      setActiveMessageId(null);
+                                    }}
+                                    className="continue-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:translate-x-1"
+                                    aria-label={t('main.message.actions.continueAriaLabel')}
+                                    title={t('main.message.actions.continue')}
+                                  >
+                                    <StepForward className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </>
+                            )}
+
+                            {!isMe && msg.type === 'IMAGE' && msg.imageGenerationSetting && (
+                              <button
+                                data-id={msg.id.toString()}
+                                onClick={async () => {
+                                  const char = allCharacters.find(c => c.id === msg.authorId);
+                                  if (!char) return;
+
+                                  const messageId = msg.id.toString();
+                                  setRegeneratingImageIds(prev => new Set([...prev, messageId]));
+
+                                  try {
+                                    const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
+                                    const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+                                    if (inlineDataBody) {
+                                      const newDataUrl = `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`;
+                                      dispatch(messagesActions.updateOne({
+                                        id: msg.id,
+                                        changes: {
+                                          file: {
+                                            ...msg.file,
+                                            dataUrl: newDataUrl,
+                                            mimeType: inlineDataBody.mimeType
+                                          }
+                                        }
+                                      }));
+                                    }
+                                  } catch (error) {
+                                    console.error('Image reroll failed:', error);
+                                  } finally {
+                                    setRegeneratingImageIds(prev => {
+                                      const newSet = new Set(prev);
+                                      newSet.delete(messageId);
+                                      return newSet;
+                                    });
+                                  }
+                                }}
+                                disabled={regeneratingImageIds.has(msg.id.toString())}
+                                className={`reroll-image-btn p-2 bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180 ${regeneratingImageIds.has(msg.id.toString())
+                                  ? 'opacity-60 cursor-not-allowed text-[var(--color-icon-tertiary)]'
+                                  : 'text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)]'
+                                  }`}
+                                aria-label={t('main.message.actions.imageRerollAriaLabel')}
+                                title={regeneratingImageIds.has(msg.id.toString()) ? t('main.message.actions.imageRerolling') : t('main.message.actions.imageReroll')}
+                              >
+                                {regeneratingImageIds.has(msg.id.toString()) ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <RotateCwSquare className="w-4 h-4" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Timestamp and read status */}
                       {(i === groupInfo.endIndex || (i < messages.length - 1 && messages[i + 1].authorId !== msg.authorId)) && (
                         <div className={`flex items-center mt-1 md:mt-2 ${isMe ? 'flex-row-reverse' : ''} gap-2 animate-fadeIn`}>
-                          <p className="text-sm text-gray-400">
+                          <p className="text-sm text-[var(--color-text-informative-secondary)]">
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                           {showUnread && (
-                            <span className="text-sm text-blue-500 animate-pulse">전송됨</span>
+                            <span className="text-sm text-[var(--color-button-primary)] animate-pulse">{t('main.message.sent')}</span>
                           )}
                         </div>
                       )}
@@ -398,16 +605,47 @@ const MessageList: React.FC<MessageListProps> = ({
                 return typingChar ? <Avatar char={typingChar} size="sm" /> : null;
               })()}
             </div>
-            <div className="px-4 py-4 rounded-2xl bg-gray-200 rounded-bl-md min-h-[3rem]">
+            <div className="px-4 py-4 rounded-2xl bg-[var(--color-message-other)] rounded-bl-md min-h-[3rem]">
               <div className="flex items-center justify-center gap-2 h-full">
-                <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1.4s' }}></span>
-                <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1.4s' }}></span>
-                <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1.4s' }}></span>
+                <span className="w-2.5 h-2.5 bg-[var(--color-text-informative-secondary)] rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1.4s' }}></span>
+                <span className="w-2.5 h-2.5 bg-[var(--color-text-informative-secondary)] rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1.4s' }}></span>
+                <span className="w-2.5 h-2.5 bg-[var(--color-text-informative-secondary)] rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1.4s' }}></span>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Image Modal */}
+      {imageModalOpen && selectedImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-bg-shadow)]/80 animate-fadeIn"
+          onClick={() => setImageModalOpen(false)}
+        >
+          <div className="flex items-center justify-center">
+            <div
+              className="relative inline-block"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={selectedImageUrl}
+                alt={t('main.message.imageModal.alt')}
+                className="block max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl animate-scaleIn"
+              />
+              <button
+                onClick={() => setImageModalOpen(false)}
+                className="absolute top-2 right-2 p-2 bg-[var(--color-bg-shadow)]/60 text-[var(--color-text-accent)] rounded-full hover:bg-[var(--color-bg-shadow)]/70 transition-all duration-200"
+                aria-label={t('main.message.imageModal.closeAria')}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
   );
 };

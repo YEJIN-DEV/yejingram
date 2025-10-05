@@ -3,9 +3,13 @@ import ErrorPage from './ErrorPage';
 import { store } from '../app/store';
 import { persistor, resetAll } from '../app/store';
 import { settingsActions } from '../entities/setting/slice';
-import { initialApiConfigs, initialImageApiConfigs } from '../entities/setting/slice';
-import type { ApiProvider, ImageApiProvider } from '../entities/setting/types';
+import { initialApiConfigs } from '../entities/setting/slice';
+import { initialSyncSettings } from '../entities/setting/slice';
+import { initialImageApiConfigs } from '../entities/setting/image/slice';
+import type { ApiProvider } from '../entities/setting/types';
+import type { ImageApiProvider } from '../entities/setting/image/types';
 import { backupStateToFile, restoreStateFromFile } from '../utils/backup';
+import i18n from '../i18n/i18n';
 
 interface Props {
     children: ReactNode;
@@ -57,12 +61,17 @@ class ErrorBoundary extends Component<Props, State> {
             providers.forEach(provider => {
                 store.dispatch(settingsActions.setApiConfig({ provider, config: initialApiConfigs[provider] }));
             });
-            const imageProviders: ImageApiProvider[] = ['gemini', 'novelai'];
+            const imageProviders: ImageApiProvider[] = ['gemini', 'novelai', 'comfy'];
             imageProviders.forEach(provider => {
-                store.dispatch(settingsActions.setImageApiConfig({ provider, config: initialImageApiConfigs[provider] }));
+                store.dispatch(settingsActions.setImageApiConfigForImageSettings({ provider, config: initialImageApiConfigs[provider] }));
             });
             store.dispatch(settingsActions.setApiProvider('gemini'));
-            store.dispatch(settingsActions.setImageApiProvider('gemini'));
+            // Reset image settings with default imageProvider
+            const currentState = store.getState().settings;
+            store.dispatch(settingsActions.setImageSettings({
+                ...currentState.imageSettings,
+                imageProvider: 'gemini'
+            }));
         }
         if (resetOptions.resetPrompts) {
             store.dispatch(settingsActions.resetPrompts());
@@ -84,7 +93,8 @@ class ErrorBoundary extends Component<Props, State> {
                 useStructuredOutput: true,
                 speedup: 2,
                 personas: [],
-                selectedPersonaId: null
+                selectedPersonaId: null,
+                syncSettings: initialSyncSettings
             }));
         }
         this.setState({ hasError: false, error: undefined });
@@ -104,11 +114,11 @@ class ErrorBoundary extends Component<Props, State> {
             if (!file) return;
             try {
                 await restoreStateFromFile(file);
-                alert("백업 파일이 성공적으로 불러와졌습니다.");
+                alert(i18n.t('settings.alerts.backupImported'));
                 window.location.reload();
             } catch (err) {
                 console.error(err);
-                alert("백업 파일 불러오기 실패");
+                alert(i18n.t('settings.alerts.backupImportFailed'));
             }
         };
         input.click();
