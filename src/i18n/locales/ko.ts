@@ -104,6 +104,9 @@ const ko = {
                 imageRerollAriaLabel: "이미지 다시 생성",
                 imageRerolling: "이미지 재생성 중...",
                 imageReroll: "이미지 다시 생성",
+                toggleIncludeCharAriaLabel: "프로필 이미지 참고 토글",
+                includeCharOn: "프로필 이미지 참고: 켜짐",
+                includeCharOff: "프로필 이미지 참고: 꺼짐",
             },
             system: {
                 inviteCta: "채팅방으로 초대하기",

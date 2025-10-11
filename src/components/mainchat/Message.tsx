@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
 import type { Message as MessageType } from '../../entities/message/types';
-import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare, Loader2, StepForward } from 'lucide-react';
+import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare, Loader2, StepForward, UserCheck, UserX } from 'lucide-react';
 import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
@@ -524,55 +524,92 @@ const MessageList: React.FC<MessageListProps> = ({
                             )}
 
                             {!isMe && msg.type === 'IMAGE' && msg.imageGenerationSetting && (
-                              <button
-                                data-id={msg.id.toString()}
-                                onClick={async () => {
-                                  const char = allCharacters.find(c => c.id === msg.authorId);
-                                  if (!char) return;
+                              <>
+                                {/* isIncludingChar 토글 버튼 */}
+                                <button
+                                  data-id={msg.id.toString()}
+                                  onClick={() => {
+                                    if (!msg.imageGenerationSetting) return;
+                                    dispatch(messagesActions.updateOne({
+                                      id: msg.id,
+                                      changes: {
+                                        imageGenerationSetting: {
+                                          ...msg.imageGenerationSetting,
+                                          isIncludingChar: !msg.imageGenerationSetting.isIncludingChar,
+                                        },
+                                      },
+                                    }));
+                                  }}
+                                  disabled={regeneratingImageIds.has(msg.id.toString())}
+                                  className={`toggle-include-char-btn p-2 bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform ${regeneratingImageIds.has(msg.id.toString())
+                                    ? 'opacity-60 cursor-not-allowed text-[var(--color-icon-tertiary)]'
+                                    : (msg.imageGenerationSetting.isIncludingChar
+                                      ? 'text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)]'
+                                      : 'text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)]')
+                                    }`}
+                                  aria-label={t('main.message.actions.toggleIncludeCharAriaLabel')}
+                                  title={msg.imageGenerationSetting.isIncludingChar
+                                    ? t('main.message.actions.includeCharOn')
+                                    : t('main.message.actions.includeCharOff')}
+                                >
+                                  {msg.imageGenerationSetting.isIncludingChar ? (
+                                    <UserCheck className="w-4 h-4" />
+                                  ) : (
+                                    <UserX className="w-4 h-4" />
+                                  )}
+                                </button>
 
-                                  const messageId = msg.id.toString();
-                                  setRegeneratingImageIds(prev => new Set([...prev, messageId]));
+                                {/* 이미지 재생성 버튼 */}
+                                <button
+                                  data-id={msg.id.toString()}
+                                  onClick={async () => {
+                                    const char = allCharacters.find(c => c.id === msg.authorId);
+                                    if (!char) return;
 
-                                  try {
-                                    const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
-                                    const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
-                                    if (inlineDataBody) {
-                                      const newDataUrl = `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`;
-                                      dispatch(messagesActions.updateOne({
-                                        id: msg.id,
-                                        changes: {
-                                          file: {
-                                            ...msg.file,
-                                            dataUrl: newDataUrl,
-                                            mimeType: inlineDataBody.mimeType
+                                    const messageId = msg.id.toString();
+                                    setRegeneratingImageIds(prev => new Set([...prev, messageId]));
+
+                                    try {
+                                      const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
+                                      const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+                                      if (inlineDataBody) {
+                                        const newDataUrl = `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`;
+                                        dispatch(messagesActions.updateOne({
+                                          id: msg.id,
+                                          changes: {
+                                            file: {
+                                              ...msg.file,
+                                              dataUrl: newDataUrl,
+                                              mimeType: inlineDataBody.mimeType
+                                            }
                                           }
-                                        }
-                                      }));
+                                        }));
+                                      }
+                                    } catch (error) {
+                                      console.error('Image reroll failed:', error);
+                                    } finally {
+                                      setRegeneratingImageIds(prev => {
+                                        const newSet = new Set(prev);
+                                        newSet.delete(messageId);
+                                        return newSet;
+                                      });
                                     }
-                                  } catch (error) {
-                                    console.error('Image reroll failed:', error);
-                                  } finally {
-                                    setRegeneratingImageIds(prev => {
-                                      const newSet = new Set(prev);
-                                      newSet.delete(messageId);
-                                      return newSet;
-                                    });
-                                  }
-                                }}
-                                disabled={regeneratingImageIds.has(msg.id.toString())}
-                                className={`reroll-image-btn p-2 bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180 ${regeneratingImageIds.has(msg.id.toString())
-                                  ? 'opacity-60 cursor-not-allowed text-[var(--color-icon-tertiary)]'
-                                  : 'text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)]'
-                                  }`}
-                                aria-label={t('main.message.actions.imageRerollAriaLabel')}
-                                title={regeneratingImageIds.has(msg.id.toString()) ? t('main.message.actions.imageRerolling') : t('main.message.actions.imageReroll')}
-                              >
-                                {regeneratingImageIds.has(msg.id.toString()) ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <RotateCwSquare className="w-4 h-4" />
-                                )}
-                              </button>
+                                  }}
+                                  disabled={regeneratingImageIds.has(msg.id.toString())}
+                                  className={`reroll-image-btn p-2 bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180 ${regeneratingImageIds.has(msg.id.toString())
+                                    ? 'opacity-60 cursor-not-allowed text-[var(--color-icon-tertiary)]'
+                                    : 'text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)]'
+                                    }`}
+                                  aria-label={t('main.message.actions.imageRerollAriaLabel')}
+                                  title={regeneratingImageIds.has(msg.id.toString()) ? t('main.message.actions.imageRerolling') : t('main.message.actions.imageReroll')}
+                                >
+                                  {regeneratingImageIds.has(msg.id.toString()) ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <RotateCwSquare className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </>
                             )}
                           </div>
                         )}

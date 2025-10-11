@@ -104,6 +104,9 @@ const en = {
                 imageRerollAriaLabel: "Regenerate image",
                 imageRerolling: "Image regenerating...",
                 imageReroll: "Regenerate image",
+                toggleIncludeCharAriaLabel: "Toggle profile image reference",
+                includeCharOn: "Profile image reference: On",
+                includeCharOff: "Profile image reference: Off",
             },
             system: {
                 inviteCta: "Invite to chat",

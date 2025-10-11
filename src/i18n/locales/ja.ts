@@ -104,6 +104,9 @@ const ja = {
                 imageRerollAriaLabel: "画像再生成",
                 imageRerolling: "画像を再生成中...",
                 imageReroll: "画像を再生成",
+                toggleIncludeCharAriaLabel: "プロフィール画像参照の切替",
+                includeCharOn: "プロフィール画像参照: オン",
+                includeCharOff: "プロフィール画像参照: オフ",
             },
             system: {
                 inviteCta: "チャットに招待",
