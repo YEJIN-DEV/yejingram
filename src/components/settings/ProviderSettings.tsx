@@ -161,20 +161,22 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            const providers: string[] = Array.isArray(data.data.endpoints)
+            const entries: Array<{ tag: string; supportsResponseFormat: boolean }> = Array.isArray(data.data.endpoints)
                 ? data.data.endpoints.map((ep: any) => {
                     const tag = ep.tag;
-                    const prov = ep.provider;
-                    const provId = typeof prov === 'string' ? prov : (prov?.id || prov?.slug || prov?.name);
-                    const id = ep?.id;
-                    const fallbackFromId = typeof id === 'string' ? (id.split(':')[0] || id.split('/')[0] || id) : undefined;
-                    return tag || provId || fallbackFromId;
-                }).filter((v: any) => typeof v === 'string')
+                    const supported: string[] = Array.isArray(ep.supported_parameters) ? ep.supported_parameters : [];
+                    const supports = supported.includes('response_format') || supported.includes('structured_outputs');
+                    return (typeof tag === 'string') ? { tag, supportsResponseFormat: supports } : null;
+                }).filter(Boolean) as any
                 : [];
-            const unique = providers.filter((v, i, a) => a.indexOf(v) === i);
+            const unique = entries.map(e => e.tag).filter((v, i, a) => a.indexOf(v) === i);
             setEndpointOptions(unique);
-            if (resetOrder || !config.providerOrder || config.providerOrder.length === 0) {
-                handleConfigChange('providerOrder', unique);
+            if (resetOrder || !Array.isArray(config.providers) || config.providers.length === 0) {
+                handleConfigChange('providers', entries as any);
+            } else {
+                const supportMap: Record<string, boolean> = Object.fromEntries(entries.map(e => [e.tag, e.supportsResponseFormat]));
+                const updated = (config.providers || []).map((p: any) => ({ tag: p.tag, supportsResponseFormat: supportMap[p.tag] ?? p.supportsResponseFormat }));
+                handleConfigChange('providers', updated as any);
             }
         } catch (e: any) {
             console.error('Failed to load endpoints:', e);
@@ -237,6 +239,15 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                     )
                 }
             />
+            {settings.useStructuredOutput && provider === 'customOpenAI' && (
+                <Toggle
+                    id="response-format-toggle"
+                    label={t('settings.ai.responseFormat.label')}
+                    description={t('settings.ai.responseFormat.help')}
+                    checked={settings.useResponseFormat ?? true}
+                    onChange={checked => setSettings(prev => ({ ...prev, useResponseFormat: checked }))}
+                />
+            )}
             {settings.useStructuredOutput && (
                 <Toggle
                     id="image-response-toggle"
@@ -360,19 +371,20 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                                         <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.ai.openrouter.priorityHelp')}</p>
                                         <div className="flex flex-wrap gap-2">
                                             {endpointOptions.map(tag => {
-                                                const active = (config.providerOrder || []).includes(tag);
-                                                const orderIndex = (config.providerOrder || []).indexOf(tag);
+                                                const orderList = (config.providers || []).map((p: any) => p.tag);
+                                                const active = orderList.includes(tag);
+                                                const orderIndex = orderList.indexOf(tag);
                                                 return (
                                                     <button
                                                         key={tag}
                                                         type="button"
                                                         onClick={() => {
-                                                            const current = config.providerOrder || [];
+                                                            const current = (config.providers || []) as Array<{ tag: string; supportsResponseFormat: boolean }>;
                                                             if (active) {
                                                                 // toggle off
-                                                                handleConfigChange('providerOrder', current.filter(x => x !== tag));
+                                                                handleConfigChange('providers', current.filter(x => x.tag !== tag));
                                                             } else {
-                                                                handleConfigChange('providerOrder', [...current, tag]);
+                                                                handleConfigChange('providers', [...current, { tag, supportsResponseFormat: false }] as any);
                                                             }
                                                         }}
                                                         className={`px-3 py-1 rounded-full border text-xs ${active ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-focus-border)]' : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-interface)] hover:bg-[var(--color-bg-hover)] border-[var(--color-border)]'}`}
@@ -383,13 +395,13 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                                                 );
                                             })}
                                         </div>
-                                        {(config.providerOrder || []).length > 0 && (
+                                        {(config.providers || []).length > 0 && (
                                             <div className="mt-2">
                                                 <label className="text-xs text-[var(--color-icon-tertiary)]">{t('settings.ai.openrouter.currentPriority')}</label>
                                                 <div className="flex flex-wrap gap-2 mt-1">
-                                                    {(config.providerOrder || []).map((tag, idx) => (
-                                                        <span key={tag} className="px-2 py-1 rounded-md bg-[var(--color-bg-secondary)] text-[var(--color-text-interface)] border border-[var(--color-border)] text-xs">
-                                                            {idx + 1}. {tag}
+                                                    {(config.providers || []).map((p: any, idx: number) => (
+                                                        <span key={p.tag} className="px-2 py-1 rounded-md bg-[var(--color-bg-secondary)] text-[var(--color-text-interface)] border border-[var(--color-border)] text-xs">
+                                                            {idx + 1}. {p.tag}{p.supportsResponseFormat ? ' · JSON' : ''}
                                                         </span>
                                                     ))}
                                                 </div>

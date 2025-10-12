@@ -318,6 +318,10 @@ const ja = {
                 help: "LLMが応答時間とメッセージを直接制御します。（推奨）",
                 warnClaude: "注意：Claudeではリクエストに失敗する場合があります。",
             },
+            responseFormat: {
+                label: "response_format を使用",
+                help: "構造化出力がオンでも、response_format を送信するかどうかを選択します。",
+            },
             imageResponse: {
                 label: "画像応答を許可",
                 help: "会話コンテキストに応じて画像の応答を許可します。",

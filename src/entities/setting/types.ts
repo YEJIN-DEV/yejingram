@@ -12,7 +12,11 @@ export interface ApiConfig {
     accessToken?: string;
     tokenizer?: string;
     // OpenRouter routing preferences (optional)
-    providerOrder?: string[];
+    // Unified endpoint metadata ordered by priority
+    providers?: Array<{
+        tag: string; // endpoint tag (e.g., siliconflow/fp8)
+        supportsResponseFormat: boolean; // whether endpoint supports response_format or structured_outputs
+    }>;
     providerAllowFallbacks?: boolean;
 }
 
@@ -72,6 +76,7 @@ export interface SettingsState {
     randomMessageFrequencyMax: number;
     prompts: Prompts;
     useStructuredOutput: boolean;
+    useResponseFormat?: boolean;
     useImageResponse?: boolean | undefined;
     speedup: number;
     personas: Persona[];

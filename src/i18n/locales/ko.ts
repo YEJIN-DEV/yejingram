@@ -322,6 +322,10 @@ const ko = {
                 label: "이미지 응답 허용",
                 help: "대화 컨텍스트에 따라서 이미지 응답을 허용합니다.",
             },
+            responseFormat: {
+                label: "response_format 사용",
+                help: "구조화된 출력이 켜져 있어도 response_format을 전송할지 선택합니다.",
+            },
             vertex: {
                 projectIdLabel: "Project ID",
                 projectIdPlaceholder: "Vertex AI 프로젝트 ID",
