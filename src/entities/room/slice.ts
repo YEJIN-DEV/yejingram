@@ -39,6 +39,13 @@ const roomsSlice = createSlice({
                 room.memories.splice(index, 1);
             }
         },
+        clearRoomMemories: (state, action: PayloadAction<{ roomId: string }>) => {
+            const { roomId } = action.payload;
+            const room = state.entities[roomId];
+            if (room) {
+                room.memories = [];
+            }
+        },
         updateRoomLorebook: (state, action: PayloadAction<{ roomId: string; lorebook: Lore[] }>) => {
             const { roomId, lorebook } = action.payload;
             const room = state.entities[roomId];
