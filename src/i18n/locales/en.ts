@@ -334,6 +334,8 @@ const en = {
             customModelsLabel: "Custom models",
             customOpenAI: {
                 baseUrlLabel: "Base URL",
+                tokenizerLabel: "Tokenizer",
+                selectTokenizer: "Select a tokenizer",
             },
             openrouter: {
                 modelLabel: "OpenRouter model",

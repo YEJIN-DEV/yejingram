@@ -334,6 +334,8 @@ const ja = {
             customModelsLabel: "カスタムモデル",
             customOpenAI: {
                 baseUrlLabel: "Base URL",
+                tokenizerLabel: "トークナイザー",
+                selectTokenizer: "トークナイザーを選択してください",
             },
             openrouter: {
                 modelLabel: "OpenRouter モデル",

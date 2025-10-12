@@ -334,6 +334,8 @@ const ko = {
             customModelsLabel: "커스텀 모델",
             customOpenAI: {
                 baseUrlLabel: "Base URL",
+                tokenizerLabel: "토크나이저",
+                selectTokenizer: "토크나이저를 선택하세요",
             },
             openrouter: {
                 modelLabel: "OpenRouter 모델",

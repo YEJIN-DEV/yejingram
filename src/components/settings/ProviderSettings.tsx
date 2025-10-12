@@ -411,16 +411,57 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                     )}
                 </div>
             )}
+
             {provider === 'customOpenAI' && (
-                <div>
-                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Link className="w-4 h-4 mr-2" />{t('settings.ai.customOpenAI.baseUrlLabel')}</label>
-                    <input
-                        type="text"
-                        value={config.baseUrl || ''}
-                        onChange={e => handleConfigChange('baseUrl', e.target.value)}
-                        placeholder="https://api.openai.com/v1"
-                        className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
-                    />
+                <div className="space-y-3">
+                    <div>
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Link className="w-4 h-4 mr-2" />{t('settings.ai.customOpenAI.baseUrlLabel')}</label>
+                        <input
+                            type="text"
+                            value={config.baseUrl || ''}
+                            onChange={e => handleConfigChange('baseUrl', e.target.value)}
+                            placeholder="https://api.openai.com/v1"
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
+                        />
+                    </div>
+
+                    {/* Tokenizer selection for customOpenAI (used by web-tokenizers in countTokens) */}
+                    <div>
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Cpu className="w-4 h-4 mr-2" />{t('settings.ai.customOpenAI.tokenizerLabel')}</label>
+                        {(() => {
+                            // Display labels while saving normalized values. OpenAI variants should store bare algorithm ids.
+                            const tokenizerOptions = [
+                                { label: 'OpenAI (o200k_base)', value: 'o200k_base' },
+                                { label: 'OpenAI (cl100k_base)', value: 'cl100k_base' },
+                                { label: 'DeepSeek', value: 'DeepSeek' },
+                                { label: 'Llama2', value: 'Llama2' },
+                                { label: 'Llama3', value: 'Llama3' },
+                                { label: 'Llama4', value: 'Llama4' },
+                                { label: 'Mistral', value: 'Mistral' },
+                                { label: 'Qwen', value: 'Qwen' },
+                                { label: 'Qwen3', value: 'Qwen3' },
+                            ];
+                            const normalizedValue = (() => {
+                                const v = config.tokenizer || '';
+                                if (v === 'OpenAI (o200k_base)') return 'o200k_base';
+                                if (v === 'OpenAI (cl100k_base)') return 'cl100k_base';
+                                return v;
+                            })();
+                            return (
+                                <select
+                                    value={normalizedValue}
+                                    onChange={(e) => handleConfigChange('tokenizer', e.target.value)}
+                                    className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm"
+                                >
+                                    <option value="" disabled>{t('settings.ai.customOpenAI.selectTokenizer')}</option>
+                                    {/* Keep this list in sync with CustomTokenizer and supported algorithms in src/utils/token.ts */}
+                                    {tokenizerOptions.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                            );
+                        })()}
+                    </div>
                 </div>
             )}
 
