@@ -690,7 +690,8 @@ export async function buildOpenAIApiPayload(
     useStructuredOutput: boolean,
     useImageResponse: boolean | undefined,
     apiConfig: ApiConfig,
-    extraSystemInstruction?: string
+    extraSystemInstruction?: string,
+    useResponseFormat: boolean = true
 ): Promise<OpenAIApiPayload> {
     const maxTokens = selectPrompts(store.getState()).maxContextTokens;
     let trimmedMessages = [...messages];
@@ -715,9 +716,24 @@ export async function buildOpenAIApiPayload(
             }
         }
 
-        const response_format: OpenAIApiPayload['response_format'] = useStructuredOutput
-            ? JSONSchema
-            : undefined;
+        // Determine whether to include response_format
+        let allowResponseFormat = useStructuredOutput && useResponseFormat;
+        if (provider === 'openrouter') {
+            const providers = apiConfig.providers || [];
+            if (providers.length > 0) {
+                const allowFallbacks = apiConfig.providerAllowFallbacks ?? true;
+                if (allowFallbacks) {
+                    const supportAll = providers.every(p => !!p.supportsResponseFormat);
+                    allowResponseFormat = allowResponseFormat && supportAll;
+                } else {
+                    const first = providers[0];
+                    const supportFirst = !!first?.supportsResponseFormat;
+                    allowResponseFormat = allowResponseFormat && supportFirst;
+                }
+            }
+        }
+
+        const response_format: OpenAIApiPayload['response_format'] = allowResponseFormat ? JSONSchema : undefined;
 
         const payload: OpenAIApiPayload = {
             model: apiConfig.model,
@@ -730,7 +746,7 @@ export async function buildOpenAIApiPayload(
 
         // If using OpenRouter, include provider routing preferences when available
         if (provider === 'openrouter') {
-            const order = apiConfig.providerOrder && apiConfig.providerOrder.length > 0 ? apiConfig.providerOrder : undefined;
+            const order = (apiConfig.providers && apiConfig.providers.length > 0) ? apiConfig.providers.map(p => p.tag) : undefined;
             const allow_fallbacks = (apiConfig.providerAllowFallbacks !== undefined) ? apiConfig.providerAllowFallbacks : undefined;
             if (order || allow_fallbacks !== undefined) {
                 payload.provider = {

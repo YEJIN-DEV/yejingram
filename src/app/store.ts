@@ -84,8 +84,8 @@ export const migrations = {
             add: [
                 {
                     path: 'settings.apiConfigs.openrouter',
-                    keys: ['providerOrder', 'providerAllowFallbacks', 'tokenizer'],
-                    defaults: { providerOrder: [], providerAllowFallbacks: true, tokenizer: '' }
+                    keys: ['providerAllowFallbacks', 'tokenizer'],
+                    defaults: { providerAllowFallbacks: true, tokenizer: '' }
                 },
                 {
                     path: 'settings.apiConfigs.customOpenAI',
@@ -95,6 +95,31 @@ export const migrations = {
             ]
         });
         return state;
+    },
+    4: (state: any) => {
+        // Migrate to unified providers array for OpenRouter
+        const cfg = state?.settings?.apiConfigs?.openrouter;
+        if (cfg) {
+            const order: string[] = Array.isArray(cfg.providerOrder) ? cfg.providerOrder : [];
+            const support: Record<string, boolean> = cfg.providerResponseFormat || {};
+            // Build providers array preserving order
+            const providers = order.map((tag: string) => ({ tag, supportsResponseFormat: !!support[tag] }));
+            state.settings.apiConfigs.openrouter.providers = providers;
+            // Cleanup legacy keys
+            delete state.settings.apiConfigs.openrouter.providerOrder;
+            delete state.settings.apiConfigs.openrouter.providerResponseFormat;
+        } else {
+            state = applyRules(state, {
+                add: [
+                    {
+                        path: 'settings.apiConfigs.openrouter',
+                        keys: ['providers'],
+                        defaults: { providers: [] }
+                    }
+                ]
+            });
+        }
+        return state;
     }
 } as MigrationManifest;
 
@@ -102,7 +127,7 @@ export const migrations = {
 export const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
-    version: 3,
+    version: 4,
     whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved'],
     migrate: createMigrate(migrations, { debug: true }),
 };

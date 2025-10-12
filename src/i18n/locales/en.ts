@@ -326,6 +326,10 @@ const en = {
                 help: "LLM directly controls response timing and messages. (Recommended)",
                 warnClaude: "Caution: Requests may fail with Claude in some cases.",
             },
+            responseFormat: {
+                label: "Use response_format",
+                help: "Even when structured output is on, choose whether to send response_format.",
+            },
             imageResponse: {
                 label: "Allow image responses",
                 help: "Allow image responses depending on conversation context.",

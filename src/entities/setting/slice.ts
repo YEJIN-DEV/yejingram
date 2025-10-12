@@ -12,7 +12,7 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [] },
     openai: { apiKey: '', model: 'gpt-5', customModels: [] },
     grok: { apiKey: '', model: 'grok-4-0709', customModels: [] },
-    openrouter: { apiKey: '', model: '', customModels: [], tokenizer: '', providerOrder: [], providerAllowFallbacks: true },
+    openrouter: { apiKey: '', model: '', customModels: [], tokenizer: '', providers: [], providerAllowFallbacks: true },
     customOpenAI: { apiKey: '', baseUrl: '', model: '', customModels: [], tokenizer: '' },
 };
 
@@ -46,6 +46,7 @@ export const initialState: SettingsState = {
     randomMessageFrequencyMin: 10,
     randomMessageFrequencyMax: 60,
     useStructuredOutput: true,
+    useResponseFormat: true,
     speedup: 2,
     personas: [],
     selectedPersonaId: null,
@@ -93,6 +94,9 @@ const settingsSlice = createSlice({
         },
         setUseImageResponse: (state, action: PayloadAction<boolean>) => {
             state.useImageResponse = action.payload;
+        },
+        setUseResponseFormat: (state, action: PayloadAction<boolean>) => {
+            state.useResponseFormat = action.payload;
         },
         setPrompts: (state, action: PayloadAction<Prompts>) => {
             state.prompts = action.payload;
