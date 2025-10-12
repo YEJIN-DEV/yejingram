@@ -1,8 +1,8 @@
-import type { ProviderModel } from "../components/settings/ProviderSettings";
-import type { ApiProvider } from "../entities/setting/types";
+import type { ApiConfig, ApiProvider } from "../entities/setting/types";
 import type { OpenAIContent } from "../services/llm/promptBuilder";
-import { encoding_for_model, type TiktokenModel } from "tiktoken";
+import { encoding_for_model, get_encoding, type TiktokenModel } from "tiktoken";
 import type { ClaudeApiPayload, GeminiApiPayload } from "../services/llm/type";
+import { Tokenizer } from "@mlc-ai/web-tokenizers";
 
 export type Prompts =
     | {
@@ -15,36 +15,43 @@ export type Prompts =
     };
 
 
-export async function CountTokens(prompts: Prompts, provider: ApiProvider, model: ProviderModel, auth?: { apiKey?: string; location?: string; projectId?: string }): Promise<number> {
+type CustomTokenizer = 'DeepSeek' | 'Llama2' | 'Llama3' | 'Llama4' | 'Mistral' | 'Qwen' | 'Qwen3'
+async function tokenizeWebTokenizers(text: string, tokenizer: CustomTokenizer) {
+    try {
+        let tokenizersTokenizer = await Tokenizer.fromJSON(
+            await (await fetch(`/token/${tokenizer}.json`)
+            ).arrayBuffer())
+
+        return tokenizersTokenizer.encode(text);
+    } catch (error) {
+        console.error('Failed to load tokenizer');
+        return null;
+    }
+}
+
+export async function countTokens(prompts: Prompts, provider: ApiProvider, apiConfig: ApiConfig): Promise<number> {
     switch (provider) {
+        default:
         case 'openai':
             {
-                const encoding = encoding_for_model((model ?? "gpt-5") as TiktokenModel);
-                const serialized = [
-                    ...(prompts.content as OpenAIContent[]).map(({ role, content }) => {
-                        return `<|im_start|>${role}<|im_sep|>${content}<|im_end|>`;
-                    }),
-                    "<|im_start|>assistant",
-                ].join('');
-
-                return encoding.encode(serialized).length;
+                return countOpenAI(true);
             }
         case 'claude':
             {
-                if (!auth?.apiKey) {
+                if (!apiConfig.apiKey) {
                     return 0;
                 }
                 try {
                     const url = "https://api.anthropic.com/v1/messages/count_tokens";
                     const payload = {
-                        'model': model,
+                        'model': apiConfig.model,
                         'system': (prompts.payload as ClaudeApiPayload)?.system,
                         'messages': (prompts.payload as ClaudeApiPayload)?.messages,
                     };
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: {
-                            'x-api-key': auth.apiKey,
+                            'x-api-key': apiConfig.apiKey,
                             'content-type': 'application/json',
                             'anthropic-version': '2023-06-01',
                             'anthropic-dangerous-direct-browser-access': 'true'
@@ -63,11 +70,11 @@ export async function CountTokens(prompts: Prompts, provider: ApiProvider, model
             }
         case 'gemini':
             {
-                if (!auth?.apiKey) {
+                if (!apiConfig.apiKey) {
                     return 0;
                 }
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:countTokens?key=${auth.apiKey}`;
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${apiConfig.model}:countTokens?key=${apiConfig.apiKey}`;
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: {
@@ -75,7 +82,7 @@ export async function CountTokens(prompts: Prompts, provider: ApiProvider, model
                         },
                         body: JSON.stringify({
                             generateContentRequest: {
-                                model: `models/${model}`,
+                                model: `models/${apiConfig.model}`,
                                 ...prompts.payload
                             }
                         })
@@ -92,16 +99,16 @@ export async function CountTokens(prompts: Prompts, provider: ApiProvider, model
             }
         case 'vertexai':
             {
-                if (!auth?.apiKey) {
+                if (!apiConfig.apiKey) {
                     return 0;
                 }
                 try {
-                    const url = `https://aiplatform.googleapis.com/v1/projects/${auth?.projectId}/locations/${auth?.location}/publishers/google/models/${model}:countTokens`;
+                    const url = `https://aiplatform.googleapis.com/v1/projects/${apiConfig.projectId}/locations/${apiConfig.location}/publishers/google/models/${apiConfig.model}:countTokens`;
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${auth?.apiKey}`
+                            'Authorization': `Bearer ${apiConfig.apiKey}`
                         },
                         body: JSON.stringify({
                             system_instruction: (prompts.payload as GeminiApiPayload)?.systemInstruction,
@@ -120,7 +127,7 @@ export async function CountTokens(prompts: Prompts, provider: ApiProvider, model
             }
         case 'grok':
             {
-                if (!auth?.apiKey) {
+                if (!apiConfig.apiKey) {
                     return 0;
                 }
                 try {
@@ -158,13 +165,13 @@ export async function CountTokens(prompts: Prompts, provider: ApiProvider, model
                         "Assistant:",
                     ].join('');
                     const payload = {
-                        'model': model,
-                        'text': serialized
+                        model: apiConfig.model,
+                        text: serialized
                     };
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${auth.apiKey}`,
+                            'Authorization': `Bearer ${apiConfig.apiKey}`,
                             'content-type': 'application/json',
                         },
                         body: JSON.stringify(payload)
@@ -179,7 +186,29 @@ export async function CountTokens(prompts: Prompts, provider: ApiProvider, model
                     return 0;
                 }
             }
-        default:
-            return 0;
+        case 'openrouter':
+        case 'customOpenAI':
+            {
+                const serialized = [
+                    ...(prompts.content as OpenAIContent[]).map(({ role, content }) => {
+                        return `<|im_start|>${role}<|im_sep|>${content}<|im_end|>`;
+                    }),
+                    "<|im_start|>assistant",
+                ].join('');
+                const tokens = await tokenizeWebTokenizers(serialized, apiConfig.tokenizer! as CustomTokenizer);
+                return tokens ? tokens.length : countOpenAI(false);
+            }
+    }
+
+    function countOpenAI(realOpenAIModel: boolean) {
+        const encoding = realOpenAIModel ? encoding_for_model(apiConfig.model as TiktokenModel) : get_encoding('o200k_base');
+        const serialized = [
+            ...(prompts.content as OpenAIContent[]).map(({ role, content }) => {
+                return `<|im_start|>${role}<|im_sep|>${content}<|im_end|>`;
+            }),
+            "<|im_start|>assistant",
+        ].join('');
+
+        return encoding.encode(serialized).length;
     }
 }

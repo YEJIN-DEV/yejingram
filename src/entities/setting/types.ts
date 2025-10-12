@@ -1,6 +1,6 @@
 import type { ImageGenerationSettingsState } from "./image/types";
 
-export type ApiProvider = 'gemini' | 'vertexai' | 'claude' | 'openai' | 'grok' | 'openrouter' | 'customOpenAI';
+export type ApiProvider = 'gemini' | 'vertexai' | 'claude' | 'grok' | 'openai' | 'openrouter' | 'customOpenAI';
 
 export interface ApiConfig {
     apiKey: string;
@@ -10,6 +10,10 @@ export interface ApiConfig {
     projectId?: string;
     location?: string;
     accessToken?: string;
+    tokenizer?: string;
+    // OpenRouter routing preferences (optional)
+    providerOrder?: string[];
+    providerAllowFallbacks?: boolean;
 }
 
 export type PromptRole = 'system' | 'assistant' | 'user';

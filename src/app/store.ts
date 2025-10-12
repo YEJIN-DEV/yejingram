@@ -46,7 +46,7 @@ export const migrations = {
                     path: 'settings.prompts',
                     keys: ['maxContextTokens', 'maxResponseTokens', 'temperature', 'topP', 'topK'],
                     defaults: settingsInitialState.prompts
-                }, 
+                },
             ],
             move: [
                 {
@@ -77,6 +77,24 @@ export const migrations = {
             ]
         });
         return state;
+    },
+    3: (state: any) => {
+        // Ensure new fields exist after introducing OpenRouter provider routing and tokenizer settings
+        state = applyRules(state, {
+            add: [
+                {
+                    path: 'settings.apiConfigs.openrouter',
+                    keys: ['providerOrder', 'providerAllowFallbacks', 'tokenizer'],
+                    defaults: { providerOrder: [], providerAllowFallbacks: true, tokenizer: '' }
+                },
+                {
+                    path: 'settings.apiConfigs.customOpenAI',
+                    keys: ['tokenizer'],
+                    defaults: { tokenizer: '' }
+                }
+            ]
+        });
+        return state;
     }
 } as MigrationManifest;
 
@@ -84,7 +102,7 @@ export const migrations = {
 export const persistConfig = {
     key: 'yejingram',
     storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
-    version: 2,
+    version: 3,
     whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved'],
     migrate: createMigrate(migrations, { debug: true }),
 };

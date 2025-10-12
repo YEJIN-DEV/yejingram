@@ -15,7 +15,7 @@ import { nanoid } from "@reduxjs/toolkit";
 import toast from 'react-hot-toast';
 import { callImageGeneration } from "../image/ImageCaller";
 import { LLMJSONParser } from 'ai-json-fixer';
-import { CLAUDE_API_BASE_URL, GEMINI_API_BASE_URL, GROK_API_BASE_URL, OPENAI_API_BASE_URL, VERTEX_AI_API_BASE_URL } from "../URLs";
+import { CLAUDE_API_BASE_URL, GEMINI_API_BASE_URL, GROK_API_BASE_URL, OPENAI_API_BASE_URL, VERTEX_AI_API_BASE_URL, OPENROUTER_API_BASE_URL } from "../URLs";
 
 const llmParser = new LLMJSONParser();
 
@@ -168,24 +168,17 @@ async function callApi(
 
     switch (apiProvider) {
         case 'gemini':
-            payload = await buildGeminiApiPayload('gemini', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, { apiKey: apiConfig.apiKey! }, extraSystemInstruction);
-            break;
         case 'vertexai':
-            payload = await buildGeminiApiPayload('vertexai', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, {
-                apiKey: apiConfig.accessToken!,
-                location: apiConfig.location!,
-                projectId: apiConfig.projectId!
-            }, extraSystemInstruction);
+            payload = await buildGeminiApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
             break;
         case 'claude':
-            payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
-            break;
         case 'grok':
-            payload = await buildClaudeApiPayload('grok', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
+            payload = await buildClaudeApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
             break;
         case 'openai':
+        case 'openrouter':
         case 'customOpenAI':
-            payload = await buildOpenAIApiPayload(room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, extraSystemInstruction);
+            payload = await buildOpenAIApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
             break;
     }
     let url: string;
@@ -211,8 +204,28 @@ async function callApi(
             "content-type": "application/json",
             "anthropic-dangerous-direct-browser-access": "true"
         };
-    } else { // openai & customOpenAI & grok
-        const baseUrl = (apiProvider === 'customOpenAI' && apiConfig.baseUrl) ? apiConfig.baseUrl : (apiProvider === 'grok' ? GROK_API_BASE_URL : OPENAI_API_BASE_URL);
+    } else if (apiProvider === 'openrouter') {
+        url = OPENROUTER_API_BASE_URL;
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiConfig.apiKey}`,
+            'HTTP-Referer': 'https://yejingram.com',
+            'X-Title': 'Yejingram',
+        };
+    }
+
+    else { // openai-compatible providers (openai, customOpenAI, grok, openrouter)
+        let baseUrl: string;
+        switch (apiProvider) {
+            case 'customOpenAI':
+                baseUrl = apiConfig.baseUrl || OPENAI_API_BASE_URL;
+                break;
+            case 'grok':
+                baseUrl = GROK_API_BASE_URL;
+                break;
+            default:
+                baseUrl = OPENAI_API_BASE_URL;
+        }
         url = baseUrl;
         headers = {
             'Content-Type': 'application/json',

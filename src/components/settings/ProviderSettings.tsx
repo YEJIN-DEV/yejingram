@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { SettingsState, ApiConfig } from '../../entities/setting/types';
 import { Key, Cpu, Link, Plus, X, Briefcase, Globe } from 'lucide-react';
 import { initialApiConfigs } from '../../entities/setting/slice';
@@ -39,14 +39,23 @@ const providerModels: Record<string, string[]> = {
         'grok-4-0709',
         'grok-3'
     ],
-    // openrouter: [],
+    openrouter: [],
     customOpenAI: []
 };
+
 export type ProviderModel = typeof providerModels[keyof typeof providerModels][number];
 
 export function ProviderSettings({ settings, setSettings }: ProviderSettingsProps) {
     const { t } = useTranslation();
     const [customModelInput, setCustomModelInput] = useState('');
+    type OpenRouterModel = { id: string; name: string; price: number; context_length?: number; tokenizer?: string };
+    const [openRouterModels, setOpenRouterModels] = useState<OpenRouterModel[]>([]);
+    const [openRouterLoading, setOpenRouterLoading] = useState(false);
+    const [openRouterError, setOpenRouterError] = useState<string | null>(null);
+    const [openRouterSearch, setOpenRouterSearch] = useState('');
+    const [endpointOptions, setEndpointOptions] = useState<string[]>([]); // provider endpoints for selected model
+    const [endpointLoading, setEndpointLoading] = useState(false);
+    const [endpointError, setEndpointError] = useState<string | null>(null);
     const provider = settings.apiProvider;
     const rawConfig = settings?.apiConfigs?.[provider];
     const config = {
@@ -68,8 +77,13 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
         });
     };
 
-    const handleModelSelect = (model: string) => {
+    const handleModelSelect = async (model: string) => {
         handleConfigChange('model', model);
+        if (provider === 'openrouter') {
+            const selected = openRouterModels.find(m => m.id === model);
+            handleConfigChange('tokenizer', selected?.tokenizer || '');
+            await loadModelEndpoints(model, true);
+        }
     };
 
     const handleAddCustomModel = () => {
@@ -84,6 +98,129 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
         const newCustomModels = [...config.customModels];
         newCustomModels.splice(index, 1);
         handleConfigChange('customModels', newCustomModels);
+    };
+
+    async function openRouterModel(): Promise<OpenRouterModel[]> {
+        try {
+            const response = await fetch("https://openrouter.ai/api/v1/models");
+
+            if (!response.ok) {
+                console.error("Failed to fetch models:", response.status, response.statusText);
+                return [] as OpenRouterModel[];
+            }
+
+            const data: { data?: any[] } = await response.json();
+
+            if (!Array.isArray(data?.data)) {
+                console.error("Invalid response format:", data);
+                return [] as OpenRouterModel[];
+            }
+
+            const models: OpenRouterModel[] = data.data
+                .map((model: any) => {
+                    const { id, name, pricing, context_length, architecture } = model;
+
+                    // 기본값 처리
+                    const promptPrice = Number(pricing?.prompt) || 0;
+                    const completionPrice = Number(pricing?.completion) || 0;
+
+                    // 단가 계산
+                    const avgPrice = ((promptPrice * 3) + completionPrice) / 4;
+
+                    let displayName = name;
+                    if (avgPrice > 0) {
+                        displayName += ` - $${(avgPrice * 1000).toFixed(5)}/1k`;
+                    } else {
+                        displayName += " - Free";
+                    }
+
+                    return {
+                        id,
+                        name: displayName,
+                        price: avgPrice,
+                        context_length,
+                        tokenizer: architecture?.tokenizer,
+                    };
+                })
+                .filter((m: any) => m.price >= 0)
+                .sort((a: any, b: any) => a.price - b.price);
+
+            return models;
+        } catch (error) {
+            console.error("Error loading OpenRouter models:", error);
+            return [] as OpenRouterModel[];
+        }
+    }
+
+    // Fetch list endpoints for a selected model (OpenRouter specific)
+    async function loadModelEndpoints(modelId: string, resetOrder: boolean = false) {
+        setEndpointError(null);
+        setEndpointLoading(true);
+        try {
+            const url = `https://openrouter.ai/api/v1/models/${modelId}/endpoints`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const providers: string[] = Array.isArray(data.data.endpoints)
+                ? data.data.endpoints.map((ep: any) => {
+                    const tag = ep.tag;
+                    const prov = ep.provider;
+                    const provId = typeof prov === 'string' ? prov : (prov?.id || prov?.slug || prov?.name);
+                    const id = ep?.id;
+                    const fallbackFromId = typeof id === 'string' ? (id.split(':')[0] || id.split('/')[0] || id) : undefined;
+                    return tag || provId || fallbackFromId;
+                }).filter((v: any) => typeof v === 'string')
+                : [];
+            const unique = providers.filter((v, i, a) => a.indexOf(v) === i);
+            setEndpointOptions(unique);
+            if (resetOrder || !config.providerOrder || config.providerOrder.length === 0) {
+                handleConfigChange('providerOrder', unique);
+            }
+        } catch (e: any) {
+            console.error('Failed to load endpoints:', e);
+            setEndpointError(t('settings.ai.openrouter.endpointsLoadFailed'));
+            setEndpointOptions([]);
+        } finally {
+            setEndpointLoading(false);
+        }
+    }
+
+    // Load OpenRouter models when provider switches to openrouter
+    useEffect(() => {
+        if (provider !== 'openrouter') return;
+        let ignore = false;
+        (async () => {
+            try {
+                setOpenRouterError(null);
+                setOpenRouterLoading(true);
+                const models = await openRouterModel();
+                if (!ignore) setOpenRouterModels(models);
+                // If a model is already selected, load its endpoints
+                if (!ignore && config.model) {
+                    await loadModelEndpoints(config.model);
+                }
+            } catch (e) {
+                if (!ignore) setOpenRouterError(t('settings.ai.openrouter.modelsLoadFailed'));
+            } finally {
+                if (!ignore) setOpenRouterLoading(false);
+            }
+        })();
+        return () => {
+            ignore = true;
+        };
+    }, [provider]);
+
+    const refreshOpenRouterModels = async () => {
+        try {
+            setOpenRouterError(null);
+            setOpenRouterLoading(true);
+            const models = await openRouterModel();
+            setOpenRouterModels(models);
+        } catch (e) {
+            setOpenRouterError(t('settings.ai.openrouter.modelsLoadFailed'));
+        } finally {
+            setOpenRouterLoading(false);
+        }
     };
 
     return (
@@ -157,6 +294,123 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                 </>
             )}
 
+            {provider === 'openrouter' && (
+                <div className="space-y-2">
+                    <div>
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Cpu className="w-4 h-4 mr-2" />{t('settings.ai.openrouter.modelLabel')}</label>
+                        <div className="flex gap-2 items-center mb-2">
+                            <input
+                                type="text"
+                                value={openRouterSearch}
+                                onChange={e => setOpenRouterSearch(e.target.value)}
+                                placeholder={t('settings.ai.openrouter.searchPlaceholder')}
+                                className="flex-1 px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm"
+                            />
+                            <button
+                                type="button"
+                                onClick={refreshOpenRouterModels}
+                                className="px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-interface)] text-sm"
+                            >
+                                {t('settings.ai.openrouter.refresh')}
+                            </button>
+                        </div>
+                        {openRouterLoading && (
+                            <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.ai.openrouter.loading')}</p>
+                        )}
+                        {openRouterError && (
+                            <p className="text-xs text-[var(--color-button-negative)]">{openRouterError}</p>
+                        )}
+                        {!openRouterLoading && !openRouterError && (
+                            <div>
+                                {openRouterModels.length === 0 ? (
+                                    <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.ai.openrouter.noModels')}</p>
+                                ) : (
+                                    <select
+                                        value={config.model || ''}
+                                        onChange={(e) => handleModelSelect(e.target.value)}
+                                        className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm"
+                                    >
+                                        <option value="" disabled>{config.model ? t('settings.ai.openrouter.selectAnotherModel') : t('settings.ai.openrouter.selectModel')}</option>
+                                        {openRouterModels
+                                            .filter(m => {
+                                                const q = openRouterSearch.trim().toLowerCase();
+                                                if (!q) return true;
+                                                return m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
+                                            })
+                                            .map(m => (
+                                                <option key={m.id} value={m.id}>
+                                                    {m.name}
+                                                </option>
+                                            ))}
+                                    </select>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Provider endpoints for the selected model */}
+                    {config.model && (
+                        <div className="mt-3">
+                            <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Link className="w-4 h-4 mr-2" />{t('settings.ai.openrouter.providerPriority')}</label>
+                            {endpointLoading && <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.ai.openrouter.endpointsLoading')}</p>}
+                            {endpointError && <p className="text-xs text-[var(--color-button-negative)]">{endpointError}</p>}
+                            {!endpointLoading && !endpointError && (
+                                endpointOptions.length > 0 ? (
+                                    <div className="space-y-2">
+                                        <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.ai.openrouter.priorityHelp')}</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {endpointOptions.map(tag => {
+                                                const active = (config.providerOrder || []).includes(tag);
+                                                const orderIndex = (config.providerOrder || []).indexOf(tag);
+                                                return (
+                                                    <button
+                                                        key={tag}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const current = config.providerOrder || [];
+                                                            if (active) {
+                                                                // toggle off
+                                                                handleConfigChange('providerOrder', current.filter(x => x !== tag));
+                                                            } else {
+                                                                handleConfigChange('providerOrder', [...current, tag]);
+                                                            }
+                                                        }}
+                                                        className={`px-3 py-1 rounded-full border text-xs ${active ? 'bg-[var(--color-button-primary)] text-[var(--color-text-accent)] border-[var(--color-focus-border)]' : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-interface)] hover:bg-[var(--color-bg-hover)] border-[var(--color-border)]'}`}
+                                                        title={active ? t('settings.ai.openrouter.selectedWithOrder', { order: orderIndex + 1 }) : t('settings.ai.openrouter.clickToAdd')}
+                                                    >
+                                                        {tag}{active ? ` · ${orderIndex + 1}` : ''}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {(config.providerOrder || []).length > 0 && (
+                                            <div className="mt-2">
+                                                <label className="text-xs text-[var(--color-icon-tertiary)]">{t('settings.ai.openrouter.currentPriority')}</label>
+                                                <div className="flex flex-wrap gap-2 mt-1">
+                                                    {(config.providerOrder || []).map((tag, idx) => (
+                                                        <span key={tag} className="px-2 py-1 rounded-md bg-[var(--color-bg-secondary)] text-[var(--color-text-interface)] border border-[var(--color-border)] text-xs">
+                                                            {idx + 1}. {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <Toggle
+                                            id="allow-fallbacks-toggle"
+                                            label={t('settings.ai.openrouter.allowFallbacksLabel')}
+                                            description={t('settings.ai.openrouter.allowFallbacksHelp')}
+                                            checked={config.providerAllowFallbacks ?? true}
+                                            onChange={(checked) => handleConfigChange('providerAllowFallbacks', checked)}
+                                        />
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-[var(--color-text-secondary)]">{t('settings.ai.openrouter.noEndpoints')}</p>
+                                )
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
             {provider === 'customOpenAI' && (
                 <div>
                     <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Link className="w-4 h-4 mr-2" />{t('settings.ai.customOpenAI.baseUrlLabel')}</label>
@@ -170,7 +424,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                 </div>
             )}
 
-            <div>
+            {provider !== 'openrouter' && (<div>
                 <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Cpu className="w-4 h-4 mr-2" />{t('settings.ai.modelLabel')}</label>
 
                 {models.length > 0 && (
@@ -186,7 +440,6 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         ))}
                     </div>
                 )}
-
                 <div className="flex gap-2">
                     <input
                         type="text"
@@ -225,6 +478,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                     </div>
                 )}
             </div>
+            )}
         </div>
     );
 }

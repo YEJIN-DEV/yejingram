@@ -6,13 +6,13 @@ import type { GeminiApiPayload, ClaudeApiPayload, OpenAIApiPayload, GeminiStruct
 import { getActiveRoomId } from "../../utils/activeRoomTracker";
 import { selectRoomById } from "../../entities/room/selectors";
 import { selectCharacterById } from "../../entities/character/selectors";
-import type { Persona } from "../../entities/setting/types";
+import type { ApiConfig, ApiProvider, Persona } from "../../entities/setting/types";
 import { replacePlaceholders } from "../../utils/placeholder";
 import type { PlaceholderValues } from "../../utils/placeholder";
 import type { Room } from "../../entities/room/types";
 import type { PromptItem } from "../../entities/setting/types";
 import type { Lore } from "../../entities/lorebook/types";
-import { CountTokens } from "../../utils/token";
+import { countTokens } from "../../utils/token";
 
 export type GeminiContent = {
     role: string;
@@ -355,12 +355,7 @@ export async function buildGeminiApiPayload(
     isProactive: boolean,
     useStructuredOutput: boolean,
     useImageResponse: boolean | undefined,
-    model: string,
-    auth: {
-        apiKey: string;
-        location?: string;
-        projectId?: string;
-    },
+    apiConfig: ApiConfig,
     extraSystemInstruction?: string
 ): Promise<GeminiApiPayload> {
     const maxTokens = selectPrompts(store.getState()).maxContextTokens;
@@ -413,8 +408,8 @@ export async function buildGeminiApiPayload(
             { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
         ]
     };
-    
-    const tokenCountForPromptOnly = await CountTokens({ payload: payload_promptOnly }, provider, model, auth);
+
+    const tokenCountForPromptOnly = await countTokens({ payload: payload_promptOnly }, provider, apiConfig);
     console.debug("Total tokens for system prompt only:", tokenCountForPromptOnly);
 
     while (true) {
@@ -434,7 +429,7 @@ export async function buildGeminiApiPayload(
             ]
         };
 
-        const tokenCount = await CountTokens({ payload }, provider, model, auth);
+        const tokenCount = await countTokens({ payload }, provider, apiConfig);
         console.debug("Total tokens after trimming:", tokenCount);
 
         if (tokenCount <= maxTokens) {
@@ -546,8 +541,7 @@ export async function buildClaudeApiPayload(
     isProactive: boolean,
     useStructuredOutput: boolean,
     useImageResponse: boolean | undefined,
-    model: string,
-    apiKey: string,
+    apiConfig: ApiConfig,
     extraSystemInstruction?: string
 ): Promise<ClaudeApiPayload> {
     const maxTokens = selectPrompts(store.getState()).maxContextTokens;
@@ -556,7 +550,7 @@ export async function buildClaudeApiPayload(
     const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
 
     const payload_promptOnly: ClaudeApiPayload = {
-        model: model,
+        model: apiConfig.model,
         messages: [{ role: 'user', content: [{ type: 'text', text: 'placeholder' }] }],
         system: [{
             type: "text",
@@ -564,18 +558,18 @@ export async function buildClaudeApiPayload(
         }],
         temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature,
         top_k: selectPrompts(store.getState()).topK,
-        ...((model.startsWith("claude-opus-4-1") || model.startsWith("claude-sonnet-4-5")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
+        ...((apiConfig.model.startsWith("claude-opus-4-1") || apiConfig.model.startsWith("claude-sonnet-4-5")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
         max_tokens: selectPrompts(store.getState()).maxResponseTokens,
     };
 
-    const tokenCountForPromptOnly = await CountTokens({ payload: payload_promptOnly }, provider, model, { apiKey });
+    const tokenCountForPromptOnly = await countTokens({ payload: payload_promptOnly }, provider, apiConfig);
     console.debug("Total tokens for system prompt only:", tokenCountForPromptOnly);
 
     while (true) {
-        const contents = buildClaudeContents(trimmedMessages, isProactive, persona, model, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse);
+        const contents = buildClaudeContents(trimmedMessages, isProactive, persona, apiConfig.model, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse);
 
         const payload: ClaudeApiPayload = {
-            model: model,
+            model: apiConfig.model,
             messages: contents,
             system: [{
                 type: "text",
@@ -583,11 +577,11 @@ export async function buildClaudeApiPayload(
             }],
             temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature,
             top_k: selectPrompts(store.getState()).topK,
-            ...((model.startsWith("claude-opus-4-1") || model.startsWith("claude-sonnet-4-5")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
+            ...((apiConfig.model.startsWith("claude-opus-4-1") || apiConfig.model.startsWith("claude-sonnet-4-5")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
             max_tokens: selectPrompts(store.getState()).maxResponseTokens,
         };
 
-        const tokenCount = await CountTokens({ payload }, provider, model, { apiKey });
+        const tokenCount = await countTokens({ payload }, provider, apiConfig);
         console.debug("Total tokens after trimming:", tokenCount);
 
         if (tokenCount <= maxTokens) {
@@ -605,7 +599,7 @@ export async function buildClaudeApiPayload(
 }
 
 // OpenAI (Chat Completions) payload builders
-async function buildOpenAIContents(messages: Message[], isProactive: boolean, model: string, persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean, useImageResponse?: boolean) {
+async function buildOpenAIContents(messages: Message[], isProactive: boolean, provider: ApiProvider, apiConfig: ApiConfig, persona?: Persona | null, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean, useImageResponse?: boolean) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
@@ -682,11 +676,12 @@ async function buildOpenAIContents(messages: Message[], isProactive: boolean, mo
         items.push({ role: 'user', content: '(SYSTEM: You are starting this conversation. Please begin.)' });
     }
 
-    console.debug("Total tokens", await CountTokens({ content: items }, 'openai', model));
+    console.debug("Total tokens", await countTokens({ content: items }, provider, apiConfig));
     return items;
 }
 
 export async function buildOpenAIApiPayload(
+    provider: ApiProvider,
     room: Room,
     persona: Persona,
     character: Character,
@@ -694,14 +689,14 @@ export async function buildOpenAIApiPayload(
     isProactive: boolean,
     useStructuredOutput: boolean,
     useImageResponse: boolean | undefined,
-    model: string,
+    apiConfig: ApiConfig,
     extraSystemInstruction?: string
 ): Promise<OpenAIApiPayload> {
     const maxTokens = selectPrompts(store.getState()).maxContextTokens;
     let trimmedMessages = [...messages];
 
     while (true) {
-        const history = await buildOpenAIContents(trimmedMessages, isProactive, model, persona, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse);
+        const history = await buildOpenAIContents(trimmedMessages, isProactive, provider, apiConfig, persona, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse);
         const JSONSchema = structuredClone(OpenAIStructuredOutputSchema);
 
         if (useImageResponse) {
@@ -725,13 +720,25 @@ export async function buildOpenAIApiPayload(
             : { type: 'text' };
 
         const payload: OpenAIApiPayload = {
-            model,
+            model: apiConfig.model,
             messages: history,
-            temperature: model == 'gpt-5' ? 1 : selectPrompts(store.getState()).temperature,
-            top_p: model == 'gpt-5' ? undefined : selectPrompts(store.getState()).topP,
+            temperature: apiConfig.model == 'gpt-5' ? 1 : selectPrompts(store.getState()).temperature,
+            top_p: apiConfig.model == 'gpt-5' ? undefined : selectPrompts(store.getState()).topP,
             max_completion_tokens: selectPrompts(store.getState()).maxResponseTokens,
             response_format,
         };
+
+        // If using OpenRouter, include provider routing preferences when available
+        if (provider === 'openrouter') {
+            const order = apiConfig.providerOrder && apiConfig.providerOrder.length > 0 ? apiConfig.providerOrder : undefined;
+            const allow_fallbacks = (apiConfig.providerAllowFallbacks !== undefined) ? apiConfig.providerAllowFallbacks : undefined;
+            if (order || allow_fallbacks !== undefined) {
+                (payload as OpenAIApiPayload).provider = {
+                    ...(order ? { order } : {}),
+                    ...(allow_fallbacks !== undefined ? { allow_fallbacks } : {}),
+                };
+            }
+        }
 
         // Calculate token count for system prompt only (up to first user message)
         const payload_promptOnly = structuredClone(payload);
@@ -739,10 +746,10 @@ export async function buildOpenAIApiPayload(
         if (firstUserIndex !== -1) {
             payload_promptOnly.messages = payload_promptOnly.messages.slice(0, firstUserIndex);
         }
-        const tokenCountForPromptOnly = await CountTokens({ content: payload_promptOnly.messages }, 'openai', model);
+        const tokenCountForPromptOnly = await countTokens({ content: payload_promptOnly.messages }, provider, apiConfig);
         console.debug("Total tokens for system prompt only:", tokenCountForPromptOnly);
 
-        const tokenCount = await CountTokens({ content: history }, 'openai', model);
+        const tokenCount = await countTokens({ content: history }, provider, apiConfig);
         console.debug("Total tokens after trimming:", tokenCount);
 
         if (tokenCount <= maxTokens) {

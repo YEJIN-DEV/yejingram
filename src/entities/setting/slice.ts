@@ -12,8 +12,8 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [] },
     openai: { apiKey: '', model: 'gpt-5', customModels: [] },
     grok: { apiKey: '', model: 'grok-4-0709', customModels: [] },
-    openrouter: { apiKey: '', model: '', customModels: [] },
-    customOpenAI: { apiKey: '', baseUrl: '', model: '', customModels: [] },
+    openrouter: { apiKey: '', model: '', customModels: [], tokenizer: '', providerOrder: [], providerAllowFallbacks: true },
+    customOpenAI: { apiKey: '', baseUrl: '', model: '', customModels: [], tokenizer: '' },
 };
 
 export const initialSyncSettings: Sync = {
