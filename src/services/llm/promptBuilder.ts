@@ -717,7 +717,7 @@ export async function buildOpenAIApiPayload(
 
         const response_format: OpenAIApiPayload['response_format'] = useStructuredOutput
             ? JSONSchema
-            : { type: 'text' };
+            : undefined;
 
         const payload: OpenAIApiPayload = {
             model: apiConfig.model,
@@ -733,7 +733,7 @@ export async function buildOpenAIApiPayload(
             const order = apiConfig.providerOrder && apiConfig.providerOrder.length > 0 ? apiConfig.providerOrder : undefined;
             const allow_fallbacks = (apiConfig.providerAllowFallbacks !== undefined) ? apiConfig.providerAllowFallbacks : undefined;
             if (order || allow_fallbacks !== undefined) {
-                (payload as OpenAIApiPayload).provider = {
+                payload.provider = {
                     ...(order ? { order } : {}),
                     ...(allow_fallbacks !== undefined ? { allow_fallbacks } : {}),
                 };
