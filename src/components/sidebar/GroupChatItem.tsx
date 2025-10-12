@@ -7,6 +7,7 @@ import { selectAllCharacters } from '../../entities/character/selectors';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import { settingsActions } from '../../entities/setting/slice';
+import { useCallback } from 'react';
 
 interface GroupChatItemProps {
     room: Room;
@@ -22,6 +23,21 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal, us
     const allCharacters = useSelector(selectAllCharacters);
     const messages = useSelector((state: any) => selectMessagesByRoomId(state, room.id));
     const participants = room.memberIds.map(id => allCharacters.find(c => c.id === id)).filter(Boolean);
+
+    const formatTime = useCallback((timestamp: string) => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffMins < 1) return t('units.justNow');
+        if (diffMins < 60) return `${diffMins}${t('units.minute')}`;
+        if (diffHours < 24) return `${diffHours}${t('units.hour')}`;
+        if (diffDays < 7) return `${diffDays}${t('units.days')}`;
+        return date.toLocaleDateString();
+    }, [t]);
 
     const handleRoomSelect = () => {
         dispatch(roomsActions.resetUnread(room.id));
@@ -91,10 +107,7 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal, us
                         <div className="flex items-center space-x-2 ml-2">
                             {lastMessage?.createdAt && (
                                 <span className="text-xs text-[var(--color-text-secondary)] flex-shrink-0">
-                                    {new Date(lastMessage.createdAt).toLocaleTimeString('ko-KR', {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
+                                    {formatTime(lastMessage.createdAt)}
                                 </span>
                             )}
                             {room.unreadCount > 0 && (

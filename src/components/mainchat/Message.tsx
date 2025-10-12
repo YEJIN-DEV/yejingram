@@ -17,9 +17,9 @@ import { renderFile } from './FilePreview';
 import { callImageGeneration } from '../../services/image/ImageCaller';
 
 // Helper function for date formatting
-const formatDateSeparator = (date: Date): string => {
+const formatDateSeparator = (date: Date, locale: string | undefined): string => {
   const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-  return date.toLocaleDateString(undefined, options);
+  return date.toLocaleDateString(locale, options);
 };
 
 // Helper function to extract URLs from text
@@ -100,7 +100,7 @@ const MessageList: React.FC<MessageListProps> = ({
   setTypingCharacterId,
   setIsWaitingForResponse
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const allCharacters = useSelector((state: RootState) => charactersAdapter.getSelectors().selectAll(state.characters));
   const animatedMessageIds = useRef(new Set<string>());
@@ -388,7 +388,7 @@ const MessageList: React.FC<MessageListProps> = ({
                 <div className="flex justify-center my-6">
                   <div className="flex items-center text-sm text-[var(--color-icon-tertiary)] bg-[var(--color-bg-input-primary)] px-4 py-2 rounded-full transition-all duration-300 hover:bg-[var(--color-bg-secondary-accent)] hover:scale-105">
                     <Calendar className="w-4 h-4 mr-2 text-[var(--color-icon-secondary)]" />
-                    {formatDateSeparator(new Date(msg.createdAt))}
+                    {formatDateSeparator(new Date(msg.createdAt), i18n.resolvedLanguage)}
                   </div>
                 </div>
               )}

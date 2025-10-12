@@ -43,7 +43,7 @@ function RoomList({
         if (diffHours < 24) return `${diffHours}${t('units.hour')}`;
         if (diffDays < 7) return `${diffDays}${t('units.days')}`;
         return date.toLocaleDateString();
-    }, []);
+    }, [t]);
 
     const handleRoomSelect = () => {
         dispatch(roomsActions.resetUnread(room.id));
