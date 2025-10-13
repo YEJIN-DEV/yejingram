@@ -376,7 +376,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
         />
 
         {/* Messages Container*/}
-        <div id="messages-container" className="flex-1 overflow-y-auto bg-[var(--color-bg-main)]" ref={messagesContainerRef}>
+        <div id="messages-container" className="flex-1 overflow-y-auto w-full bg-[var(--color-bg-main)]" ref={messagesContainerRef}>
           <MessageList
             messages={messages}
             room={room}

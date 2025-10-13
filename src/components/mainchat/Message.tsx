@@ -59,14 +59,6 @@ interface MessageGroupInfo {
   lastMessageId: string;
 }
 
-interface TouchInteractionState {
-  pointerId: number | null;
-  startX: number;
-  startY: number;
-  moved: boolean;
-  messageId: string | null;
-}
-
 const findMessageGroup = (messages: MessageType[], currentIndex: number): MessageGroupInfo => {
   const currentMessage = messages[currentIndex];
   let startIndex = currentIndex;
@@ -125,14 +117,8 @@ const MessageList: React.FC<MessageListProps> = ({
   });
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-  const touchInteractionRef = useRef<TouchInteractionState>({ pointerId: null, startX: 0, startY: 0, moved: false, messageId: null });
 
   const CONTROLS_AUTOHIDE_MS = 2000; // 모바일 컨트롤 자동 숨김 시간(ms)
-  const TOUCH_MOVE_THRESHOLD_PX = 10; // 터치 드래그 허용 이동량(px)
-
-  const resetTouchInteraction = useCallback(() => {
-    touchInteractionRef.current = { pointerId: null, startX: 0, startY: 0, moved: false, messageId: null };
-  }, []);
 
   const toggleStickerSize = useCallback((messageId: string) => {
     setExpandedStickers(prev => {
@@ -201,44 +187,6 @@ const MessageList: React.FC<MessageListProps> = ({
       setActiveMessageId(null);
     }, CONTROLS_AUTOHIDE_MS);
   }, []);
-
-  const createPointerHandlers = useCallback((messageId: string, messageType: MessageType['type']) => {
-    if (!isCoarsePointer || messageType === 'IMAGE') {
-      return {};
-    }
-
-    return {
-      onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
-        e.stopPropagation();
-        touchInteractionRef.current = {
-          pointerId: e.pointerId,
-          startX: e.clientX,
-          startY: e.clientY,
-          moved: false,
-          messageId
-        };
-      },
-      onPointerMove: (e: React.PointerEvent<HTMLDivElement>) => {
-        const interaction = touchInteractionRef.current;
-        if (interaction.pointerId !== e.pointerId || interaction.moved) return;
-        const deltaX = Math.abs(e.clientX - interaction.startX);
-        const deltaY = Math.abs(e.clientY - interaction.startY);
-        if (deltaX > TOUCH_MOVE_THRESHOLD_PX || deltaY > TOUCH_MOVE_THRESHOLD_PX) {
-          interaction.moved = true;
-        }
-      },
-      onPointerUp: (e: React.PointerEvent<HTMLDivElement>) => {
-        const interaction = touchInteractionRef.current;
-        const isSamePointer = interaction.pointerId === e.pointerId;
-        const isSameMessage = interaction.messageId === messageId;
-        if (isSamePointer && isSameMessage && !interaction.moved) {
-          showControlsWithAutoHide(messageId);
-        }
-        resetTouchInteraction();
-      },
-      onPointerCancel: resetTouchInteraction
-    };
-  }, [isCoarsePointer, resetTouchInteraction, showControlsWithAutoHide]);
 
   // Mobile: hide controls when tapping outside the active message
   useEffect(() => {
@@ -492,24 +440,23 @@ const MessageList: React.FC<MessageListProps> = ({
                       {/* Message bubble with hover controls */}
                       <div
                         data-message-id={msg.id.toString()}
-                        className={`relative group/message flex flex-col ${isMe ? 'md:flex-row-reverse' : 'md:flex-row'} ${isMe ? 'items-end' : 'items-start md:items-end'} ${isCoarsePointer ? (activeMessageId === msg.id.toString() ? 'gap-1' : 'gap-0') : 'gap-0 group-hover/message:gap-2'} md:gap-2 ${editingMessageId === msg.id ? 'w-full' : ''} transition-transform duration-400 ${isMe ? 'origin-bottom-right' : 'origin-bottom-left'} ${(msg.type !== 'IMAGE' && editingMessageId !== msg.id) ? 'md:hover:scale-[1.02]' : ''}`}
-                        {...createPointerHandlers(msg.id.toString(), msg.type)}
+                        className={`relative group/message ${isMe ? 'flex-row-reverse' : ''} flex items-end gap-2 ${editingMessageId === msg.id ? 'w-full' : ''} transition-transform duration-200 ${isMe ? 'origin-bottom-right' : 'origin-bottom-left'} ${(msg.type !== 'IMAGE' && editingMessageId !== msg.id) ? 'md:hover:scale-[1.02]' : ''}`}
                       >
                         <div
                           className={`message-content-wrapper ${editingMessageId === msg.id ? 'flex-1 w-full' : ''}`}
+                          onClick={isCoarsePointer && msg.type !== 'IMAGE' ? () => showControlsWithAutoHide(msg.id.toString()) : undefined}
                         >
                           {renderMessageContent()}
                         </div>
 
                         {/* Message controls - inline (wrap with message to keep hover) */}
+                        {/* min-w-17 <- This is necessary to ensure that at least 2 Message control buttons exist on each line. (8*2) */}
                         {editingMessageId !== msg.id && (
                           <div
-                            className={`flex flex-wrap items-center gap-1 max-w-full ${isMe ? 'self-end md:self-auto' : 'self-start md:self-auto'} transition-all duration-500
+                            className={`flex flex-wrap min-w-17 items-end gap-1 self-end transition-all duration-500
                               ${isCoarsePointer
-                                ? (activeMessageId === msg.id.toString()
-                                  ? 'opacity-100 pointer-events-auto'
-                                  : 'opacity-0 pointer-events-none max-h-0 overflow-hidden')
-                                : 'opacity-0 pointer-events-none max-h-0 overflow-hidden md:max-h-none md:overflow-visible group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-hover/message:max-h-24'
+                                ? (activeMessageId === msg.id.toString() ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none')
+                                : 'opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto'
                               }
                             `}
                           >
