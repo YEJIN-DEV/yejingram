@@ -17,7 +17,7 @@ import {
 import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
-import settingsReducer, { initialSyncSettings, initialState as settingsInitialState } from '../entities/setting/slice';
+import settingsReducer, { initialSyncSettings, initialState as settingsInitialState, initialApiConfigs as settingsInitialApiConfigs } from '../entities/setting/slice';
 import { initialState as imageSettingsInitialState } from '../entities/setting/image/slice';
 import { applyRules } from '../utils/migration';
 import uiReducer from '../entities/ui/slice';
@@ -84,42 +84,19 @@ export const migrations = {
             add: [
                 {
                     path: 'settings.apiConfigs.openrouter',
-                    keys: ['providerAllowFallbacks', 'tokenizer'],
-                    defaults: { providerAllowFallbacks: true, tokenizer: '' }
+                    keys: ['providers', 'providerAllowFallbacks', 'tokenizer'],
+                    defaults: settingsInitialApiConfigs.openrouter
                 },
                 {
                     path: 'settings.apiConfigs.customOpenAI',
                     keys: ['tokenizer'],
-                    defaults: { tokenizer: '' }
+                    defaults: settingsInitialApiConfigs.customOpenAI
                 }
             ]
         });
         return state;
     },
     4: (state: any) => {
-        // Migrate to unified providers array for OpenRouter
-        const cfg = state?.settings?.apiConfigs?.openrouter;
-        if (cfg) {
-            const order: string[] = Array.isArray(cfg.providerOrder) ? cfg.providerOrder : [];
-            const support: Record<string, boolean> = cfg.providerResponseFormat || {};
-            // Build providers array preserving order
-            const providers = order.map((tag: string) => ({ tag, supportsResponseFormat: !!support[tag] }));
-            state.settings.apiConfigs.openrouter.providers = providers;
-            // Cleanup legacy keys
-            delete state.settings.apiConfigs.openrouter.providerOrder;
-            delete state.settings.apiConfigs.openrouter.providerResponseFormat;
-        } else {
-            state = applyRules(state, {
-                add: [
-                    {
-                        path: 'settings.apiConfigs.openrouter',
-                        keys: ['providers'],
-                        defaults: { providers: [] }
-                    }
-                ]
-            });
-        }
-
         // Drop orphaned messages that reference non-existent rooms
         const roomEntities = state.rooms.entities;
         const messageState = state.messages;
