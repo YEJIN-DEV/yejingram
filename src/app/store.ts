@@ -119,6 +119,31 @@ export const migrations = {
                 ]
             });
         }
+
+        // Drop orphaned messages that reference non-existent rooms
+        const roomEntities = state.rooms.entities;
+        const messageState = state.messages;
+
+        const validRoomIds = new Set(
+            Object.entries(roomEntities)
+                .filter(([, room]) => !!room)
+                .map(([roomId]) => roomId)
+        );
+
+        const filteredIds = messageState.ids.filter((messageId: string) => {
+            const message = messageState.entities[messageId];
+            return message && (!message.roomId || validRoomIds.has(message.roomId));
+        });
+
+        if (filteredIds.length !== messageState.ids.length) {
+            const filteredEntities: Record<string, unknown> = {};
+            for (const id of filteredIds) {
+                filteredEntities[id] = messageState.entities[id];
+            }
+            state.messages.ids = filteredIds;
+            state.messages.entities = filteredEntities;
+        }
+
         return state;
     }
 } as MigrationManifest;
