@@ -24,6 +24,8 @@ import { selectForceShowSyncModal, selectUI } from './entities/ui/selectors';
 import i18n from './i18n/i18n'
 import { settingsActions } from './entities/setting/slice'
 import { charactersActions } from './entities/character/slice'
+import { connect as bridgeConnect } from './services/wsBridge'
+import type { Socket } from 'socket.io-client'
 
 function App() {
   const dispatch = useDispatch();
@@ -45,6 +47,11 @@ function App() {
   const uiLanguage = useSelector(selectUILanguage);
 
   const editingCharacterId = useSelector(selectEditingCharacterId);
+  const socket = useRef<Socket | null>(null);
+
+  if (socket.current === null) {
+    socket.current = bridgeConnect();
+  }
 
   const [prefersDark, setPrefersDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined' && 'matchMedia' in window) {
