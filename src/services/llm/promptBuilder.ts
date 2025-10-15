@@ -362,6 +362,7 @@ export async function buildGeminiApiPayload(
     let trimmedMessages = [...messages];
 
     const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
+    const contentOnlyPrompt = buildGeminiContents([], isProactive, persona, character, room, useStructuredOutput, useImageResponse);
 
     const generationConfig: GeminiGenerationConfig = {
         temperature: selectPrompts(store.getState()).temperature,
@@ -394,9 +395,7 @@ export async function buildGeminiApiPayload(
     }
 
     const payload_promptOnly: GeminiApiPayload = {
-        contents: [
-            { role: 'user', parts: [{ text: 'placeholder' }] }
-        ],
+        contents: contentOnlyPrompt,
         systemInstruction: {
             parts: [{ text: systemPrompt }]
         },
@@ -548,10 +547,11 @@ export async function buildClaudeApiPayload(
     let trimmedMessages = [...messages];
 
     const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
+    const contentOnlyPrompt = buildClaudeContents([], isProactive, persona, apiConfig.model, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse);
 
     const payload_promptOnly: ClaudeApiPayload = {
         model: apiConfig.model,
-        messages: [{ role: 'user', content: [{ type: 'text', text: 'placeholder' }] }],
+        messages: contentOnlyPrompt,
         system: [{
             type: "text",
             text: systemPrompt
