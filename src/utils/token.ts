@@ -55,8 +55,9 @@ export async function countTokens(prompts: Prompts, provider: ApiProvider, apiCo
             case 'grok':
                 return await countTokensGrok(prompts, apiConfig);
             case 'deepseek':
+                return await countTokensDeepSeek(prompts);
             case 'openrouter':
-            case 'customOpenAI':
+            case 'custom':
                 return await countTokensOpenRouterOrCustom(prompts, apiConfig);
         }
     }
@@ -68,6 +69,66 @@ function serializeOpenAIContent(content: OpenAIContent[]): string {
         ...content.map(({ role, content }) => `<|im_start|>${role}<|im_sep|>${content}<|im_end|>`),
         "<|im_start|>assistant",
     ].join('');
+}
+
+function serializeClaudeContent(content: ClaudeApiPayload): string {
+    const segments: string[] = [];
+
+    const systemText = (content.system ?? [])
+        .filter(part => part.type === 'text')
+        .map(part => part.text)
+        .join('')
+        .trim();
+
+    if (systemText) {
+        segments.push(`System: ${systemText}<|separator|>`);
+    }
+
+    for (const message of content.messages) {
+        const textContent = message.content
+            .map(part => {
+                if ('source' in part) return `[image:${part.source.media_type}]`;
+                if ('text' in part) return part.text;
+                return '';
+            })
+            .join('')
+            .trim();
+
+        segments.push(`${message.role}: ${textContent}<|separator|>`);
+    }
+
+    segments.push("Assistant: ");
+    return segments.join('');
+}
+
+function serializeGeminiContent(content: GeminiApiPayload): string {
+    const segments: string[] = [];
+
+    const systemText = content.systemInstruction?.parts
+        ?.map(part => part.text)
+        .join('')
+        .trim();
+
+    if (systemText) {
+        segments.push(`System: ${systemText}<|separator|>`);
+    }
+
+    for (const { role, parts } of content.contents) {
+        const textContent = parts
+            .map(part => {
+                if ('text' in part) return part.text;
+                if ('inline_data' in part) return `[inline_data:${part.inline_data.mime_type}]`;
+                if ('file_data' in part) return `[file:${part.file_data.file_uri}]`;
+                return '';
+            })
+            .join('')
+            .trim();
+
+        segments.push(`${role}: ${textContent}<|separator|>`);
+    }
+
+    segments.push("Assistant: ");
+    return segments.join('');
 }
 
 function encodeWithOpenAIModel(serialized: string, model: string): number {
@@ -216,9 +277,26 @@ async function countTokensGrok(prompts: Prompts, apiConfig: ApiConfig): Promise<
     }
 }
 
-async function countTokensOpenRouterOrCustom(prompts: Prompts, apiConfig: ApiConfig): Promise<number> {
+async function countTokensDeepSeek(prompts: Prompts): Promise<number> {
     const serialized = serializeOpenAIContent(prompts.content as OpenAIContent[]);
+    const tokens = await tokenizeWebTokenizers(serialized, 'DeepSeek');
+    return tokens ? tokens.length : 0;
+}
 
+async function countTokensOpenRouterOrCustom(prompts: Prompts, apiConfig: ApiConfig): Promise<number> {
+    let serialized = '';
+    switch (apiConfig?.payloadTemplate) { // PayloadTemplate only exists for 'custom' provider
+        case 'anthropic':
+            serialized = serializeClaudeContent((prompts.payload as ClaudeApiPayload) || []);
+            break;
+        case 'gemini':
+            serialized = serializeGeminiContent((prompts.payload as GeminiApiPayload) || []);
+            break;
+        case 'openai':
+        default: // When OpenRouter
+            serialized = serializeOpenAIContent(prompts.content as OpenAIContent[]);
+    }
+    
     if (apiConfig.tokenizer) {
         if (customTokenizers.includes(apiConfig.tokenizer as CustomTokenizer)) {
             const tokens = await tokenizeWebTokenizers(serialized, apiConfig.tokenizer as CustomTokenizer);

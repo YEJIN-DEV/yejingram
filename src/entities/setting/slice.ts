@@ -12,9 +12,9 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [] },
     openai: { apiKey: '', model: 'gpt-5', customModels: [] },
     grok: { apiKey: '', model: 'grok-4-0709', customModels: [] },
-    deepseek: { apiKey: '', model: 'deepseek-chat', customModels: [], tokenizer: 'DeepSeek' },
+    deepseek: { apiKey: '', model: 'deepseek-chat', customModels: [] },
     openrouter: { apiKey: '', model: '', customModels: [], tokenizer: '', providers: [], providerAllowFallbacks: true },
-    customOpenAI: { apiKey: '', baseUrl: '', model: '', customModels: [], tokenizer: '' },
+    custom: { apiKey: '', baseUrl: '', model: '', customModels: [], tokenizer: '', payloadTemplate: '' },
 };
 
 export const initialSyncSettings: Sync = {

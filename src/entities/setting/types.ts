@@ -1,6 +1,6 @@
 import type { ImageGenerationSettingsState } from "./image/types";
 
-export type ApiProvider = 'gemini' | 'vertexai' | 'claude' | 'grok' | 'openai' | 'deepseek' | 'openrouter' | 'customOpenAI';
+export type ApiProvider = 'gemini' | 'vertexai' | 'claude' | 'grok' | 'openai' | 'deepseek' | 'openrouter' | 'custom';
 
 export interface ApiConfig {
     apiKey: string;
@@ -18,6 +18,8 @@ export interface ApiConfig {
         supportsResponseFormat: boolean; // whether endpoint supports response_format or structured_outputs
     }>;
     providerAllowFallbacks?: boolean;
+    // Custom endpoint payload template (for 'custom' provider)
+    payloadTemplate?: string;
 }
 
 export type PromptRole = 'system' | 'assistant' | 'user';

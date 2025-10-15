@@ -344,10 +344,12 @@ const ko = {
             customModelPlaceholder: "커스텀 모델명 입력",
             add: "추가",
             customModelsLabel: "커스텀 모델",
-            customOpenAI: {
+            custom: {
                 baseUrlLabel: "Base URL",
                 tokenizerLabel: "토크나이저",
                 selectTokenizer: "토크나이저를 선택하세요",
+                payloadTemplateLabel: "페이로드 템플릿",
+                selectPayloadTemplate: "페이로드 템플릿을 선택하세요",
             },
             openrouter: {
                 modelLabel: "OpenRouter 모델",

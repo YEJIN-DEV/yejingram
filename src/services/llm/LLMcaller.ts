@@ -178,8 +178,20 @@ async function callApi(
         case 'openai':
         case 'deepseek':
         case 'openrouter':
-        case 'customOpenAI':
             payload = await buildOpenAIApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction, settings.useResponseFormat ?? true);
+            break;
+        case 'custom':
+            switch (apiConfig.payloadTemplate) {
+                case 'gemini':
+                    payload = await buildGeminiApiPayload('gemini', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
+                    break;
+                case 'anthropic':
+                    payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
+                    break;
+                case 'openai':
+                    payload = await buildOpenAIApiPayload('openai', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction, settings.useResponseFormat ?? true);
+                    break;
+            }
             break;
     }
     let url: string;
@@ -215,13 +227,13 @@ async function callApi(
         };
     }
 
-    else { // openai-compatible providers (openai, customOpenAI, grok, openrouter)
+    else { // openai-compatible providers (openai, custom, grok, openrouter)
         let baseUrl: string;
         switch (apiProvider) {
             case 'deepseek':
                 baseUrl = DEEPSEEK_API_BASE_URL;
                 break;
-            case 'customOpenAI':
+            case 'custom':
                 baseUrl = apiConfig.baseUrl || OPENAI_API_BASE_URL;
                 break;
             case 'grok':

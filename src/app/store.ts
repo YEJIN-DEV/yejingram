@@ -84,21 +84,30 @@ export const migrations = {
             add: [
                 {
                     path: 'settings.apiConfigs',
-                    keys: ['deepseek'],
-                    defaults: { deepseek: settingsInitialApiConfigs.deepseek }
+                    keys: ['deepseek', 'custom'],
+                    defaults: { deepseek: settingsInitialApiConfigs.deepseek, custom: settingsInitialApiConfigs.custom }
                 },
                 {
                     path: 'settings.apiConfigs.openrouter',
                     keys: ['providers', 'providerAllowFallbacks', 'tokenizer'],
                     defaults: settingsInitialApiConfigs.openrouter
                 },
+            ],
+            move: [
                 {
-                    path: 'settings.apiConfigs.customOpenAI',
-                    keys: ['tokenizer'],
-                    defaults: settingsInitialApiConfigs.customOpenAI
+                    from: 'settings.apiConfigs.customOpenAI',
+                    to: 'settings.apiConfigs.custom',
+                    keys: ['apiKey', 'baseUrl', 'model', 'customModels'],
+                    overwrite: true,
+                    keepSource: false
                 }
             ]
+
         });
+
+        if (state?.settings?.apiProvider === 'customOpenAI') {
+            state.settings.apiProvider = 'custom';
+        }
         return state;
     },
     4: (state: any) => {

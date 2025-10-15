@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { SettingsState, ApiConfig } from '../../entities/setting/types';
-import { Key, Cpu, Link, Plus, X, Briefcase, Globe } from 'lucide-react';
+import { Key, Cpu, Link, Plus, X, Briefcase, Globe, LayoutTemplate, Braces } from 'lucide-react';
 import { initialApiConfigs } from '../../entities/setting/slice';
 import { Toggle } from '../Toggle';
 
@@ -44,7 +44,7 @@ const providerModels: Record<string, string[]> = {
         'deepseek-reasoner'
     ],
     openrouter: [],
-    customOpenAI: []
+    custom: []
 };
 
 export type ProviderModel = typeof providerModels[keyof typeof providerModels][number];
@@ -243,7 +243,7 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                     )
                 }
             />
-            {settings.useStructuredOutput && provider === 'customOpenAI' && (
+            {settings.useStructuredOutput && provider === 'custom' && (
                 <Toggle
                     id="response-format-toggle"
                     label={t('settings.ai.responseFormat.label')}
@@ -428,10 +428,10 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                 </div>
             )}
 
-            {provider === 'customOpenAI' && (
+            {provider === 'custom' && (
                 <div className="space-y-3">
                     <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Link className="w-4 h-4 mr-2" />{t('settings.ai.customOpenAI.baseUrlLabel')}</label>
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Link className="w-4 h-4 mr-2" />{t('settings.ai.custom.baseUrlLabel')}</label>
                         <input
                             type="text"
                             value={config.baseUrl || ''}
@@ -441,9 +441,9 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                         />
                     </div>
 
-                    {/* Tokenizer selection for customOpenAI (used by web-tokenizers in countTokens) */}
+                    {/* Tokenizer selection for custom (used by web-tokenizers in countTokens) */}
                     <div>
-                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Cpu className="w-4 h-4 mr-2" />{t('settings.ai.customOpenAI.tokenizerLabel')}</label>
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><Braces className="w-4 h-4 mr-2" />{t('settings.ai.custom.tokenizerLabel')}</label>
                         {(() => {
                             // Display labels while saving normalized values. OpenAI variants should store bare algorithm ids.
                             const tokenizerOptions = [
@@ -469,9 +469,34 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                                     onChange={(e) => handleConfigChange('tokenizer', e.target.value)}
                                     className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm"
                                 >
-                                    <option value="" disabled>{t('settings.ai.customOpenAI.selectTokenizer')}</option>
+                                    <option value="" disabled>{t('settings.ai.custom.selectTokenizer')}</option>
                                     {/* Keep this list in sync with CustomTokenizer and supported algorithms in src/utils/token.ts */}
                                     {tokenizerOptions.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                            );
+                        })()}
+                    </div>
+
+                    {/* Payload template selection for custom */}
+                    <div>
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><LayoutTemplate className="w-4 h-4 mr-2" />{t('settings.ai.custom.payloadTemplateLabel')}</label>
+                        {(() => {
+                            // Display labels while saving normalized values. OpenAI variants should store bare algorithm ids.
+                            const payloadTemplateOptions = [
+                                { label: 'OpenAI', value: 'openai' },
+                                { label: 'Anthropic', value: 'anthropic' },
+                                { label: 'Gemini', value: 'gemini' },
+                            ];
+                            return (
+                                <select
+                                    value={config.payloadTemplate}
+                                    onChange={(e) => handleConfigChange('payloadTemplate', e.target.value)}
+                                    className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm"
+                                >
+                                    <option value="" disabled>{t('settings.ai.custom.selectPayloadTemplate')}</option>
+                                    {payloadTemplateOptions.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                                     ))}
                                 </select>

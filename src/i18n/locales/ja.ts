@@ -344,10 +344,12 @@ const ja = {
             customModelPlaceholder: "カスタムモデル名を入力",
             add: "追加",
             customModelsLabel: "カスタムモデル",
-            customOpenAI: {
+            custom: {
                 baseUrlLabel: "Base URL",
                 tokenizerLabel: "トークナイザー",
                 selectTokenizer: "トークナイザーを選択してください",
+                payloadTemplateLabel: "ペイロードテンプレート",
+                selectPayloadTemplate: "ペイロードテンプレートを選択してください",
             },
             openrouter: {
                 modelLabel: "OpenRouter モデル",

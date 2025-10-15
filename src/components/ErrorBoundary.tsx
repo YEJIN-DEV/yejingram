@@ -57,7 +57,7 @@ class ErrorBoundary extends Component<Props, State> {
             store.dispatch(resetAll());
         }
         if (resetOptions.resetApi) {
-            const providers: ApiProvider[] = ['gemini', 'vertexai', 'claude', 'openai', 'grok', 'openrouter', 'customOpenAI'];
+            const providers: ApiProvider[] = ['gemini', 'vertexai', 'claude', 'openai', 'grok', 'deepseek', 'openrouter', 'custom'];
             providers.forEach(provider => {
                 store.dispatch(settingsActions.setApiConfig({ provider, config: initialApiConfigs[provider] }));
             });

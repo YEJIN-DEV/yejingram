@@ -344,10 +344,12 @@ const en = {
             customModelPlaceholder: "Enter a custom model name",
             add: "Add",
             customModelsLabel: "Custom models",
-            customOpenAI: {
+            custom: {
                 baseUrlLabel: "Base URL",
                 tokenizerLabel: "Tokenizer",
                 selectTokenizer: "Select a tokenizer",
+                payloadTemplateLabel: "Payload template",
+                selectPayloadTemplate: "Select a payload template",
             },
             openrouter: {
                 modelLabel: "OpenRouter model",
