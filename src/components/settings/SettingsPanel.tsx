@@ -208,6 +208,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         <option value="claude">Anthropic Claude</option>
                                         <option value="openai">OpenAI</option>
                                         <option value="grok">xAI Grok</option>
+                                        <option value="deepseek">DeepSeek</option>
                                         <option value="openrouter">OpenRouter</option>
                                         <option value="customOpenAI">Custom OpenAI</option>
                                     </select>

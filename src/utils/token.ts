@@ -54,6 +54,7 @@ export async function countTokens(prompts: Prompts, provider: ApiProvider, apiCo
                 return await countTokensVertexAI(prompts, apiConfig);
             case 'grok':
                 return await countTokensGrok(prompts, apiConfig);
+            case 'deepseek':
             case 'openrouter':
             case 'customOpenAI':
                 return await countTokensOpenRouterOrCustom(prompts, apiConfig);

@@ -83,6 +83,11 @@ export const migrations = {
         state = applyRules(state, {
             add: [
                 {
+                    path: 'settings.apiConfigs',
+                    keys: ['deepseek'],
+                    defaults: { deepseek: settingsInitialApiConfigs.deepseek }
+                },
+                {
                     path: 'settings.apiConfigs.openrouter',
                     keys: ['providers', 'providerAllowFallbacks', 'tokenizer'],
                     defaults: settingsInitialApiConfigs.openrouter

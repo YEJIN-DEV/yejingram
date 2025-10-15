@@ -15,7 +15,7 @@ import { nanoid } from "@reduxjs/toolkit";
 import toast from 'react-hot-toast';
 import { callImageGeneration } from "../image/ImageCaller";
 import { LLMJSONParser } from 'ai-json-fixer';
-import { CLAUDE_API_BASE_URL, GEMINI_API_BASE_URL, GROK_API_BASE_URL, OPENAI_API_BASE_URL, VERTEX_AI_API_BASE_URL, OPENROUTER_API_BASE_URL } from "../URLs";
+import { CLAUDE_API_BASE_URL, GEMINI_API_BASE_URL, GROK_API_BASE_URL, OPENAI_API_BASE_URL, VERTEX_AI_API_BASE_URL, OPENROUTER_API_BASE_URL, DEEPSEEK_API_BASE_URL } from "../URLs";
 
 const llmParser = new LLMJSONParser();
 
@@ -176,6 +176,7 @@ async function callApi(
             payload = await buildClaudeApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
             break;
         case 'openai':
+        case 'deepseek':
         case 'openrouter':
         case 'customOpenAI':
             payload = await buildOpenAIApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction, settings.useResponseFormat ?? true);
@@ -217,6 +218,9 @@ async function callApi(
     else { // openai-compatible providers (openai, customOpenAI, grok, openrouter)
         let baseUrl: string;
         switch (apiProvider) {
+            case 'deepseek':
+                baseUrl = DEEPSEEK_API_BASE_URL;
+                break;
             case 'customOpenAI':
                 baseUrl = apiConfig.baseUrl || OPENAI_API_BASE_URL;
                 break;

@@ -1,6 +1,6 @@
 import type { ImageGenerationSettingsState } from "./image/types";
 
-export type ApiProvider = 'gemini' | 'vertexai' | 'claude' | 'grok' | 'openai' | 'openrouter' | 'customOpenAI';
+export type ApiProvider = 'gemini' | 'vertexai' | 'claude' | 'grok' | 'openai' | 'deepseek' | 'openrouter' | 'customOpenAI';
 
 export interface ApiConfig {
     apiKey: string;

@@ -733,7 +733,7 @@ export async function buildOpenAIApiPayload(
             }
         }
 
-        const response_format: OpenAIApiPayload['response_format'] = allowResponseFormat ? JSONSchema : undefined;
+        const response_format: OpenAIApiPayload['response_format'] = allowResponseFormat ? (provider !== 'deepseek' ? JSONSchema : {type: 'json_object'}) : undefined;
 
         const payload: OpenAIApiPayload = {
             model: apiConfig.model,
