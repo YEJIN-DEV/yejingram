@@ -56,7 +56,7 @@ export function connect() {
 
         console.log("✅ Socket connected:", socket.id);
         ownId = socket.id!;
-        joinRoom("1-1758311125433");
+        joinRoom("1-1760630448146");
         onMessage((msg) => {
             console.log(`💬 [${msg.room}] ${msg.sender}: ${msg.content}`);
         });
@@ -167,7 +167,7 @@ function startBroadcastNewLLMMessages() {
         const all = selectAllMessages(state);
         for (const m of all) {
             if (broadcastedMessageIds.has(m.id)) continue;
-            if (m.type == 'TEXT') {
+            if (m.type == 'TEXT' && m.authorId != 0) {
                 socket.emit("chat_message", {
                     room: m.roomId,
                     sender: ownId,
