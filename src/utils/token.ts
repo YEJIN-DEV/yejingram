@@ -2,7 +2,6 @@ import type { ApiConfig, ApiProvider } from "../entities/setting/types";
 import type { OpenAIContent } from "../services/llm/promptBuilder";
 import type { TiktokenEncoding, TiktokenModel } from "tiktoken";
 import type { ClaudeApiPayload, GeminiApiPayload } from "../services/llm/type";
-import { Tokenizer } from "@mlc-ai/web-tokenizers";
 
 export type Prompts =
     | {
@@ -20,6 +19,7 @@ const customTokenizers: CustomTokenizer[] = ['DeepSeek', 'Llama2', 'Llama3', 'Ll
 
 async function tokenizeWebTokenizers(text: string, tokenizer: CustomTokenizer) {
     try {
+        const { Tokenizer } = await loadWebTokenizers();
         let tokenizersTokenizer = await Tokenizer.fromJSON(
             await (await fetch(`/token/${tokenizer}.json`)
             ).arrayBuffer())
@@ -31,14 +31,21 @@ async function tokenizeWebTokenizers(text: string, tokenizer: CustomTokenizer) {
     }
 }
 
-// ---------- tiktoken lazy loader ----------
+// ---------- Tokenizer lazy loader ----------
 let tiktokenModulePromise: Promise<typeof import("tiktoken")> | null = null;
-
+let webTokenizersModulePromise: Promise<typeof import("@mlc-ai/web-tokenizers")> | null = null;
 async function loadTiktoken() {
     if (!tiktokenModulePromise) {
         tiktokenModulePromise = import("tiktoken");
     }
     return tiktokenModulePromise;
+}
+
+async function loadWebTokenizers() {
+    if (!webTokenizersModulePromise) {
+        webTokenizersModulePromise = import("@mlc-ai/web-tokenizers");
+    }
+    return webTokenizersModulePromise;
 }
 
 export async function countTokens(prompts: Prompts, provider: ApiProvider, apiConfig: ApiConfig): Promise<number> {
