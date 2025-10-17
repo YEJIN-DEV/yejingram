@@ -139,7 +139,7 @@ const roomsSlice = createSlice({
             }
         },
         importRooms: (state, action: PayloadAction<Room[]>) => {
-            roomsAdapter.upsertMany(state, action); // 호출만
+            roomsAdapter.upsertMany(state, action.payload);
         },
         duplicateRoom: (state, action: { payload: { originalId: string, newId: string } }) => {
             const room = state.entities[action.payload.originalId];
