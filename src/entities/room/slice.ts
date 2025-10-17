@@ -13,6 +13,7 @@ const roomsSlice = createSlice({
     reducers: {
         upsertOne: roomsAdapter.upsertOne,
         upsertMany: roomsAdapter.upsertMany,
+        removeMany: roomsAdapter.removeMany,
         removeOne: roomsAdapter.removeOne,
         setRoomMemory: (state, action: PayloadAction<{ roomId: string; index: number; value: string }>) => {
             const { roomId, index, value } = action.payload;

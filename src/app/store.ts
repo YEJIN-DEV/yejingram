@@ -111,9 +111,45 @@ export const migrations = {
         return state;
     },
     4: (state: any) => {
-        // Drop orphaned messages that reference non-existent rooms
-        const roomEntities = state.rooms.entities;
-        const messageState = state.messages;
+        // 1) Remove orphan rooms: rooms whose memberIds, after filtering by existing characters, become empty
+        const characterEntities = state?.characters?.entities ?? {};
+        const validCharacterIds = new Set(
+            Object.entries(characterEntities)
+                .filter(([, ch]) => !!ch)
+                // character keys are numbers (stored as strings in object keys)
+                .map(([id]) => Number(id))
+        );
+
+        const roomState = state?.rooms;
+        if (roomState && roomState.entities && roomState.ids) {
+            const roomEntitiesMap = roomState.entities as Record<string, any>;
+            const roomsToDelete = new Set<string>();
+
+            for (const [roomId, room] of Object.entries(roomEntitiesMap)) {
+                if (!room) continue;
+                const memberIds: number[] = Array.isArray(room.memberIds) ? room.memberIds : [];
+                const filteredMembers = memberIds.filter((id) => validCharacterIds.has(id));
+
+                if (filteredMembers.length === 0) {
+                    roomsToDelete.add(roomId);
+                } else if (filteredMembers.length !== memberIds.length) {
+                    room.memberIds = filteredMembers;
+                }
+            }
+
+            if (roomsToDelete.size > 0) {
+                roomState.ids = (roomState.ids as string[]).filter((id) => !roomsToDelete.has(id));
+                const newEntities: Record<string, unknown> = {};
+                for (const id of roomState.ids as string[]) {
+                    newEntities[id] = roomEntitiesMap[id];
+                }
+                roomState.entities = newEntities;
+            }
+        }
+
+        // 2) After rooms cleanup, drop orphaned messages that reference non-existent rooms
+        const roomEntities = state.rooms.entities as Record<string, any>;
+        const messageState = state.messages as { ids: string[]; entities: Record<string, any> };
 
         const validRoomIds = new Set(
             Object.entries(roomEntities)

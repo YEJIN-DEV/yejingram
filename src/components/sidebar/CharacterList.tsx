@@ -9,6 +9,7 @@ import { selectAllRooms } from '../../entities/room/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import { charactersActions } from '../../entities/character/slice';
 import { selectMessagesByRoomId } from '../../entities/message/selectors';
+import { messagesActions } from '../../entities/message/slice';
 import RoomList from './RoomList';
 import { Avatar } from '../../utils/Avatar';
 import { useCharacterOnlineStatus } from '../../utils/simulateOnline';
@@ -99,6 +100,25 @@ function CharacterList({
                         onClick={(e) => {
                             e.stopPropagation()
                             if (confirm(t('sidebar.characters.deleteConfirm', { name: character.name }))) {
+                                const roomsToDelete = chatRooms.map(r => r.id);
+
+                                const messageIdsToDelete: string[] = [];
+                                roomsToDelete.forEach(roomId => {
+                                    const msgs = selectMessagesByRoomId(state, roomId);
+                                    msgs.forEach(m => messageIdsToDelete.push(m.id));
+                                });
+                                if (messageIdsToDelete.length > 0) {
+                                    dispatch(messagesActions.removeMany(messageIdsToDelete));
+                                }
+
+                                if (roomsToDelete.length > 0) {
+                                    dispatch(roomsActions.removeMany(roomsToDelete));
+                                }
+
+                                if (selectedRoomId && roomsToDelete.includes(selectedRoomId)) {
+                                    setRoomId(null);
+                                }
+
                                 dispatch(charactersActions.removeOne(character.id));
                             }
                         }}
