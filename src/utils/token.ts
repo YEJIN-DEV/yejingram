@@ -1,6 +1,6 @@
 import type { ApiConfig, ApiProvider } from "../entities/setting/types";
 import type { OpenAIContent } from "../services/llm/promptBuilder";
-import { encoding_for_model, get_encoding, type TiktokenEncoding, type TiktokenModel } from "tiktoken";
+import type { TiktokenEncoding, TiktokenModel } from "tiktoken";
 import type { ClaudeApiPayload, GeminiApiPayload } from "../services/llm/type";
 import { Tokenizer } from "@mlc-ai/web-tokenizers";
 
@@ -29,6 +29,16 @@ async function tokenizeWebTokenizers(text: string, tokenizer: CustomTokenizer) {
         console.error('Failed to load tokenizer');
         return null;
     }
+}
+
+// ---------- tiktoken lazy loader ----------
+let tiktokenModulePromise: Promise<typeof import("tiktoken")> | null = null;
+
+async function loadTiktoken() {
+    if (!tiktokenModulePromise) {
+        tiktokenModulePromise = import("tiktoken");
+    }
+    return tiktokenModulePromise;
 }
 
 export async function countTokens(prompts: Prompts, provider: ApiProvider, apiConfig: ApiConfig): Promise<number> {
@@ -131,20 +141,24 @@ function serializeGeminiContent(content: GeminiApiPayload): string {
     return segments.join('');
 }
 
-function encodeWithOpenAIModel(serialized: string, model: string): number {
+async function encodeWithOpenAIModel(serialized: string, model: string): Promise<number> {
+    const { encoding_for_model } = await loadTiktoken();
     const encoding = encoding_for_model(model as TiktokenModel);
-    return encoding.encode(serialized).length;
+    const length = encoding.encode(serialized).length;
+    return length;
 }
 
-function encodeWithBaseModel(serialized: string, algorithm: TiktokenEncoding = 'o200k_base'): number {
+async function encodeWithBaseModel(serialized: string, algorithm: TiktokenEncoding = 'o200k_base'): Promise<number> {
+    const { get_encoding } = await loadTiktoken();
     const encoding = get_encoding(algorithm);
-    return encoding.encode(serialized).length;
+    const length = encoding.encode(serialized).length;
+    return length;
 }
 
 // ---------- Per-provider counters ----------
 async function countTokensOpenAI(prompts: Prompts, apiConfig: ApiConfig): Promise<number> {
     const serialized = serializeOpenAIContent(prompts.content as OpenAIContent[]);
-    return encodeWithOpenAIModel(serialized, apiConfig.model);
+    return await encodeWithOpenAIModel(serialized, apiConfig.model);
 }
 
 async function countTokensClaude(prompts: Prompts, apiConfig: ApiConfig): Promise<number> {
@@ -296,13 +310,13 @@ async function countTokensOpenRouterOrCustom(prompts: Prompts, apiConfig: ApiCon
         default: // When OpenRouter
             serialized = serializeOpenAIContent(prompts.content as OpenAIContent[]);
     }
-    
+
     if (apiConfig.tokenizer) {
         if (customTokenizers.includes(apiConfig.tokenizer as CustomTokenizer)) {
             const tokens = await tokenizeWebTokenizers(serialized, apiConfig.tokenizer as CustomTokenizer);
             if (tokens) return tokens.length;
         } else {
-            return encodeWithBaseModel(serialized, 'o200k_base');
+            return await encodeWithBaseModel(serialized, 'o200k_base');
         }
     }
 
