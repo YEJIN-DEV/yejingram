@@ -8,6 +8,7 @@ import { selectMessagesByRoomId } from '../../entities/message/selectors';
 import { roomsActions } from '../../entities/room/slice';
 import { settingsActions } from '../../entities/setting/slice';
 import { useCallback } from 'react';
+import { messagesActions } from '../../entities/message/slice';
 
 interface GroupChatItemProps {
     room: Room;
@@ -60,6 +61,10 @@ function GroupChatItem({ room, setRoomId, isSelected, openEditGroupChatModal, us
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (window.confirm(t('sidebar.groups.item.deleteConfirm', { name: room.name }))) {
+            if (messages.length > 0) {
+                const messageIds = messages.map(message => message.id);
+                dispatch(messagesActions.removeMany(messageIds));
+            }
             dispatch(roomsActions.removeOne(room.id));
         }
     };
