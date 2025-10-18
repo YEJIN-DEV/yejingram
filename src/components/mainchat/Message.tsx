@@ -305,19 +305,17 @@ const MessageList: React.FC<MessageListProps> = ({
               );
             }
 
-            // Instagram DM Style message rendering
             if (msg.type === 'STICKER' && msg.sticker) {
               const stickerData = msg.sticker;
               const isExpanded = expandedStickers.has(msg.id.toString());
-              const sizeClass = isExpanded ? 'max-w-sm' : 'max-w-32';
-              const heightStyle = isExpanded ? { maxHeight: '400px' } : { maxHeight: '120px' };
+              const sizeClass = isExpanded ? 'max-w-64' : 'max-w-48';
 
               const imgSrc = stickerData.data;
               const stickerName = stickerData.name || t('main.message.sticker.defaultName');
 
               return (
-                <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
-                  <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`} style={heightStyle} />
+                <div className="space-x-1 inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
+                  <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`} />
                 </div>
               );
             } else if ((msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.type === 'VIDEO' || msg.type === 'FILE') && msg.file?.dataUrl) {
@@ -453,7 +451,7 @@ const MessageList: React.FC<MessageListProps> = ({
                         {/* min-w-17 <- This is necessary to ensure that at least 2 Message control buttons exist on each line. (8*2) */}
                         {editingMessageId !== msg.id && (
                           <div
-                            className={`flex flex-wrap min-w-17 items-end gap-1 self-end transition-all duration-500
+                            className={`flex flex-wrap ${msg.type == 'TEXT' ? 'min-w-17' : ''} items-end gap-1 self-end transition-all duration-500
                               ${isCoarsePointer
                                 ? (activeMessageId === msg.id.toString() ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none')
                                 : 'opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto'
