@@ -1,11 +1,12 @@
 
 import type { Sticker } from '../../entities/character/types';
-import { Plus, X, Edit3, Music, Smile } from 'lucide-react';
+import { Plus, X, Smile } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { charactersActions } from '../../entities/character/slice';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { nanoid } from '@reduxjs/toolkit';
+import { filesToStickers, formatBytes, estimateBase64Size } from '../../utils/sticker';
+import { StickerGrid } from '../common/StickerGrid';
 
 interface StickerPanelProps {
     characterId: number;
@@ -23,23 +24,13 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
         fileInputRef.current?.click();
     };
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files) return;
 
-        for (const file of Array.from(files)) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const data = e.target?.result as string;
-                const newSticker: Sticker = {
-                    id: nanoid(),
-                    name: file.name,
-                    data,
-                    type: file.type,
-                };
-                dispatch(charactersActions.addSticker({ characterId, sticker: newSticker }));
-            };
-            reader.readAsDataURL(file);
+        const newStickers = await filesToStickers(files);
+        for (const sticker of newStickers) {
+            dispatch(charactersActions.addSticker({ characterId, sticker }));
         }
     };
 
@@ -56,16 +47,7 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
         }
     };
 
-    const formatBytes = (bytes: number, decimals = 2) => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    }
-
-    const totalSize = stickers.reduce((acc, sticker) => acc + (sticker.data.length * 0.75), 0); // Base64 approx size
+    const totalSize = stickers.reduce((acc, sticker) => acc + estimateBase64Size(sticker.data), 0);
 
     return (
         <div className="absolute bottom-full left-0 mb-2 w-80 bg-[var(--color-bg-main)] rounded-2xl shadow-xl border border-[var(--color-border)] animate-fadeIn">
@@ -95,42 +77,15 @@ export function StickerPanel({ characterId, stickers, onSelectSticker, onClose }
                         <button onClick={handleAddStickerClick} className="text-sm text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)] font-medium">{t('main.stickerPanel.emptyCta')}</button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto">
-                        {stickers.map(sticker => {
-                            const isVideo = sticker.type.startsWith('video/');
-                            const isAudio = sticker.type.startsWith('audio/');
-                            let content;
-                            if (isAudio) {
-                                content = <div className="w-full h-full flex items-center justify-center bg-[var(--color-bg-input-primary)]"><Music className="w-6 h-6 text-[var(--color-icon-secondary)]" /></div>;
-                            } else if (isVideo) {
-                                content = <video className="w-full h-full object-cover" muted src={sticker.data} />;
-                            } else {
-                                content = <img src={sticker.data} alt={sticker.name} className="w-full h-full object-cover" />;
-                            }
-
-                            return (
-                                <div key={sticker.id} className="relative group">
-                                    <button onClick={() => onSelectSticker(sticker)}
-                                        className="w-full aspect-square bg-[var(--color-bg-secondary)] rounded-xl overflow-hidden hover:bg-[var(--color-bg-hover)] transition-all duration-200 shadow-sm hover:shadow-md border border-[var(--color-border-secondary)]">
-                                        {content}
-                                    </button>
-                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                        <button onClick={(e) => { e.stopPropagation(); handleEditStickerName(sticker.id, sticker.name); }}
-                                            className="w-6 h-6 bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] rounded-full flex items-center justify-center transition-colors shadow-lg" title={t('main.stickerPanel.renameTitle')}>
-                                            <Edit3 className="w-3 h-3" />
-                                        </button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteSticker(sticker.id); }}
-                                            className="w-6 h-6 bg-[var(--color-button-negative)] hover:bg-[var(--color-button-negative)] text-[var(--color-text-accent)] rounded-full flex items-center justify-center transition-colors shadow-lg" title={t('main.stickerPanel.deleteTitle')}>
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[var(--color-bg-shadow)]/60 to-transparent text-[var(--color-text-accent)] text-xs p-2 truncate rounded-b-xl">
-                                        {sticker.name}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <StickerGrid
+                        stickers={stickers}
+                        mode="panel"
+                        onStickerClick={onSelectSticker}
+                        onEdit={handleEditStickerName}
+                        onDelete={handleDeleteSticker}
+                        gridCols="grid-cols-3"
+                        maxHeight="12rem"
+                    />
                 )}
             </div>
             <input type="file" accept="image/jpg,image/gif,image/png,image/bmp,image/webp" ref={fileInputRef} className="hidden" multiple onChange={handleFileChange} />
