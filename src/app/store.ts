@@ -28,6 +28,39 @@ localforage.config({
     storeName: 'persist',
 });
 
+const blobStorage = {
+    async getItem(key: string): Promise<string | null> {
+        const data = await localforage.getItem(key);
+        if (data == null) return null;
+
+        if (data instanceof Blob) {
+            try {
+                return await data.text();
+            } catch {
+                // Fallback: try to read as ArrayBuffer -> string
+                const buf = await data.arrayBuffer();
+                return new TextDecoder().decode(new Uint8Array(buf));
+            }
+        }
+
+        // Backward compatibility
+        if (typeof data === 'string') return data;
+        try {
+            await this.setItem(key, JSON.stringify(data)); // Migrate to Blob storage
+            return JSON.stringify(data);
+        } catch {
+            return null;
+        }
+    },
+    async setItem(key: string, value: string): Promise<void> {
+        const blob = new Blob([value], { type: 'application/json' });
+        await localforage.setItem(key, blob);
+    },
+    removeItem(key: string): Promise<void> {
+        return localforage.removeItem(key);
+    },
+} as const;
+
 export const migrations = {
     2: (state: any) => {
         state = applyRules(state, {
@@ -178,7 +211,7 @@ export const migrations = {
 
 export const persistConfig = {
     key: 'yejingram',
-    storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
+    storage: blobStorage as any,
     version: 4,
     whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved'],
     migrate: createMigrate(migrations, { debug: true }),
