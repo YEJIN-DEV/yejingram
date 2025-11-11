@@ -17,7 +17,7 @@ import {
 import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
-import settingsReducer, { initialSyncSettings, initialState as settingsInitialState } from '../entities/setting/slice';
+import settingsReducer, { initialSyncSettings, initialState as settingsInitialState, initialApiConfigs as settingsInitialApiConfigs } from '../entities/setting/slice';
 import { initialState as imageSettingsInitialState } from '../entities/setting/image/slice';
 import { applyRules } from '../utils/migration';
 import uiReducer from '../entities/ui/slice';
@@ -27,6 +27,39 @@ localforage.config({
     name: 'yejingram',
     storeName: 'persist',
 });
+
+const blobStorage = {
+    async getItem(key: string): Promise<string | null> {
+        const data = await localforage.getItem(key);
+        if (data == null) return null;
+
+        if (data instanceof Blob) {
+            try {
+                return await data.text();
+            } catch {
+                // Fallback: try to read as ArrayBuffer -> string
+                const buf = await data.arrayBuffer();
+                return new TextDecoder().decode(new Uint8Array(buf));
+            }
+        }
+
+        // Backward compatibility
+        if (typeof data === 'string') return data;
+        try {
+            await this.setItem(key, JSON.stringify(data)); // Migrate to Blob storage
+            return JSON.stringify(data);
+        } catch {
+            return null;
+        }
+    },
+    async setItem(key: string, value: string): Promise<void> {
+        const blob = new Blob([value], { type: 'application/json' });
+        await localforage.setItem(key, blob);
+    },
+    removeItem(key: string): Promise<void> {
+        return localforage.removeItem(key);
+    },
+} as const;
 
 export const migrations = {
     2: (state: any) => {
@@ -46,7 +79,7 @@ export const migrations = {
                     path: 'settings.prompts',
                     keys: ['maxContextTokens', 'maxResponseTokens', 'temperature', 'topP', 'topK'],
                     defaults: settingsInitialState.prompts
-                }, 
+                },
             ],
             move: [
                 {
@@ -77,14 +110,109 @@ export const migrations = {
             ]
         });
         return state;
+    },
+    3: (state: any) => {
+        // Ensure new fields exist after introducing OpenRouter provider routing and tokenizer settings
+        state = applyRules(state, {
+            add: [
+                {
+                    path: 'settings.apiConfigs',
+                    keys: ['deepseek', 'custom'],
+                    defaults: { deepseek: settingsInitialApiConfigs.deepseek, custom: settingsInitialApiConfigs.custom }
+                },
+                {
+                    path: 'settings.apiConfigs.openrouter',
+                    keys: ['providers', 'providerAllowFallbacks', 'tokenizer'],
+                    defaults: settingsInitialApiConfigs.openrouter
+                },
+            ],
+            move: [
+                {
+                    from: 'settings.apiConfigs.customOpenAI',
+                    to: 'settings.apiConfigs.custom',
+                    keys: ['apiKey', 'baseUrl', 'model', 'customModels'],
+                    overwrite: true,
+                    keepSource: false
+                }
+            ]
+
+        });
+
+        if (state?.settings?.apiProvider === 'customOpenAI') {
+            state.settings.apiProvider = 'custom';
+        }
+        return state;
+    },
+    4: (state: any) => {
+        // 1) Remove orphan rooms: rooms whose memberIds, after filtering by existing characters, become empty
+        const characterEntities = state?.characters?.entities ?? {};
+        const validCharacterIds = new Set(
+            Object.entries(characterEntities)
+                .filter(([, ch]) => !!ch)
+                // character keys are numbers (stored as strings in object keys)
+                .map(([id]) => Number(id))
+        );
+
+        const roomState = state?.rooms;
+        if (roomState && roomState.entities && roomState.ids) {
+            const roomEntitiesMap = roomState.entities as Record<string, any>;
+            const roomsToDelete = new Set<string>();
+
+            for (const [roomId, room] of Object.entries(roomEntitiesMap)) {
+                if (!room) continue;
+                const memberIds: number[] = Array.isArray(room.memberIds) ? room.memberIds : [];
+                const filteredMembers = memberIds.filter((id) => validCharacterIds.has(id));
+
+                if (filteredMembers.length === 0) {
+                    roomsToDelete.add(roomId);
+                } else if (filteredMembers.length !== memberIds.length) {
+                    room.memberIds = filteredMembers;
+                }
+            }
+
+            if (roomsToDelete.size > 0) {
+                roomState.ids = (roomState.ids as string[]).filter((id) => !roomsToDelete.has(id));
+                const newEntities: Record<string, unknown> = {};
+                for (const id of roomState.ids as string[]) {
+                    newEntities[id] = roomEntitiesMap[id];
+                }
+                roomState.entities = newEntities;
+            }
+        }
+
+        // 2) After rooms cleanup, drop orphaned messages that reference non-existent rooms
+        const roomEntities = state.rooms.entities as Record<string, any>;
+        const messageState = state.messages as { ids: string[]; entities: Record<string, any> };
+
+        const validRoomIds = new Set(
+            Object.entries(roomEntities)
+                .filter(([, room]) => !!room)
+                .map(([roomId]) => roomId)
+        );
+
+        const filteredIds = messageState.ids.filter((messageId: string) => {
+            const message = messageState.entities[messageId];
+            return message && (!message.roomId || validRoomIds.has(message.roomId));
+        });
+
+        if (filteredIds.length !== messageState.ids.length) {
+            const filteredEntities: Record<string, unknown> = {};
+            for (const id of filteredIds) {
+                filteredEntities[id] = messageState.entities[id];
+            }
+            state.messages.ids = filteredIds;
+            state.messages.entities = filteredEntities;
+        }
+
+        return state;
     }
 } as MigrationManifest;
 
 
 export const persistConfig = {
     key: 'yejingram',
-    storage: localforage as any, // localForage는 getItem/setItem/removeItem을 제공하므로 호환됩니다.
-    version: 2,
+    storage: blobStorage as any,
+    version: 4,
     whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved'],
     migrate: createMigrate(migrations, { debug: true }),
 };

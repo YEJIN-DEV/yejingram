@@ -13,6 +13,7 @@ const roomsSlice = createSlice({
     reducers: {
         upsertOne: roomsAdapter.upsertOne,
         upsertMany: roomsAdapter.upsertMany,
+        removeMany: roomsAdapter.removeMany,
         removeOne: roomsAdapter.removeOne,
         setRoomMemory: (state, action: PayloadAction<{ roomId: string; index: number; value: string }>) => {
             const { roomId, index, value } = action.payload;
@@ -37,6 +38,13 @@ const roomsSlice = createSlice({
             const room = state.entities[roomId];
             if (room && room.memories && index >= 0 && index < room.memories.length) {
                 room.memories.splice(index, 1);
+            }
+        },
+        clearRoomMemories: (state, action: PayloadAction<{ roomId: string }>) => {
+            const { roomId } = action.payload;
+            const room = state.entities[roomId];
+            if (room) {
+                room.memories = [];
             }
         },
         updateRoomLorebook: (state, action: PayloadAction<{ roomId: string; lorebook: Lore[] }>) => {
@@ -131,7 +139,7 @@ const roomsSlice = createSlice({
             }
         },
         importRooms: (state, action: PayloadAction<Room[]>) => {
-            roomsAdapter.upsertMany(state, action); // 호출만
+            roomsAdapter.upsertMany(state, action.payload);
         },
         duplicateRoom: (state, action: { payload: { originalId: string, newId: string } }) => {
             const room = state.entities[action.payload.originalId];

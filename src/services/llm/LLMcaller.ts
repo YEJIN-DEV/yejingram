@@ -15,7 +15,7 @@ import { nanoid } from "@reduxjs/toolkit";
 import toast from 'react-hot-toast';
 import { callImageGeneration } from "../image/ImageCaller";
 import { LLMJSONParser } from 'ai-json-fixer';
-import { CLAUDE_API_BASE_URL, GEMINI_API_BASE_URL, GROK_API_BASE_URL, OPENAI_API_BASE_URL, VERTEX_AI_API_BASE_URL } from "../URLs";
+import { CLAUDE_API_BASE_URL, GEMINI_API_BASE_URL, GROK_API_BASE_URL, OPENAI_API_BASE_URL, VERTEX_AI_API_BASE_URL, OPENROUTER_API_BASE_URL, DEEPSEEK_API_BASE_URL } from "../URLs";
 
 const llmParser = new LLMJSONParser();
 
@@ -64,6 +64,10 @@ async function handleApiResponse(
         }
     }
     if (res && res.messages && Array.isArray(res.messages) && res.messages.length > 0) {
+        if (res.reactionDelay && res.reactionDelay > 10000) {
+            console.warn("Capping reaction delay to 10 seconds.");
+            res.reactionDelay = 10000;
+        }
         await sleep(res.reactionDelay || 1000);
         setTypingCharacterId(char.id);
 
@@ -168,24 +172,30 @@ async function callApi(
 
     switch (apiProvider) {
         case 'gemini':
-            payload = await buildGeminiApiPayload('gemini', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, { apiKey: apiConfig.apiKey! }, extraSystemInstruction);
-            break;
         case 'vertexai':
-            payload = await buildGeminiApiPayload('vertexai', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, {
-                apiKey: apiConfig.accessToken!,
-                location: apiConfig.location!,
-                projectId: apiConfig.projectId!
-            }, extraSystemInstruction);
+            payload = await buildGeminiApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
             break;
         case 'claude':
-            payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
-            break;
         case 'grok':
-            payload = await buildClaudeApiPayload('grok', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, apiConfig.apiKey, extraSystemInstruction);
+            payload = await buildClaudeApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
             break;
         case 'openai':
-        case 'customOpenAI':
-            payload = await buildOpenAIApiPayload(room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig.model, extraSystemInstruction);
+        case 'deepseek':
+        case 'openrouter':
+            payload = await buildOpenAIApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction, settings.useResponseFormat ?? true);
+            break;
+        case 'custom':
+            switch (apiConfig.payloadTemplate) {
+                case 'gemini':
+                    payload = await buildGeminiApiPayload('gemini', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
+                    break;
+                case 'anthropic':
+                    payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
+                    break;
+                case 'openai':
+                    payload = await buildOpenAIApiPayload('openai', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction, settings.useResponseFormat ?? true);
+                    break;
+            }
             break;
     }
     let url: string;
@@ -211,8 +221,31 @@ async function callApi(
             "content-type": "application/json",
             "anthropic-dangerous-direct-browser-access": "true"
         };
-    } else { // openai & customOpenAI & grok
-        const baseUrl = (apiProvider === 'customOpenAI' && apiConfig.baseUrl) ? apiConfig.baseUrl : (apiProvider === 'grok' ? GROK_API_BASE_URL : OPENAI_API_BASE_URL);
+    } else if (apiProvider === 'openrouter') {
+        url = OPENROUTER_API_BASE_URL;
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiConfig.apiKey}`,
+            'HTTP-Referer': 'https://yejingram.com',
+            'X-Title': 'Yejingram',
+        };
+    }
+
+    else { // openai-compatible providers (openai, custom, grok, openrouter)
+        let baseUrl: string;
+        switch (apiProvider) {
+            case 'deepseek':
+                baseUrl = DEEPSEEK_API_BASE_URL;
+                break;
+            case 'custom':
+                baseUrl = apiConfig.baseUrl || OPENAI_API_BASE_URL;
+                break;
+            case 'grok':
+                baseUrl = GROK_API_BASE_URL;
+                break;
+            default:
+                baseUrl = OPENAI_API_BASE_URL;
+        }
         url = baseUrl;
         headers = {
             'Content-Type': 'application/json',
@@ -303,7 +336,7 @@ async function LLMSend(
     char: Character,
     setTypingCharacterId: (id: number | null) => void,
     t: (key: string) => string,
-    isContinuation = false
+    sendType: 'normal' | 'continuation' | 'proactive' = 'normal',
 ) {
     const state = store.getState();
     const dispatch = store.dispatch;
@@ -312,14 +345,27 @@ async function LLMSend(
     const settings = selectAllSettings(state);
     const messages = structuredClone(selectMessagesByRoomId(state, room.id))
 
-    if (isContinuation) {
+    // --- Continuation handling ---
+    if (sendType === 'continuation') {
         messages.push({
             id: nanoid(),
             roomId: room.id,
-            authorId: char.id,
+            authorId: 0, // prevent end_of_turn
             createdAt: new Date().toISOString(),
             type: 'SYSTEM',
-            content: `[The reply is too short. Since ${persona?.name || 'User'} has not yet responded, continue ${char.name}'s reply.]`
+            content: `[The reply is too short. Since ${persona?.name || 'User'} has not yet responded, continue ${char.name}'s reply. Do NOT repeat any part of the previous message.]`
+        });
+    }
+
+    // --- Proactive chat handling ---
+    if (sendType === 'proactive') {
+        messages.push({
+            id: nanoid(),
+            roomId: room.id,
+            authorId: 0, // prevent end_of_turn
+            createdAt: new Date().toISOString(),
+            type: 'SYSTEM',
+            content: `[${char.name} is initiating a new message to ${persona?.name || 'User'} based on the conversation so far. Do NOT repeat any part of previous messages.]`
         });
     }
 
@@ -412,14 +458,14 @@ async function LLMSend(
 }
 
 
-export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void, t: (key: string) => string, isContinuation = false) {
+export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void, t: (key: string) => string, sendType: 'normal' | 'continuation' | 'proactive' = 'normal') {
     const state = store.getState();
     const persona = selectSelectedPersona(state);
     const memberChars = room.memberIds.map(id => selectCharacterById(state, id));
 
     for (const char of memberChars) {
         if (char) {
-            await LLMSend(room, persona, char, setTypingCharacterId, t, isContinuation);
+            await LLMSend(room, persona, char, setTypingCharacterId, t, sendType);
         }
     }
 }

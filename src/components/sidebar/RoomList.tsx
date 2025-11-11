@@ -26,10 +26,8 @@ function RoomList({
 }: RoomListProps) {
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    const lastMessage = useSelector((state: RootState) => {
-        const messages = selectMessagesByRoomId(state, room.id);
-        return messages[messages.length - 1];
-    });
+    const roomMessages = useSelector((state: RootState) => selectMessagesByRoomId(state, room.id));
+    const lastMessage = roomMessages[roomMessages.length - 1];
     const formatTime = useCallback((timestamp: string) => {
         const date = new Date(timestamp);
         const now = new Date();
@@ -43,7 +41,7 @@ function RoomList({
         if (diffHours < 24) return `${diffHours}${t('units.hour')}`;
         if (diffDays < 7) return `${diffDays}${t('units.days')}`;
         return date.toLocaleDateString();
-    }, []);
+    }, [t]);
 
     const handleRoomSelect = () => {
         dispatch(roomsActions.resetUnread(room.id));
@@ -102,6 +100,10 @@ function RoomList({
                 <button
                     onClick={() => {
                         if (confirm(t('sidebar.rooms.deleteConfirm', { name: room.name }))) {
+                            if (roomMessages.length > 0) {
+                                const messageIds = roomMessages.map(message => message.id);
+                                dispatch(messagesActions.removeMany(messageIds));
+                            }
                             dispatch(roomsActions.removeOne(room.id));
                         }
                     }}

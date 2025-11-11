@@ -104,6 +104,9 @@ const ko = {
                 imageRerollAriaLabel: "이미지 다시 생성",
                 imageRerolling: "이미지 재생성 중...",
                 imageReroll: "이미지 다시 생성",
+                toggleIncludeCharAriaLabel: "프로필 이미지 참고 토글",
+                includeCharOn: "프로필 이미지 참고: 켜짐",
+                includeCharOff: "프로필 이미지 참고: 꺼짐",
             },
             system: {
                 inviteCta: "채팅방으로 초대하기",
@@ -194,6 +197,7 @@ const ko = {
             messagePlaceholder: "메시지 보내기...",
             file: "파일",
             send: "전송",
+            proactiveChat: "선톡 요청",
         },
         tooltips: {
             authorNote: "작가의 노트",
@@ -205,6 +209,7 @@ const ko = {
         toast: {
             noLorebookCharacter: "로어북을 열 수 있는 캐릭터가 없습니다.",
             noPersonaSelected: "선택된 페르소나가 없습니다. 설정 > 페르소나에서 선택 또는 추가해주세요.",
+            waitForResponse: "현재 응답이 완료될 때까지 기다려주세요.",
         },
         authorNoteModal: {
             title: "작가의 노트",
@@ -226,6 +231,14 @@ const ko = {
             placeholder: '기억할 내용을 입력하세요... (여러 줄 입력 가능)',
             memoryAriaLabel: '메모리 {{index}}',
             addMemory: '메모리 추가',
+            clearMemories: '메모리 초기화',
+            clearMemoriesConfirm: '이 방의 모든 메모리를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+            transferMemories: '메모리 전송',
+            groupChatLabel: '그룹 채팅',
+            unknownCharacter: '알 수 없는 캐릭터',
+            noOtherRooms: '다른 방이 없습니다.',
+            transferMemoryHelp: '전송할 채팅방을 선택하세요. 전송된 메모리는 해당 채팅방에 추가되며, 기존 메모리를 대체하지 않습니다.',
+            transferMemoryConfirm: '{{targetRoomName}} 채팅방으로 메모리를 전송하시겠습니까?',
         },
     },
 
@@ -319,6 +332,10 @@ const ko = {
                 label: "이미지 응답 허용",
                 help: "대화 컨텍스트에 따라서 이미지 응답을 허용합니다.",
             },
+            responseFormat: {
+                label: "response_format 사용",
+                help: "구조화된 출력이 켜져 있어도 response_format을 전송할지 선택합니다.",
+            },
             vertex: {
                 projectIdLabel: "Project ID",
                 projectIdPlaceholder: "Vertex AI 프로젝트 ID",
@@ -329,8 +346,32 @@ const ko = {
             customModelPlaceholder: "커스텀 모델명 입력",
             add: "추가",
             customModelsLabel: "커스텀 모델",
-            customOpenAI: {
+            custom: {
                 baseUrlLabel: "Base URL",
+                tokenizerLabel: "토크나이저",
+                selectTokenizer: "토크나이저를 선택하세요",
+                payloadTemplateLabel: "페이로드 템플릿",
+                selectPayloadTemplate: "페이로드 템플릿을 선택하세요",
+            },
+            openrouter: {
+                modelLabel: "OpenRouter 모델",
+                searchPlaceholder: "모델 검색 (id, 이름)",
+                refresh: "새로고침",
+                loading: "불러오는 중…",
+                noModels: "표시할 모델이 없습니다.",
+                selectModel: "모델을 선택하세요",
+                selectAnotherModel: "다른 모델을 선택하세요",
+                providerPriority: "프로바이더 우선순위",
+                endpointsLoading: "엔드포인트 불러오는 중…",
+                endpointsLoadFailed: "엔드포인트 목록을 불러오지 못했습니다.",
+                priorityHelp: "아래 목록에서 우선순위대로 선택하세요. 드래그 대신 클릭으로 추가/순서를 설정할 수 있습니다.",
+                selectedWithOrder: "선택됨 · 순위 {{order}}",
+                clickToAdd: "클릭하여 추가",
+                currentPriority: "현재 우선순위",
+                allowFallbacksLabel: "대체 프로바이더 허용",
+                allowFallbacksHelp: "선호한 엔드포인트가 불가한 경우 다른 엔드포인트로 자동 전환",
+                noEndpoints: "사용 가능한 프로바이더 엔드포인트가 없습니다.",
+                modelsLoadFailed: "모델 목록을 불러오지 못했습니다.",
             },
         },
         image: {

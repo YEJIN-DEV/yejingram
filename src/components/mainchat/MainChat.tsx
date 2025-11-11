@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown } from 'lucide-react';
+import { Menu, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
@@ -286,6 +286,19 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
     }, DEBOUNCE_DELAY) as unknown as number;
   };
 
+  const handleRequestProactiveChat = () => {
+    if (!room) return;
+    if (isWaitingForResponse) {
+      toast.error(t('main.toast.waitForResponse'));
+      return;
+    }
+    setIsWaitingForResponse(true);
+    SendMessage(room, setTypingCharacterId, t, 'proactive')
+      .finally(() => {
+        setIsWaitingForResponse(false);
+      });
+  };
+
   // Called when user types or interacts with input to postpone/send LLM request
   const handleUserActivity = () => {
     // If there's a pending timer, reset it (postpone LLM call)
@@ -376,7 +389,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
         />
 
         {/* Messages Container*/}
-        <div id="messages-container" className="flex-1 overflow-y-auto bg-[var(--color-bg-main)]" ref={messagesContainerRef}>
+        <div id="messages-container" className="flex-1 overflow-y-auto w-full bg-[var(--color-bg-main)]" ref={messagesContainerRef}>
           <MessageList
             messages={messages}
             room={room}
@@ -415,6 +428,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
                 />
               )
             }
+            handleRequestProactiveChat={handleRequestProactiveChat}
           />
         </div>
       </div>
@@ -675,9 +689,11 @@ interface InputAreaProps {
 
   // (선택) 커스텀 스티커 패널 렌더링
   renderUserStickerPanel?: () => React.ReactNode;
+  handleRequestProactiveChat: () => void;
 }
 
 function InputArea({
+  room,
   isWaitingForResponse,
   fileToSend,
   stickerToSend,
@@ -690,6 +706,7 @@ function InputArea({
   onFocus,
   onUserActivity,
   renderUserStickerPanel,
+  handleRequestProactiveChat
 }: InputAreaProps) {
   const { t } = useTranslation();
   const [text, setText] = useState("");
@@ -770,6 +787,18 @@ function InputArea({
           >
             <Paperclip className="w-4 h-4" /> {t('main.input.file')}
           </button>
+          {room.type === 'Direct' && (
+            <button
+              type="button"
+              onClick={() => {
+                handleRequestProactiveChat();
+                setInputOptions((prev) => !prev);
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+            >
+              <Zap className="w-4 h-4" /> {t('main.input.proactiveChat')}
+            </button>
+          )}
         </div>
       )}
 

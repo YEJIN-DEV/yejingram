@@ -137,4 +137,9 @@ export interface OpenAIApiPayload {
     | { type: 'json_object' }
     | { type: 'text' }
     | OpenAIStructuredSchema;
+    // OpenRouter provider preferences (optional)
+    provider?: {
+        order?: string[];
+        allow_fallbacks?: boolean;
+    };
 }

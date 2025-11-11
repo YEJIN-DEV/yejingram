@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../app/store';
 import { charactersAdapter } from '../../entities/character/slice';
 import type { Message as MessageType } from '../../entities/message/types';
-import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare, Loader2, StepForward } from 'lucide-react';
+import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare, Loader2, StepForward, UserCheck, UserX } from 'lucide-react';
 import { messagesActions } from '../../entities/message/slice';
 
 import SenderName from './SenderName';
@@ -17,9 +17,9 @@ import { renderFile } from './FilePreview';
 import { callImageGeneration } from '../../services/image/ImageCaller';
 
 // Helper function for date formatting
-const formatDateSeparator = (date: Date): string => {
+const formatDateSeparator = (date: Date, locale: string | undefined): string => {
   const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-  return date.toLocaleDateString(undefined, options);
+  return date.toLocaleDateString(locale, options);
 };
 
 // Helper function to extract URLs from text
@@ -100,7 +100,7 @@ const MessageList: React.FC<MessageListProps> = ({
   setTypingCharacterId,
   setIsWaitingForResponse
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const allCharacters = useSelector((state: RootState) => charactersAdapter.getSelectors().selectAll(state.characters));
   const animatedMessageIds = useRef(new Set<string>());
@@ -305,19 +305,17 @@ const MessageList: React.FC<MessageListProps> = ({
               );
             }
 
-            // Instagram DM Style message rendering
             if (msg.type === 'STICKER' && msg.sticker) {
               const stickerData = msg.sticker;
               const isExpanded = expandedStickers.has(msg.id.toString());
-              const sizeClass = isExpanded ? 'max-w-sm' : 'max-w-32';
-              const heightStyle = isExpanded ? { maxHeight: '400px' } : { maxHeight: '120px' };
+              const sizeClass = isExpanded ? 'max-w-64' : 'max-w-48';
 
               const imgSrc = stickerData.data;
               const stickerName = stickerData.name || t('main.message.sticker.defaultName');
 
               return (
-                <div className="inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
-                  <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`} style={heightStyle} />
+                <div className="space-x-1 inline-block cursor-pointer transition-all duration-300" onClick={() => toggleStickerSize(msg.id.toString())}>
+                  <img src={imgSrc} alt={stickerName} className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`} />
                 </div>
               );
             } else if ((msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.type === 'VIDEO' || msg.type === 'FILE') && msg.file?.dataUrl) {
@@ -388,7 +386,7 @@ const MessageList: React.FC<MessageListProps> = ({
                 <div className="flex justify-center my-6">
                   <div className="flex items-center text-sm text-[var(--color-icon-tertiary)] bg-[var(--color-bg-input-primary)] px-4 py-2 rounded-full transition-all duration-300 hover:bg-[var(--color-bg-secondary-accent)] hover:scale-105">
                     <Calendar className="w-4 h-4 mr-2 text-[var(--color-icon-secondary)]" />
-                    {formatDateSeparator(new Date(msg.createdAt))}
+                    {formatDateSeparator(new Date(msg.createdAt), i18n.resolvedLanguage)}
                   </div>
                 </div>
               )}
@@ -450,9 +448,10 @@ const MessageList: React.FC<MessageListProps> = ({
                         </div>
 
                         {/* Message controls - inline (wrap with message to keep hover) */}
+                        {/* min-w-17 <- This is necessary to ensure that at least 2 Message control buttons exist on each line. (8*2) */}
                         {editingMessageId !== msg.id && (
                           <div
-                            className={`flex items-center space-x-1 transition-opacity duration-200
+                            className={`flex flex-wrap ${msg.type == 'TEXT' ? 'min-w-17' : ''} items-end gap-1 self-end transition-all duration-500
                               ${isCoarsePointer
                                 ? (activeMessageId === msg.id.toString() ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none')
                                 : 'opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto'
@@ -501,78 +500,113 @@ const MessageList: React.FC<MessageListProps> = ({
                                 >
                                   <RefreshCw className="w-4 h-4" />
                                 </button>
-                                {room?.type !== 'Group' && (
-                                  <button
-                                    data-id={msg.id.toString()}
-                                    onClick={() => {
-                                      console.log('Continue response', msg.id)
-                                      setIsWaitingForResponse(true);
-                                      SendMessage(room, setTypingCharacterId, t, true) // continue=true
-                                        .finally(() => {
-                                          setIsWaitingForResponse(false);
-                                        });
-                                      setActiveMessageId(null);
-                                    }}
-                                    className="continue-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:translate-x-1"
-                                    aria-label={t('main.message.actions.continueAriaLabel')}
-                                    title={t('main.message.actions.continue')}
-                                  >
-                                    <StepForward className="w-4 h-4" />
-                                  </button>
-                                )}
+                                <button
+                                  data-id={msg.id.toString()}
+                                  onClick={() => {
+                                    console.log('Continue response', msg.id)
+                                    setIsWaitingForResponse(true);
+                                    SendMessage(room, setTypingCharacterId, t, 'continuation')
+                                      .finally(() => {
+                                        setIsWaitingForResponse(false);
+                                      });
+                                    setActiveMessageId(null);
+                                  }}
+                                  className="continue-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:translate-x-1"
+                                  aria-label={t('main.message.actions.continueAriaLabel')}
+                                  title={t('main.message.actions.continue')}
+                                >
+                                  <StepForward className="w-4 h-4" />
+                                </button>
                               </>
                             )}
 
                             {!isMe && msg.type === 'IMAGE' && msg.imageGenerationSetting && (
-                              <button
-                                data-id={msg.id.toString()}
-                                onClick={async () => {
-                                  const char = allCharacters.find(c => c.id === msg.authorId);
-                                  if (!char) return;
+                              <>
+                                {/* isIncludingChar 토글 버튼 */}
+                                <button
+                                  data-id={msg.id.toString()}
+                                  onClick={() => {
+                                    if (!msg.imageGenerationSetting) return;
+                                    dispatch(messagesActions.updateOne({
+                                      id: msg.id,
+                                      changes: {
+                                        imageGenerationSetting: {
+                                          ...msg.imageGenerationSetting,
+                                          isIncludingChar: !msg.imageGenerationSetting.isIncludingChar,
+                                        },
+                                      },
+                                    }));
+                                  }}
+                                  disabled={regeneratingImageIds.has(msg.id.toString())}
+                                  className={`toggle-include-char-btn p-2 bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform ${regeneratingImageIds.has(msg.id.toString())
+                                    ? 'opacity-60 cursor-not-allowed text-[var(--color-icon-tertiary)]'
+                                    : (msg.imageGenerationSetting.isIncludingChar
+                                      ? 'text-[var(--color-button-primary)] hover:text-[var(--color-button-primary-accent)]'
+                                      : 'text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)]')
+                                    }`}
+                                  aria-label={t('main.message.actions.toggleIncludeCharAriaLabel')}
+                                  title={msg.imageGenerationSetting.isIncludingChar
+                                    ? t('main.message.actions.includeCharOn')
+                                    : t('main.message.actions.includeCharOff')}
+                                >
+                                  {msg.imageGenerationSetting.isIncludingChar ? (
+                                    <UserCheck className="w-4 h-4" />
+                                  ) : (
+                                    <UserX className="w-4 h-4" />
+                                  )}
+                                </button>
 
-                                  const messageId = msg.id.toString();
-                                  setRegeneratingImageIds(prev => new Set([...prev, messageId]));
+                                {/* 이미지 재생성 버튼 */}
+                                <button
+                                  data-id={msg.id.toString()}
+                                  onClick={async () => {
+                                    const char = allCharacters.find(c => c.id === msg.authorId);
+                                    if (!char) return;
 
-                                  try {
-                                    const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
-                                    const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
-                                    if (inlineDataBody) {
-                                      const newDataUrl = `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`;
-                                      dispatch(messagesActions.updateOne({
-                                        id: msg.id,
-                                        changes: {
-                                          file: {
-                                            ...msg.file,
-                                            dataUrl: newDataUrl,
-                                            mimeType: inlineDataBody.mimeType
+                                    const messageId = msg.id.toString();
+                                    setRegeneratingImageIds(prev => new Set([...prev, messageId]));
+
+                                    try {
+                                      const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
+                                      const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+                                      if (inlineDataBody) {
+                                        const newDataUrl = `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`;
+                                        dispatch(messagesActions.updateOne({
+                                          id: msg.id,
+                                          changes: {
+                                            file: {
+                                              ...msg.file,
+                                              dataUrl: newDataUrl,
+                                              mimeType: inlineDataBody.mimeType
+                                            }
                                           }
-                                        }
-                                      }));
+                                        }));
+                                      }
+                                    } catch (error) {
+                                      console.error('Image reroll failed:', error);
+                                    } finally {
+                                      setRegeneratingImageIds(prev => {
+                                        const newSet = new Set(prev);
+                                        newSet.delete(messageId);
+                                        return newSet;
+                                      });
                                     }
-                                  } catch (error) {
-                                    console.error('Image reroll failed:', error);
-                                  } finally {
-                                    setRegeneratingImageIds(prev => {
-                                      const newSet = new Set(prev);
-                                      newSet.delete(messageId);
-                                      return newSet;
-                                    });
-                                  }
-                                }}
-                                disabled={regeneratingImageIds.has(msg.id.toString())}
-                                className={`reroll-image-btn p-2 bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180 ${regeneratingImageIds.has(msg.id.toString())
-                                  ? 'opacity-60 cursor-not-allowed text-[var(--color-icon-tertiary)]'
-                                  : 'text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)]'
-                                  }`}
-                                aria-label={t('main.message.actions.imageRerollAriaLabel')}
-                                title={regeneratingImageIds.has(msg.id.toString()) ? t('main.message.actions.imageRerolling') : t('main.message.actions.imageReroll')}
-                              >
-                                {regeneratingImageIds.has(msg.id.toString()) ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <RotateCwSquare className="w-4 h-4" />
-                                )}
-                              </button>
+                                  }}
+                                  disabled={regeneratingImageIds.has(msg.id.toString())}
+                                  className={`reroll-image-btn p-2 bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform hover:rotate-180 ${regeneratingImageIds.has(msg.id.toString())
+                                    ? 'opacity-60 cursor-not-allowed text-[var(--color-icon-tertiary)]'
+                                    : 'text-[var(--color-icon-secondary)] hover:text-[var(--color-button-primary)]'
+                                    }`}
+                                  aria-label={t('main.message.actions.imageRerollAriaLabel')}
+                                  title={regeneratingImageIds.has(msg.id.toString()) ? t('main.message.actions.imageRerolling') : t('main.message.actions.imageReroll')}
+                                >
+                                  {regeneratingImageIds.has(msg.id.toString()) ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <RotateCwSquare className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </>
                             )}
                           </div>
                         )}

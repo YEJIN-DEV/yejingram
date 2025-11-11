@@ -104,6 +104,9 @@ const ja = {
                 imageRerollAriaLabel: "画像再生成",
                 imageRerolling: "画像を再生成中...",
                 imageReroll: "画像を再生成",
+                toggleIncludeCharAriaLabel: "プロフィール画像参照の切替",
+                includeCharOn: "プロフィール画像参照: オン",
+                includeCharOff: "プロフィール画像参照: オフ",
             },
             system: {
                 inviteCta: "チャットに招待",
@@ -194,6 +197,7 @@ const ja = {
             messagePlaceholder: "メッセージを送信…",
             file: "ファイル",
             send: "送信",
+            proactiveChat: "メッセージリクエスト",
         },
         tooltips: {
             authorNote: "作者ノート",
@@ -205,6 +209,7 @@ const ja = {
         toast: {
             noLorebookCharacter: "ロアブックを開けるキャラクターがいません。",
             noPersonaSelected: "選択されたペルソナがありません。設定 > ペルソナで選択または追加してください。",
+            waitForResponse: "現在の応答が終了するまでお待ちください。",
         },
         authorNoteModal: {
             title: "作者ノート",
@@ -226,6 +231,14 @@ const ja = {
             placeholder: '記憶する内容を入力してください…（複数行可）',
             memoryAriaLabel: 'メモリ {{index}}',
             addMemory: 'メモリを追加',
+            clearMemories: 'メモリをクリア',
+            clearMemoriesConfirm: 'このルームのすべてのメモリをクリアしますか？この操作は元に戻せません。',
+            transferMemories: 'メモリを転送',
+            groupChatLabel: 'グループチャット',
+            unknownCharacter: '不明なキャラクター',
+            noOtherRooms: '他のルームはありません。',
+            transferMemoryHelp: 'メモリを転送するチャットルームを選択してください。転送されたメモリは追加され、既存のメモリを置き換えません。',
+            transferMemoryConfirm: '{{targetRoomName}}ルームにメモリを転送しますか？',
         },
     },
 
@@ -315,6 +328,10 @@ const ja = {
                 help: "LLMが応答時間とメッセージを直接制御します。（推奨）",
                 warnClaude: "注意：Claudeではリクエストに失敗する場合があります。",
             },
+            responseFormat: {
+                label: "response_format を使用",
+                help: "構造化出力がオンでも、response_format を送信するかどうかを選択します。",
+            },
             imageResponse: {
                 label: "画像応答を許可",
                 help: "会話コンテキストに応じて画像の応答を許可します。",
@@ -329,8 +346,32 @@ const ja = {
             customModelPlaceholder: "カスタムモデル名を入力",
             add: "追加",
             customModelsLabel: "カスタムモデル",
-            customOpenAI: {
+            custom: {
                 baseUrlLabel: "Base URL",
+                tokenizerLabel: "トークナイザー",
+                selectTokenizer: "トークナイザーを選択してください",
+                payloadTemplateLabel: "ペイロードテンプレート",
+                selectPayloadTemplate: "ペイロードテンプレートを選択してください",
+            },
+            openrouter: {
+                modelLabel: "OpenRouter モデル",
+                searchPlaceholder: "モデルを検索（id、名前）",
+                refresh: "再読み込み",
+                loading: "読み込み中…",
+                noModels: "表示できるモデルがありません。",
+                selectModel: "モデルを選択してください",
+                selectAnotherModel: "別のモデルを選択してください",
+                providerPriority: "プロバイダの優先順位",
+                endpointsLoading: "エンドポイントを読み込み中…",
+                endpointsLoadFailed: "エンドポイント一覧の読み込みに失敗しました。",
+                priorityHelp: "下のリストから優先順位の順に選択してください。ドラッグの代わりにクリックで追加/順序を設定できます。",
+                selectedWithOrder: "選択済み · 順位 {{order}}",
+                clickToAdd: "クリックして追加",
+                currentPriority: "現在の優先順位",
+                allowFallbacksLabel: "代替プロバイダを許可",
+                allowFallbacksHelp: "優先エンドポイントが利用できない場合に自動的に他のエンドポイントへ切り替え",
+                noEndpoints: "利用可能なプロバイダエンドポイントがありません。",
+                modelsLoadFailed: "モデル一覧の読み込みに失敗しました。",
             },
         },
         image: {

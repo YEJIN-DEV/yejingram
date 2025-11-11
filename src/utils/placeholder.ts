@@ -68,8 +68,10 @@ export function replacePlaceholders(input: string, values: PlaceholderValues): s
     const participantCountValue = String(values.participantCount ?? '');
     output = output.replace(/\{participantCount\}/g, participantCountValue);
 
-    const availableStickersValue = values.character?.stickers ?? [];
-    output = output.replace(/\{availableStickers\}/g, availableStickersValue.length > 0 ? availableStickersValue.join(', ') : 'NO AVAILABLE STICKERS');
+    const availableStickerNames = (values.character?.stickers ?? [])
+        .map(s => s.name)
+        .filter(Boolean);
+    output = output.replace(/\{availableStickers\}/g, availableStickerNames.length > 0 ? availableStickerNames.join(', ') : 'NO AVAILABLE STICKERS');
 
     return output;
 }

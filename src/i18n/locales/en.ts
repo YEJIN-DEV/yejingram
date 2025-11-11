@@ -104,6 +104,9 @@ const en = {
                 imageRerollAriaLabel: "Regenerate image",
                 imageRerolling: "Image regenerating...",
                 imageReroll: "Regenerate image",
+                toggleIncludeCharAriaLabel: "Toggle profile image reference",
+                includeCharOn: "Profile image reference: On",
+                includeCharOff: "Profile image reference: Off",
             },
             system: {
                 inviteCta: "Invite to chat",
@@ -194,11 +197,20 @@ const en = {
             messagePlaceholder: "Send a message…",
             file: "File",
             send: "Send",
+            proactiveChat: "Request message",
         },
         roomMemory: {
             placeholder: 'Enter content to remember... (multi-line allowed)',
             memoryAriaLabel: 'Memory {{index}}',
             addMemory: 'Add memory',
+            clearMemories: 'Clear memories',
+            clearMemoriesConfirm: 'Are you sure you want to clear all memories in this room? This action cannot be undone.',
+            transferMemories: 'Transfer memories',
+            groupChatLabel: 'Group chat',
+            unknownCharacter: 'Unknown character',
+            noOtherRooms: 'No other rooms available.',
+            transferMemoryHelp: 'Select a room to receive these memories. Transferred memories are added and do not replace existing entries.',
+            transferMemoryConfirm: 'Are you sure you want to transfer memories to {{targetRoomName}}?',
         },
         tooltips: {
             authorNote: "Author's Note",
@@ -210,6 +222,7 @@ const en = {
         toast: {
             noLorebookCharacter: "No character available to open the lorebook.",
             noPersonaSelected: "No persona selected. Please select or add one in Settings > Persona.",
+            waitForResponse: "Please wait for the current response to finish.",
         },
         authorNoteModal: {
             title: "Author's Note",
@@ -315,6 +328,10 @@ const en = {
                 help: "LLM directly controls response timing and messages. (Recommended)",
                 warnClaude: "Caution: Requests may fail with Claude in some cases.",
             },
+            responseFormat: {
+                label: "Use response_format",
+                help: "Even when structured output is on, choose whether to send response_format.",
+            },
             imageResponse: {
                 label: "Allow image responses",
                 help: "Allow image responses depending on conversation context.",
@@ -329,8 +346,32 @@ const en = {
             customModelPlaceholder: "Enter a custom model name",
             add: "Add",
             customModelsLabel: "Custom models",
-            customOpenAI: {
+            custom: {
                 baseUrlLabel: "Base URL",
+                tokenizerLabel: "Tokenizer",
+                selectTokenizer: "Select a tokenizer",
+                payloadTemplateLabel: "Payload template",
+                selectPayloadTemplate: "Select a payload template",
+            },
+            openrouter: {
+                modelLabel: "OpenRouter model",
+                searchPlaceholder: "Search models (id, name)",
+                refresh: "Refresh",
+                loading: "Loading…",
+                noModels: "No models to display.",
+                selectModel: "Select a model",
+                selectAnotherModel: "Select another model",
+                providerPriority: "Provider priority",
+                endpointsLoading: "Loading endpoints…",
+                endpointsLoadFailed: "Failed to load endpoint list.",
+                priorityHelp: "Select in order of priority below. Click to add/reorder instead of dragging.",
+                selectedWithOrder: "Selected · Order {{order}}",
+                clickToAdd: "Click to add",
+                currentPriority: "Current priority",
+                allowFallbacksLabel: "Allow fallback providers",
+                allowFallbacksHelp: "Automatically switch to another endpoint if the preferred one is unavailable",
+                noEndpoints: "No available provider endpoints.",
+                modelsLoadFailed: "Failed to load model list.",
             },
         },
         image: {
