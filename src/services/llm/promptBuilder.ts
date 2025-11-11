@@ -184,7 +184,11 @@ function buildMessageContents<T>(
 ): T[] {
     const useSpeakerTag = room?.type !== 'Direct';
     return messages.map(msg => {
-        const role = msg.authorId === 0 ? "user" : "assistant";
+        let role = msg.authorId === 0 ? "user" : "assistant";
+        // If it's the last message, force role to 'user' to avoid end_of_turn issues
+        if (msg === messages[messages.length - 1]) {
+            role = "user";
+        }
         const speaker = msg.authorId === 0
             ? (persona?.name || 'User')
             : (selectCharacterById(store.getState(), msg.authorId)?.name || `Char#${msg.authorId}`);
