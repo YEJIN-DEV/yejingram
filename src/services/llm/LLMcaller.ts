@@ -64,6 +64,10 @@ async function handleApiResponse(
         }
     }
     if (res && res.messages && Array.isArray(res.messages) && res.messages.length > 0) {
+        if (res.reactionDelay && res.reactionDelay > 10000) {
+            console.warn("Capping reaction delay to 10 seconds.");
+            res.reactionDelay = 10000;
+        }
         await sleep(res.reactionDelay || 1000);
         setTypingCharacterId(char.id);
 
