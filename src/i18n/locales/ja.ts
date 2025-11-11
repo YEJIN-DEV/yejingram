@@ -197,6 +197,7 @@ const ja = {
             messagePlaceholder: "メッセージを送信…",
             file: "ファイル",
             send: "送信",
+            proactiveChat: "メッセージリクエスト",
         },
         tooltips: {
             authorNote: "作者ノート",
@@ -208,6 +209,7 @@ const ja = {
         toast: {
             noLorebookCharacter: "ロアブックを開けるキャラクターがいません。",
             noPersonaSelected: "選択されたペルソナがありません。設定 > ペルソナで選択または追加してください。",
+            waitForResponse: "現在の応答が終了するまでお待ちください。",
         },
         authorNoteModal: {
             title: "作者ノート",

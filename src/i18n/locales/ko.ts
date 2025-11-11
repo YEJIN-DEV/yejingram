@@ -197,6 +197,7 @@ const ko = {
             messagePlaceholder: "메시지 보내기...",
             file: "파일",
             send: "전송",
+            proactiveChat: "선톡 요청",
         },
         tooltips: {
             authorNote: "작가의 노트",
@@ -208,6 +209,7 @@ const ko = {
         toast: {
             noLorebookCharacter: "로어북을 열 수 있는 캐릭터가 없습니다.",
             noPersonaSelected: "선택된 페르소나가 없습니다. 설정 > 페르소나에서 선택 또는 추가해주세요.",
+            waitForResponse: "현재 응답이 완료될 때까지 기다려주세요.",
         },
         authorNoteModal: {
             title: "작가의 노트",

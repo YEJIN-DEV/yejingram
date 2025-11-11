@@ -332,7 +332,7 @@ async function LLMSend(
     char: Character,
     setTypingCharacterId: (id: number | null) => void,
     t: (key: string) => string,
-    isContinuation = false
+    sendType: 'normal' | 'continuation' | 'proactive' = 'normal',
 ) {
     const state = store.getState();
     const dispatch = store.dispatch;
@@ -341,14 +341,27 @@ async function LLMSend(
     const settings = selectAllSettings(state);
     const messages = structuredClone(selectMessagesByRoomId(state, room.id))
 
-    if (isContinuation) {
+    // --- Continuation handling ---
+    if (sendType === 'continuation') {
         messages.push({
             id: nanoid(),
             roomId: room.id,
-            authorId: char.id,
+            authorId: 0, // prevent end_of_turn
             createdAt: new Date().toISOString(),
             type: 'SYSTEM',
-            content: `[The reply is too short. Since ${persona?.name || 'User'} has not yet responded, continue ${char.name}'s reply.]`
+            content: `[The reply is too short. Since ${persona?.name || 'User'} has not yet responded, continue ${char.name}'s reply. Do NOT repeat any part of the previous message.]`
+        });
+    }
+
+    // --- Proactive chat handling ---
+    if (sendType === 'proactive') {
+        messages.push({
+            id: nanoid(),
+            roomId: room.id,
+            authorId: 0, // prevent end_of_turn
+            createdAt: new Date().toISOString(),
+            type: 'SYSTEM',
+            content: `[${char.name} is initiating a new message to ${persona?.name || 'User'} based on the conversation so far. Do NOT repeat any part of previous messages.]`
         });
     }
 
@@ -441,14 +454,14 @@ async function LLMSend(
 }
 
 
-export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void, t: (key: string) => string, isContinuation = false) {
+export async function SendMessage(room: Room, setTypingCharacterId: (id: number | null) => void, t: (key: string) => string, sendType: 'normal' | 'continuation' | 'proactive' = 'normal') {
     const state = store.getState();
     const persona = selectSelectedPersona(state);
     const memberChars = room.memberIds.map(id => selectCharacterById(state, id));
 
     for (const char of memberChars) {
         if (char) {
-            await LLMSend(room, persona, char, setTypingCharacterId, t, isContinuation);
+            await LLMSend(room, persona, char, setTypingCharacterId, t, sendType);
         }
     }
 }

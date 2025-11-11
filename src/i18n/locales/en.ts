@@ -197,6 +197,7 @@ const en = {
             messagePlaceholder: "Send a message…",
             file: "File",
             send: "Send",
+            proactiveChat: "Request message",
         },
         roomMemory: {
             placeholder: 'Enter content to remember... (multi-line allowed)',
@@ -221,6 +222,7 @@ const en = {
         toast: {
             noLorebookCharacter: "No character available to open the lorebook.",
             noPersonaSelected: "No persona selected. Please select or add one in Settings > Persona.",
+            waitForResponse: "Please wait for the current response to finish.",
         },
         authorNoteModal: {
             title: "Author's Note",
