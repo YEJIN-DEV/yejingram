@@ -23,13 +23,24 @@ import { applyRules } from '../utils/migration';
 import uiReducer from '../entities/ui/slice';
 import lastSavedReducer from '../entities/lastSaved/slice';
 
-localforage.config({
-    name: 'yejingram',
-    storeName: 'persist',
-});
+// Enable localforage only in browser environments
+const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+
+if (isBrowser) {
+    localforage.config({
+        name: 'yejingram',
+        storeName: 'persist',
+    });
+}
+
+const memoryStore = new Map<string, string>();
 
 const blobStorage = {
     async getItem(key: string): Promise<string | null> {
+        if (!isBrowser) {
+            return memoryStore.has(key) ? memoryStore.get(key)! : null;
+        }
+
         const data = await localforage.getItem(key);
         if (data == null) return null;
 
@@ -53,10 +64,18 @@ const blobStorage = {
         }
     },
     async setItem(key: string, value: string): Promise<void> {
+        if (!isBrowser) {
+            memoryStore.set(key, value);
+            return;
+        }
         const blob = new Blob([value], { type: 'application/json' });
         await localforage.setItem(key, blob);
     },
     removeItem(key: string): Promise<void> {
+        if (!isBrowser) {
+            memoryStore.delete(key);
+            return Promise.resolve();
+        }
         return localforage.removeItem(key);
     },
 } as const;

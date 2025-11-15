@@ -19,6 +19,7 @@
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "ai-json-fixer": "^0.2.0",
+    "arg": "^5.0.2",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "fflate": "^0.8.2",
