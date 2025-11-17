@@ -71,7 +71,6 @@ export interface SettingsState {
     fontScale: number;
     userName: string;
     userDescription: string;
-    proactiveChatEnabled: boolean;
     randomFirstMessageEnabled: boolean;
     randomCharacterCount: number;
     randomMessageFrequencyMin: number;
@@ -84,8 +83,7 @@ export interface SettingsState {
     personas: Persona[];
     selectedPersonaId: string | null;
     syncSettings: Sync;
-    proactiveServerBaseUrl: string;
-    proactiveClientId: string;
+    proactiveSettings: Proactive;
 }
 
 export interface Persona {
@@ -103,4 +101,10 @@ export interface Sync {
     syncEnabled: boolean;
     syncClientId: string;
     syncBaseUrl: string;
+}
+
+export interface Proactive {
+    proactiveChatEnabled: boolean;
+    proactiveServerBaseUrl: string;
+    proactiveClientId: string;
 }

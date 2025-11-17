@@ -402,7 +402,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             <label className="text-xs text-[var(--color-text-secondary)]">선톡 클라이언트 ID</label>
                                             <input
                                                 type="text"
-                                                value={localSettings.proactiveClientId || ''}
+                                                value={localSettings.proactiveSettings.proactiveClientId || ''}
                                                 onChange={e => setLocalSettings(prev => ({
                                                     ...prev,
                                                     proactiveClientId: e.target.value,
@@ -415,7 +415,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             <label className="text-xs text-[var(--color-text-secondary)]">선톡 서버 주소</label>
                                             <input
                                                 type="text"
-                                                value={localSettings.proactiveServerBaseUrl || ''}
+                                                value={localSettings.proactiveSettings.proactiveServerBaseUrl || ''}
                                                 onChange={e => setLocalSettings(prev => ({
                                                     ...prev,
                                                     proactiveServerBaseUrl: e.target.value,
@@ -428,24 +428,27 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     <button
                                         type="button"
                                         className={`w-full py-2 px-4 rounded-lg text-sm flex items-center justify-center gap-2 border transition-colors
-                                            ${localSettings.proactiveChatEnabled
+                                            ${localSettings.proactiveSettings.proactiveChatEnabled
                                                 ? 'bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] border-[var(--color-border)]'
                                                 : 'bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
                                             }`}
                                         onClick={() => {
                                             setLocalSettings(prev => ({
                                                 ...prev,
-                                                proactiveChatEnabled: !prev.proactiveChatEnabled,
+                                                proactiveSettings: {
+                                                    ...prev.proactiveSettings,
+                                                    proactiveChatEnabled: !prev.proactiveSettings.proactiveChatEnabled,
+                                                },
                                             }));
 
-                                            if (!localSettings.proactiveChatEnabled && localSettings.proactiveServerBaseUrl) {
-                                                registerProactivePush(localSettings.proactiveClientId, localSettings.proactiveServerBaseUrl);
+                                            if (!localSettings.proactiveSettings.proactiveChatEnabled && localSettings.proactiveSettings.proactiveServerBaseUrl) {
+                                                registerProactivePush(localSettings.proactiveSettings.proactiveClientId, localSettings.proactiveSettings.proactiveServerBaseUrl);
                                             } else {
                                                 unsubscribeProactivePush();
                                             }
                                         }}
                                     >
-                                        {localSettings.proactiveChatEnabled ? (
+                                        {localSettings.proactiveSettings.proactiveChatEnabled ? (
                                             <>
                                                 <BellOff className="w-4 h-4" /> 구독 해제
                                             </>

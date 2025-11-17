@@ -222,7 +222,7 @@ function printMessages(messages: Message[]) {
             webpush.sendNotification(
                 await readSubscriptions(argv['--clientId']) as PushSubscription,
                 JSON.stringify({
-                    icon: `${state.settings.proactiveServerBaseUrl}/api/push/icon/${newlyAdded.authorId}`,
+                    icon: `${state.settings.proactiveSettings.proactiveServerBaseUrl}/api/push/icon/${newlyAdded.authorId}`,
                     badge: '/yejingram.png',
                     body: characterName + ": " + newlyAdded.content,
                 })
