@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAllSettings } from '../../entities/setting/selectors';
 import type { SettingsState, ApiProvider } from '../../entities/setting/types';
-import { Globe, FilePenLine, User, Download, Upload, FastForward, X, Image, CircleEllipsis, Palette, Languages, Cloud, RotateCcw, CloudUpload, Trash2, ChevronDown } from 'lucide-react';
+import { Globe, FilePenLine, User, Download, Upload, FastForward, X, Image, CircleEllipsis, Palette, Languages, Cloud, RotateCcw, CloudUpload, Trash2, ChevronDown, BellRing, BellOff } from 'lucide-react';
 import i18n from '../../i18n/i18n';
 import { useTranslation } from 'react-i18next';
 import { ProviderSettings } from './ProviderSettings';
@@ -12,6 +12,7 @@ import PersonaManager from './PersonaModal';
 import { ImageSettings } from './image/ImageSettings';
 import ThemeSettings from './ThemeSettings';
 import { Toggle } from '../Toggle';
+import { registerProactivePush, unsubscribeProactivePush } from '../../services/proactive';
 
 interface SettingsPanelProps {
     openPromptModal: () => void;
@@ -386,6 +387,74 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             <RotateCcw className="w-4 h-4" /> {t('settings.others.sync.restoreRemote')}
                                         </button>
                                     </div>
+                                </div>
+
+                                {/* 선톡 설정 섹션 (구독 / 구독 해제 토글 버튼 + 서버 주소) */}
+                                <div className="space-y-3 pt-4 border-t border-[var(--color-border)]">
+                                    <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)]">
+                                        <BellRing className="w-4 h-4 mr-2" /> 선톡 설정
+                                    </label>
+                                    <p className="text-xs text-[var(--color-text-secondary)]">
+                                        캐릭터가 먼저 말을 거는 선톡 기능을 관리합니다.
+                                    </p>
+                                    <div className="space-y-2">
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-[var(--color-text-secondary)]">선톡 클라이언트 ID</label>
+                                            <input
+                                                type="text"
+                                                value={localSettings.proactiveClientId || ''}
+                                                onChange={e => setLocalSettings(prev => ({
+                                                    ...prev,
+                                                    proactiveClientId: e.target.value,
+                                                }))}
+                                                className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm"
+                                                placeholder="my-proactive-device-1"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-[var(--color-text-secondary)]">선톡 서버 주소</label>
+                                            <input
+                                                type="text"
+                                                value={localSettings.proactiveServerBaseUrl || ''}
+                                                onChange={e => setLocalSettings(prev => ({
+                                                    ...prev,
+                                                    proactiveServerBaseUrl: e.target.value,
+                                                }))}
+                                                className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm"
+                                                placeholder="https://your-proactive-server.example.com"
+                                            />
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className={`w-full py-2 px-4 rounded-lg text-sm flex items-center justify-center gap-2 border transition-colors
+                                            ${localSettings.proactiveChatEnabled
+                                                ? 'bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] border-[var(--color-border)]'
+                                                : 'bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
+                                            }`}
+                                        onClick={() => {
+                                            setLocalSettings(prev => ({
+                                                ...prev,
+                                                proactiveChatEnabled: !prev.proactiveChatEnabled,
+                                            }));
+
+                                            if (!localSettings.proactiveChatEnabled && localSettings.proactiveServerBaseUrl) {
+                                                registerProactivePush(localSettings.proactiveClientId, localSettings.proactiveServerBaseUrl);
+                                            } else {
+                                                unsubscribeProactivePush();
+                                            }
+                                        }}
+                                    >
+                                        {localSettings.proactiveChatEnabled ? (
+                                            <>
+                                                <BellOff className="w-4 h-4" /> 구독 해제
+                                            </>
+                                        ) : (
+                                            <>
+                                                <BellRing className="w-4 h-4" /> 구독
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
 
                                 {/* Danger Zone section (collapsed by default at the very bottom) */}

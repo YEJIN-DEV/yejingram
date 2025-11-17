@@ -84,6 +84,8 @@ export interface SettingsState {
     personas: Persona[];
     selectedPersonaId: string | null;
     syncSettings: Sync;
+    proactiveServerBaseUrl: string;
+    proactiveClientId: string;
 }
 
 export interface Persona {
