@@ -17,14 +17,14 @@ import {
 import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
-import settingsReducer, { initialSyncSettings, initialState as settingsInitialState, initialApiConfigs as settingsInitialApiConfigs } from '../entities/setting/slice';
+import settingsReducer, { initialSyncSettings, initialState as settingsInitialState, initialApiConfigs as settingsInitialApiConfigs, initialProactiveSettings } from '../entities/setting/slice';
 import { initialState as imageSettingsInitialState } from '../entities/setting/image/slice';
 import { applyRules } from '../utils/migration';
 import uiReducer from '../entities/ui/slice';
 import lastSavedReducer from '../entities/lastSaved/slice';
 
 // Enable localforage only in browser environments
-const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+export const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
 
 if (isBrowser) {
     localforage.config({
@@ -224,6 +224,18 @@ export const migrations = {
         }
 
         return state;
+    },
+    5: (state: any) => {
+        state = applyRules(state, {
+            add: [
+                {
+                    path: 'settings',
+                    keys: ['proactiveSettings'],
+                    defaults: { proactiveSettings: initialProactiveSettings }
+                },
+            ]
+        });
+        return state;
     }
 } as MigrationManifest;
 
@@ -231,7 +243,7 @@ export const migrations = {
 export const persistConfig = {
     key: 'yejingram',
     storage: blobStorage as any,
-    version: 4,
+    version: 5,
     whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved'],
     migrate: createMigrate(migrations, { debug: true }),
 };

@@ -26,7 +26,6 @@ export const initialSyncSettings: Sync = {
 export const initialProactiveSettings: Proactive = {
     proactiveChatEnabled: false,
     proactiveServerBaseUrl: '',
-    proactiveClientId: '',
 };
 
 

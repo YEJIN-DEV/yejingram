@@ -359,7 +359,20 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         label={t('settings.others.sync.autoSyncTitle')}
                                         description={t('settings.others.sync.autoSyncHint')}
                                         checked={!!localSettings.syncSettings.syncEnabled}
-                                        onChange={(checked) => setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncEnabled: checked } }))}
+                                        onChange={(checked) => {
+                                            if (!checked && localSettings.proactiveSettings.proactiveChatEnabled) {
+                                                // If disabling sync while proactive chat is enabled, also disable proactive chat
+                                                setLocalSettings(prev => ({
+                                                    ...prev,
+                                                    proactiveSettings: {
+                                                        ...prev.proactiveSettings,
+                                                        proactiveChatEnabled: false,
+                                                    },
+                                                }));
+                                                unsubscribeProactivePush();
+                                            }
+                                            setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncEnabled: checked } }))
+                                        }}
                                     />
                                     <div className="grid grid-cols-2 gap-2">
                                         <button onClick={async () => {
@@ -399,26 +412,16 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     </p>
                                     <div className="space-y-2">
                                         <div className="space-y-1">
-                                            <label className="text-xs text-[var(--color-text-secondary)]">선톡 클라이언트 ID</label>
-                                            <input
-                                                type="text"
-                                                value={localSettings.proactiveSettings.proactiveClientId || ''}
-                                                onChange={e => setLocalSettings(prev => ({
-                                                    ...prev,
-                                                    proactiveClientId: e.target.value,
-                                                }))}
-                                                className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm"
-                                                placeholder="my-proactive-device-1"
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
                                             <label className="text-xs text-[var(--color-text-secondary)]">선톡 서버 주소</label>
                                             <input
                                                 type="text"
-                                                value={localSettings.proactiveSettings.proactiveServerBaseUrl || ''}
+                                                value={localSettings.proactiveSettings.proactiveServerBaseUrl}
                                                 onChange={e => setLocalSettings(prev => ({
                                                     ...prev,
-                                                    proactiveServerBaseUrl: e.target.value,
+                                                    proactiveSettings: {
+                                                        ...prev.proactiveSettings,
+                                                        proactiveServerBaseUrl: e.target.value,
+                                                    },
                                                 }))}
                                                 className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm"
                                                 placeholder="https://your-proactive-server.example.com"
@@ -428,9 +431,9 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     <button
                                         type="button"
                                         className={`w-full py-2 px-4 rounded-lg text-sm flex items-center justify-center gap-2 border transition-colors
-                                            ${localSettings.proactiveSettings.proactiveChatEnabled
-                                                ? 'bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] border-[var(--color-border)]'
-                                                : 'bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
+                                            ${localSettings.proactiveSettings.proactiveChatEnabled || localSettings.syncSettings.syncEnabled
+                                                ? 'bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
+                                                : 'bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] border-[var(--color-border)]'
                                             }`}
                                         onClick={() => {
                                             setLocalSettings(prev => ({
@@ -442,19 +445,27 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             }));
 
                                             if (!localSettings.proactiveSettings.proactiveChatEnabled && localSettings.proactiveSettings.proactiveServerBaseUrl) {
-                                                registerProactivePush(localSettings.proactiveSettings.proactiveClientId, localSettings.proactiveSettings.proactiveServerBaseUrl);
+                                                registerProactivePush(localSettings.syncSettings.syncClientId, localSettings.proactiveSettings.proactiveServerBaseUrl);
                                             } else {
                                                 unsubscribeProactivePush();
                                             }
                                         }}
                                     >
-                                        {localSettings.proactiveSettings.proactiveChatEnabled ? (
+                                        {localSettings.syncSettings.syncEnabled ? (
                                             <>
-                                                <BellOff className="w-4 h-4" /> 구독 해제
+                                                {localSettings.proactiveSettings.proactiveChatEnabled ? (
+                                                    <>
+                                                        <BellOff className="w-4 h-4" /> 구독 해제
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <BellRing className="w-4 h-4" /> 구독
+                                                    </>
+                                                )}
                                             </>
                                         ) : (
                                             <>
-                                                <BellRing className="w-4 h-4" /> 구독
+                                                <BellOff className="w-4 h-4" /> 자동 동기화 활성화 필요
                                             </>
                                         )}
                                     </button>

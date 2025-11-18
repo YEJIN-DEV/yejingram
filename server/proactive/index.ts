@@ -1,11 +1,10 @@
 import fs from 'fs/promises';
 import express from 'express';
-import arg from 'arg';
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import sharp from 'sharp';
 import { store } from '../../src/app/store';
-import { selectRoomById } from '../../src/entities/room/selectors';
+import { selectAllRooms, selectRoomById } from '../../src/entities/room/selectors';
 import { selectMessagesByRoomId } from '../../src/entities/message/selectors';
 import type { Message } from '../../src/entities/message/types';
 import { buildBackupPayload, restoreStateFromPayload } from '../../src/utils/backup';
@@ -17,6 +16,7 @@ import ko from '../../src/i18n/locales/ko.ts';
 import ja from '../../src/i18n/locales/ja.ts';
 import { selectCharacterById } from '../../src/entities/character/selectors.ts';
 import path from 'path';
+import { selectLastSaved } from '../../src/entities/lastSaved/selectors.ts';
 
 const resources = {
     ko: { translation: ko },
@@ -44,7 +44,7 @@ interface SubscriptionBody extends PushSubscription {
 }
 
 const SUBSCRIPTION_DIR = path.resolve(process.cwd(), 'data');
-async function readSubscriptions(clientId?: string): Promise<PushSubscription | PushSubscription[]> {
+async function readSubscriptions(clientId?: string): Promise<PushSubscription | { [key: string]: PushSubscription }> {
     try {
         await fs.mkdir(SUBSCRIPTION_DIR, { recursive: true });
     } catch { }
@@ -56,13 +56,13 @@ async function readSubscriptions(clientId?: string): Promise<PushSubscription | 
         return parsed;
     } else {
         const entries = await fs.readdir(SUBSCRIPTION_DIR, { withFileTypes: true });
-        const subs: PushSubscription[] = [];
+        const subs: { [key: string]: PushSubscription } = {};
 
         for (const entry of entries) {
             if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
             try {
                 const json = await fs.readFile(path.join(SUBSCRIPTION_DIR, entry.name), 'utf-8');
-                subs.push(JSON.parse(json));
+                subs[entry.name.replace('.json', '')] = JSON.parse(json);
             } catch {
                 // 개별 파일 오류는 무시하고 나머지 파일만 사용
                 continue;
@@ -164,87 +164,99 @@ function printMessages(messages: Message[]) {
 
 (async () => {
     startSubscriptionApi();
-    const argv = arg(
-        {
-            '--room': String,
-            '--file': String,
-            '--clientId': String,
-            '-r': '--room',
-            '-f': '--file',
-            '-c': '--clientId'
-        },
-        { permissive: true, argv: process.argv.slice(2) }
-    );
 
-    console.log("백업 복원 시작");
-    const backupFile = argv['--file'];
-    if (backupFile) {
-        try {
-            const raw = await fs.readFile(backupFile, 'utf-8');
-            await restoreStateFromPayload(JSON.parse(raw));
-            console.log(`백업 로드 완료: ${backupFile}`);
-        } catch (e: any) {
-            console.error(`백업 파일 읽기 실패: ${backupFile}\n`, e?.message ?? e);
-            return;
-        }
-    } else {
-        console.error('백업 파일 경로를 제공해주세요. --file <path> 옵션을 사용하세요.');
-        return;
-    }
+    while (true) {
+        const subscription = await readSubscriptions();
 
-    const state = store.getState();
+        for (const [clientId, push] of Object.entries(subscription)) {
+            console.log("백업 복원 시작");
 
-    const roomId = argv['--room'];
-    if (roomId) {
-        const room = selectRoomById(state, roomId);
-        if (!room) {
-            console.error("Room not found:", roomId);
-            return;
-        }
+            const backupResponse = await fetch(`${process.env.SYNC_BASE_URL}/api/sync/${clientId}`, {
+                method: 'GET',
+            });
 
-        const beforeMessages = selectMessagesByRoomId(store.getState(), roomId);
-        const beforeIds = new Set(beforeMessages.map(m => m.id));
-        printMessages(beforeMessages);
+            if (!backupResponse.ok) {
+                console.error("백업 데이터 불러오기 실패:", backupResponse.statusText);
+                return;
+            }
 
-        const pendingAdded = new Map<string, Message>();
+            const backupPayload = await backupResponse.json();
+            await restoreStateFromPayload(backupPayload);
+            console.log(`백업 로드 완료`);
+            const state = store.getState();
 
-        store.subscribe(async () => {
-            const allMessages = selectMessagesByRoomId(store.getState(), roomId);
-            const newlyAdded = allMessages.filter(m => !beforeIds.has(m.id) && !pendingAdded.has(m.id))[0];
-            if (!newlyAdded) return;
+            if (!state.settings.proactiveSettings.proactiveChatEnabled) {
+                console.log("Proactive Chat 기능이 설정에서 활성화되어 있지 않습니다.");
+                return;
+            }
 
-            pendingAdded.set(newlyAdded.id, newlyAdded);
-            beforeIds.add(newlyAdded.id);
+            const allRooms = selectAllRooms(state);
+            if (!allRooms || allRooms.length === 0) {
+                console.error('방이 하나도 없습니다.');
+                return;
+            }
 
-            const characterName = selectCharacterById(state, newlyAdded.authorId).name;
-            printMessages([newlyAdded]);
+            const randomRoom = allRooms[Math.floor(Math.random() * allRooms.length)]
 
-            webpush.sendNotification(
-                await readSubscriptions(argv['--clientId']) as PushSubscription,
-                JSON.stringify({
-                    icon: `${state.settings.proactiveSettings.proactiveServerBaseUrl}/api/push/icon/${newlyAdded.authorId}`,
-                    badge: '/yejingram.png',
-                    body: characterName + ": " + newlyAdded.content,
+            const beforeMessages = selectMessagesByRoomId(store.getState(), randomRoom.id);
+            const beforeIds = new Set(beforeMessages.map(m => m.id));
+            printMessages(beforeMessages);
+
+            const pendingAdded = new Map<string, Message>();
+
+            store.subscribe(async () => {
+                const allMessages = selectMessagesByRoomId(store.getState(), randomRoom.id);
+                const newlyAdded = allMessages.filter(m => !beforeIds.has(m.id) && !pendingAdded.has(m.id))[0];
+                if (!newlyAdded) return;
+
+                pendingAdded.set(newlyAdded.id, newlyAdded);
+                beforeIds.add(newlyAdded.id);
+
+                const characterName = selectCharacterById(state, newlyAdded.authorId).name;
+                printMessages([newlyAdded]);
+
+                webpush.sendNotification(
+                    push,
+                    JSON.stringify({
+                        icon: `${state.settings.proactiveSettings.proactiveServerBaseUrl}/api/push/icon/${newlyAdded.authorId}`,
+                        badge: '/yejingram.png',
+                        body: characterName + ": " + newlyAdded.content,
+                    })
+                )
+            });
+
+            await SendMessage(
+                randomRoom,
+                (id) => {
+                    if (id) {
+                        console.log("Message Generating... id:", id);
+                    } else {
+                        console.log("Message generation completed.");
+                    }
+                },
+                i18next.t,
+                "proactive"
+            );
+
+            console.log("동기화중");
+
+            fetch(`${state.settings.syncSettings.syncBaseUrl}/api/sync/${state.settings.syncSettings.syncClientId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    lastSaved: selectLastSaved(state),
+                    backup: buildBackupPayload(),
                 })
-            )
-        });
-
-        await SendMessage(
-            room,
-            (id) => {
-                if (id) {
-                    console.log("Message Generating... id:", id);
+            }).then((res) => {
+                if (res.ok) {
+                    console.log("동기화 완료");
                 } else {
-                    console.log("Message generation completed.");
+                    console.error("동기화 실패:", res.statusText);
                 }
-            },
-            i18next.t,
-            "proactive"
-        );
-
-        console.log("백업 저장중");
-        const payload = buildBackupPayload();
-
-        // await fs.writeFile(backupFile, JSON.stringify(payload, null, 2));
+            })
+        }
+        await new Promise(resolve => setTimeout(resolve, 6000 * 10));
     }
 })();

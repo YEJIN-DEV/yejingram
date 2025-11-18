@@ -106,5 +106,4 @@ export interface Sync {
 export interface Proactive {
     proactiveChatEnabled: boolean;
     proactiveServerBaseUrl: string;
-    proactiveClientId: string;
 }
