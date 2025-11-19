@@ -175,16 +175,6 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                             <User className="w-4 h-4 inline mr-2" />
                             {t('settings.tabs.persona')}
                         </button>
-                        {/* <button
-                            onClick={() => setActiveTab('proactive')}
-                            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'proactive'
-                                ? 'border-[var(--color-focus-border)] text-[var(--color-button-primary-accent)]'
-                                : 'border-transparent text-[var(--color-icon-tertiary)] hover:text-[var(--color-text-interface)]'
-                                }`}
-                        >
-                            <MessageSquarePlus className="w-4 h-4 inline mr-2" />
-                            {t('settings.tabs.proactive')}
-                        </button> */}
                         <button
                             onClick={() => setActiveTab('others')}
                             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${activeTab === 'others'
@@ -226,45 +216,6 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                         {activeTab === 'image' && <ImageSettings settings={localSettings} setSettings={setLocalSettings} />}
 
                         {activeTab === 'persona' && <PersonaManager />}
-
-                        {/* {activeTab === 'proactive' && (
-                            <div className="space-y-4">
-                                <Toggle
-                                    id="settings-proactive-toggle"
-                                    label={t('settings.proactive.enableInContacts')}
-                                    checked={localSettings.proactiveChatEnabled || false}
-                                    onChange={checked => setLocalSettings(prev => ({ ...prev, proactiveChatEnabled: checked }))}
-                                    icon={<MessageSquarePlus className="w-4 h-4" />}
-                                />
-                                <Toggle
-                                    id="settings-random-first-message-toggle"
-                                    label={t('settings.proactive.enableRandom')}
-                                    checked={localSettings.randomFirstMessageEnabled || false}
-                                    onChange={checked => setLocalSettings(prev => ({ ...prev, randomFirstMessageEnabled: checked }))}
-                                    icon={<Shuffle className="w-4 h-4" />}
-                                />
-                                {localSettings.randomFirstMessageEnabled && (
-                                    <div id="random-chat-options" className="mt-4 space-y-4">
-                                        <div>
-                                            <label className="flex items-center justify-between text-sm font-medium text-[var(--color-text-interface)] mb-2">
-                                                <span>{t('settings.proactive.countLabel')}</span>
-                                                <span id="random-character-count-label" className="text-[var(--color-button-primary)] font-semibold">{localSettings.randomCharacterCount}{t('units.peopleSuffix')}</span>
-                                            </label>
-                                            <input id="settings-random-character-count" type="range" min="1" max="5" step="1" value={localSettings.randomCharacterCount} onChange={e => setLocalSettings(prev => ({ ...prev, randomCharacterCount: +e.target.value }))} className="w-full accent-[var(--color-button-primary)]" />
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-medium text-[var(--color-text-interface)] mb-2 block">{t('settings.proactive.intervalLabel')}</label>
-                                            <div className="flex items-center gap-2">
-                                                <input id="settings-random-frequency-min" type="number" min="1" value={localSettings.randomMessageFrequencyMin} onChange={e => setLocalSettings(prev => ({ ...prev, randomMessageFrequencyMin: +e.target.value }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" />
-                                                <span className="text-[var(--color-text-secondary)]">-</span>
-                                                <input id="settings-random-frequency-max" type="number" min="1" value={localSettings.randomMessageFrequencyMax} onChange={e => setLocalSettings(prev => ({ ...prev, randomMessageFrequencyMax: +e.target.value }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] text-sm" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                            </div>
-                        )} */}
 
                         {activeTab === 'others' && (
                             <div className="space-y-4">
