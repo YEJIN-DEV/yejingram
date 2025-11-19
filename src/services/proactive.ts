@@ -23,9 +23,7 @@ export async function registerProactivePush(clientId: string, serverBaseUrl: str
             applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
         });
 
-        const baseUrl = serverBaseUrl;
-
-        await fetch(`${baseUrl}/api/push/subscription`, {
+        await fetch(`${serverBaseUrl}/api/push/subscription`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -40,7 +38,7 @@ export async function registerProactivePush(clientId: string, serverBaseUrl: str
     }
 }
 
-export async function unsubscribeProactivePush() {
+export async function unsubscribeProactivePush(clientId: string, serverBaseUrl: string) {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
         return;
     }
@@ -53,6 +51,16 @@ export async function unsubscribeProactivePush() {
         if (!existing) return;
 
         await existing.unsubscribe();
+
+        await fetch(`${serverBaseUrl}/api/push/unsubscribe`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                clientId
+            }),
+        });
     } catch (err) {
         console.error('Failed to unsubscribe from proactive push', err);
     }

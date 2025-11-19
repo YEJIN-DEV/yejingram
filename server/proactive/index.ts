@@ -106,6 +106,25 @@ function startSubscriptionApi(port: number = Number(process.env.HEADLESS_PORT ??
         }
     });
 
+    app.post('/api/push/unsubscribe', async (req, res) => {
+        try {
+            const clientId = req.body?.clientId;
+            if (!clientId) {
+                return res.status(400).json({ error: 'clientId is required' });
+            }
+            const filePath = path.join(SUBSCRIPTION_DIR, `${clientId}.json`);
+            if (!(await fs.stat(filePath).catch(() => false))) {
+                return res.status(404).json({ error: 'Subscription not found' });
+            } else {
+                await fs.unlink(filePath);
+            }
+            res.json({ ok: true });
+        } catch (err: any) {
+            console.error('[Unsubscription API Error]', err);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    });
+
     app.get('/api/push/icon/:authorId', async (req, res) => {
         try {
             const authorId = Number(req.params.authorId);

@@ -369,7 +369,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                         proactiveChatEnabled: false,
                                                     },
                                                 }));
-                                                unsubscribeProactivePush();
+                                                unsubscribeProactivePush(localSettings.syncSettings.syncClientId, localSettings.proactiveSettings.proactiveServerBaseUrl);
                                             }
                                             setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncEnabled: checked } }))
                                         }}
@@ -431,7 +431,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     <button
                                         type="button"
                                         className={`w-full py-2 px-4 rounded-lg text-sm flex items-center justify-center gap-2 border transition-colors
-                                            ${localSettings.proactiveSettings.proactiveChatEnabled || localSettings.syncSettings.syncEnabled
+                                            ${!localSettings.proactiveSettings.proactiveChatEnabled && localSettings.syncSettings.syncEnabled
                                                 ? 'bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-accent)] text-[var(--color-text-accent)] border-[var(--color-button-primary-accent)]'
                                                 : 'bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] border-[var(--color-border)]'
                                             }`}
@@ -447,7 +447,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             if (!localSettings.proactiveSettings.proactiveChatEnabled && localSettings.proactiveSettings.proactiveServerBaseUrl) {
                                                 registerProactivePush(localSettings.syncSettings.syncClientId, localSettings.proactiveSettings.proactiveServerBaseUrl);
                                             } else {
-                                                unsubscribeProactivePush();
+                                                unsubscribeProactivePush(localSettings.syncSettings.syncClientId, localSettings.proactiveSettings.proactiveServerBaseUrl);
                                             }
                                         }}
                                     >
