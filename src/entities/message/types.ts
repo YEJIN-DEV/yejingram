@@ -14,6 +14,7 @@ export type Message = {
     authorId: number;
     createdAt: string;
     leaveCharId?: number;
+    thoughtSignature?: string;
 } & (
         | { type: "TEXT"; content: string; sticker?: never; file?: never }
         | { type: "IMAGE"; content?: never; sticker?: never; file: FileToSend; imageGenerationSetting: { prompt: string; isIncludingChar: boolean } }

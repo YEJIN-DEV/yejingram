@@ -6,12 +6,14 @@ export interface MessagePart {
         prompt: string;   // 프롬프트
         isIncludingChar: boolean; // 셀카 여부
     }; // 이미지 생성 설정 (옵션)
+    thoughtSignature?: string; // Gemini3의 사고 서명 (선택)
 }
 
 export interface ChatResponse {
     messages: MessagePart[];
     reactionDelay: number; // 반응 지연시간 (ms)
     newMemory?: string; // 모델이 구조화된 출력으로 제공하는 신규 메모리(선택)
+    thoughtSignature?: string; // Gemini3의 사고 서명 (선택)
 }
 
 export interface GeminiApiPayload {

@@ -292,7 +292,7 @@ const MessageList: React.FC<MessageListProps> = ({
                           const newContent = textarea.value;
                           dispatch(messagesActions.updateOne({
                             id: msg.id,
-                            changes: { content: newContent }
+                            changes: { thoughtSignature: msg.thoughtSignature, content: newContent }
                           }));
                           setEditingMessageId(null);
                         }
@@ -472,7 +472,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
                             <button
                               data-id={msg.id.toString()}
-                              onClick={() => { dispatch(messagesActions.removeOne(msg.id)); setActiveMessageId(null); }}
+                              onClick={() => { dispatch(messagesActions.removeOne(msg)); setActiveMessageId(null); }}
                               className="delete-msg-btn p-2 text-[var(--color-icon-secondary)] hover:text-[var(--color-button-negative)] bg-[var(--color-bg-main)] rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 transform"
                               aria-label={t('main.message.actions.deleteAriaLabel')}
                               title={t('main.message.actions.delete')}
@@ -568,7 +568,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
                                     try {
                                       const imageResponse = await callImageGeneration(msg.imageGenerationSetting!, char);
-                                      const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+                                      const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData;
                                       if (inlineDataBody) {
                                         const newDataUrl = `data:${inlineDataBody.mimeType};base64,${inlineDataBody.data}`;
                                         dispatch(messagesActions.updateOne({
@@ -578,7 +578,8 @@ const MessageList: React.FC<MessageListProps> = ({
                                               ...msg.file,
                                               dataUrl: newDataUrl,
                                               mimeType: inlineDataBody.mimeType
-                                            }
+                                            },
+                                            thoughtSignature: imageResponse.candidates[0].content.parts[0].thoughtSignature
                                           }
                                         }));
                                       }
