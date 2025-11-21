@@ -4,7 +4,9 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { X, ChevronDown, RotateCcw, Download, Upload, ArrowUp, ArrowDown, AlertTriangle, Thermometer, Percent, ArrowUpToLine } from 'lucide-react';
 import { selectAllSettings, selectPrompts } from '../../entities/setting/selectors';
 import { settingsActions, initialState } from '../../entities/setting/slice';
+import { messagesActions } from '../../entities/message/slice';
 import type { Prompts, PromptItem, PromptRole, PromptType } from '../../entities/setting/types';
+import type { AppDispatch } from '../../app/store';
 
 interface PromptModalProps {
     isOpen: boolean;
@@ -13,7 +15,7 @@ interface PromptModalProps {
 
 function PromptModal({ isOpen, onClose }: PromptModalProps) {
     const { t } = useTranslation();
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
     const settings = useSelector(selectAllSettings);
     const prompts = useSelector(selectPrompts);
 
@@ -65,7 +67,11 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
     }
 
     const handleSave = () => {
+        const promptsChanged = JSON.stringify(localPrompts) !== JSON.stringify(prompts);
         dispatch(settingsActions.setPrompts(localPrompts));
+        if (promptsChanged) {
+            dispatch(messagesActions.clearAllThoughtSignatures());
+        }
         onClose();
     };
 

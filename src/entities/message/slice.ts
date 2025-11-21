@@ -70,6 +70,20 @@ export const messagesActions = {
                     changes: { thoughtSignature: undefined }
                 }));
             dispatch(messagesSlice.actions.updateMany(updates));
+        },
+    clearAllThoughtSignatures: (): AppThunk =>
+        (dispatch, getState) => {
+            const state = getState() as RootState;
+            const updates = messagesAdapter.getSelectors().selectAll(state.messages)
+                .filter(msg => msg.thoughtSignature !== undefined)
+                .map(msg => ({
+                    id: msg.id,
+                    changes: { thoughtSignature: undefined }
+                }));
+
+            if (updates.length > 0) {
+                dispatch(messagesSlice.actions.updateMany(updates));
+            }
         }
 }
 export default messagesSlice.reducer
