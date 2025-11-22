@@ -255,6 +255,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
     ): GeminiContent[] => {
         const result: GeminiContent[] = [];
         const useSpeakerTag = roomLocal?.type !== 'Direct';
+        let lastThoughtSignature: string | undefined;
 
         for (let i = 0; i < msgs.length; i++) {
             const msg = msgs[i];
@@ -265,7 +266,18 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
             const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
 
             const baseText = msg.content ? `${header}${msg.content}` : (header ? header : '');
-            const parts: ({ text: string } | { inline_data: { mime_type: string; data: string } } | { file_data: { file_uri: string } } & { thought_signature?: string })[] = [{ text: baseText, thought_signature: useThoughtSignature ? msg.thoughtSignature : undefined }];
+
+            let thoughtSignatureToSend: string | undefined;
+            if (useThoughtSignature && msg.thoughtSignature) {
+                if (msg.thoughtSignature !== lastThoughtSignature) {
+                    thoughtSignatureToSend = msg.thoughtSignature;
+                }
+                lastThoughtSignature = msg.thoughtSignature;
+            } else {
+                lastThoughtSignature = undefined;
+            }
+
+            const parts: ({ text: string } | { inline_data: { mime_type: string; data: string } } | { file_data: { file_uri: string } } & { thought_signature?: string })[] = [{ text: baseText, thought_signature: thoughtSignatureToSend }];
 
             if (msg.file) {
                 const mimeType = msg.file.mimeType;
@@ -302,7 +314,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
             const next = msgs[i + 1];
             if (msgs[i].type != 'TEXT' && next && next.type === 'TEXT') {
                 if (next.content) {
-                    parts[0] = { text: next.content };
+                    parts[0] = { text: next.content, thought_signature: thoughtSignatureToSend };
                 }
                 i++; // Skip the next message by advancing the loop index one extra time
             }
