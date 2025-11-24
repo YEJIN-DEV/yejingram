@@ -191,13 +191,13 @@ async function callApi(
         case 'custom':
             switch (apiConfig.payloadTemplate) {
                 case 'gemini':
-                    payload = await buildGeminiApiPayload('gemini', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, useThoughtSignature, apiConfig, extraSystemInstruction);
+                    payload = await buildGeminiApiPayload('custom', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, useThoughtSignature, apiConfig, extraSystemInstruction);
                     break;
                 case 'anthropic':
-                    payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
+                    payload = await buildClaudeApiPayload('custom', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
                     break;
                 case 'openai':
-                    payload = await buildOpenAIApiPayload('openai', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction, settings.useResponseFormat ?? true);
+                    payload = await buildOpenAIApiPayload('custom', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction, settings.useResponseFormat ?? true);
                     break;
             }
             break;

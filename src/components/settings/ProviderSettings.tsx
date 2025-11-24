@@ -504,6 +504,14 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                             );
                         })()}
                     </div>
+
+                    <Toggle
+                        id="include-images-toggle"
+                        label={t('settings.ai.custom.includeImagesLabel')}
+                        description={t('settings.ai.custom.includeImagesDescription')}
+                        checked={config.includeImages ?? false}
+                        onChange={(checked) => handleConfigChange('includeImages', checked)}
+                    />
                 </div>
             )}
 

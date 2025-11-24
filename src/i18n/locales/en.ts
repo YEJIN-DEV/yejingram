@@ -352,6 +352,8 @@ const en = {
                 selectTokenizer: "Select a tokenizer",
                 payloadTemplateLabel: "Payload template",
                 selectPayloadTemplate: "Select a payload template",
+                includeImagesLabel: "Include images",
+                includeImagesDescription: "Include images in the model context.",
             },
             openrouter: {
                 modelLabel: "OpenRouter model",

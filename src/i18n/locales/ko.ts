@@ -352,6 +352,8 @@ const ko = {
                 selectTokenizer: "토크나이저를 선택하세요",
                 payloadTemplateLabel: "페이로드 템플릿",
                 selectPayloadTemplate: "페이로드 템플릿을 선택하세요",
+                includeImagesLabel: "이미지 포함",
+                includeImagesDescription: "모델 컨텍스트에 이미지를 포함합니다.",
             },
             openrouter: {
                 modelLabel: "OpenRouter 모델",

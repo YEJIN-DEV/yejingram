@@ -20,6 +20,7 @@ export interface ApiConfig {
     providerAllowFallbacks?: boolean;
     // Custom endpoint payload template (for 'custom' provider)
     payloadTemplate?: string;
+    includeImages?: boolean;
 }
 
 export type PromptRole = 'system' | 'assistant' | 'user';
