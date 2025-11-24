@@ -18,10 +18,12 @@ const providerModels: Record<string, string[]> = {
         'gemini-2.5-flash'
     ],
     vertexai: [
+        'gemini-3-pro-preview',
         'gemini-2.5-pro',
         'gemini-2.5-flash'
     ],
     claude: [
+        'claude-opus-4-5-20251101',
         'claude-sonnet-4-5',
         'claude-opus-4-1-20250805',
         'claude-opus-4-20250514',
