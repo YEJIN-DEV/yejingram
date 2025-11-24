@@ -77,7 +77,7 @@ async function handleApiResponse(
                 await sleep(messagePart.delay || 1000);
             }
 
-            const messages = await createMessageFromPart(messagePart, room.id, char);
+            const messages = await createMessageFromPart(messagePart, room.id, char, res.thoughtSignature);
             for (const message of messages) {
                 dispatch(messagesActions.upsertOne(message));
             }
@@ -89,7 +89,7 @@ async function handleApiResponse(
     }
 }
 
-async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Promise<Message[]> {
+async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character, thoughtSignature?: string): Promise<Message[]> {
     let message: Message[] = [];
 
     if (messagePart.content) {
@@ -100,6 +100,7 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
             createdAt: new Date().toISOString(),
             type: 'TEXT',
             content: messagePart.content,
+            thoughtSignature
         });
     }
 
@@ -113,13 +114,14 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
                 createdAt: new Date().toISOString(),
                 type: 'STICKER',
                 sticker: foundSticker,
+                thoughtSignature
             });
         }
     }
 
     if (messagePart.imageGenerationSetting) {
         const imageResponse = await callImageGeneration(messagePart.imageGenerationSetting, char);
-        const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+        const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData;
         if (inlineDataBody) {
             message.push({
                 id: nanoid(),
@@ -132,10 +134,11 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
                     mimeType: inlineDataBody.mimeType,
                     name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
                 },
-                imageGenerationSetting: messagePart.imageGenerationSetting
+                imageGenerationSetting: messagePart.imageGenerationSetting,
+                thoughtSignature: imageResponse.candidates[0].content.parts[0].thoughtSignature
             });
         } else {
-            throw new Error('Failed to generate image:', imageResponse.candidates[0].finishReason ?? '');
+            throw new Error(`Failed to generate image: ${imageResponse.candidates[0].finishReason}`);
         }
     }
 
@@ -170,10 +173,11 @@ async function callApi(
     const { apiProvider } = settings;
     let payload: string | object = '';
 
+    const useThoughtSignature = apiConfig.model.startsWith('gemini-3');
     switch (apiProvider) {
         case 'gemini':
         case 'vertexai':
-            payload = await buildGeminiApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
+            payload = await buildGeminiApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, useThoughtSignature, apiConfig, extraSystemInstruction);
             break;
         case 'claude':
         case 'grok':
@@ -187,7 +191,7 @@ async function callApi(
         case 'custom':
             switch (apiConfig.payloadTemplate) {
                 case 'gemini':
-                    payload = await buildGeminiApiPayload('gemini', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
+                    payload = await buildGeminiApiPayload('gemini', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, useThoughtSignature, apiConfig, extraSystemInstruction);
                     break;
                 case 'anthropic':
                     payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
@@ -279,13 +283,13 @@ async function callApi(
 function parseApiResponse(data: any, settings: SettingsState, messages: Message[]): ChatResponse {
     const apiProvider = settings.apiProvider;
 
-    function processApiMessage(targetData: string): ChatResponse {
+    function processApiMessage(targetData: string, thoughtSignature?: string): ChatResponse {
         const rawResponseText = sanitizeOutputContent(targetData) ?? '';
         if (settings.useStructuredOutput) {
             try {
                 const parsed = llmParser.parse(rawResponseText);
                 parsed.reactionDelay = Math.max(0, parsed?.reactionDelay || 0);
-                return parsed;
+                return { ...parsed, thoughtSignature };
             } catch {
                 // If parsing fails, fallback to plain text
                 console.warn("Failed to parse structured output, falling back to plain text.");
@@ -308,7 +312,7 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
 
     if (apiProvider === 'gemini' || apiProvider === 'vertexai') {
         if (data.candidates && data.candidates.length > 0 && data.candidates[0].content?.parts[0]?.text) {
-            return processApiMessage(data.candidates[0].content?.parts[0]?.text);
+            return processApiMessage(data.candidates[0].content?.parts[0]?.text, data.candidates[0].content?.parts[0]?.thoughtSignature);
         } else {
             throw new Error(data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || 'Unknown reason');
         }

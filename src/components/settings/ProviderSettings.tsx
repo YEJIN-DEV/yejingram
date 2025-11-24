@@ -13,6 +13,7 @@ interface ProviderSettingsProps {
 
 const providerModels: Record<string, string[]> = {
     gemini: [
+        'gemini-3-pro-preview',
         'gemini-2.5-pro',
         'gemini-2.5-flash'
     ],

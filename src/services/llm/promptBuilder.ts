@@ -238,7 +238,7 @@ function buildSystemPrompt(persona?: Persona | null, character?: Character, extr
     return lines.join('\n\n');
 }
 
-function buildGeminiContents(messages: Message[], isProactive: boolean, persona: Persona, character: Character, room: Room, useStructuredOutput?: boolean, useImageResponse?: boolean) {
+function buildGeminiContents(messages: Message[], isProactive: boolean, persona: Persona, character: Character, room: Room, useStructuredOutput?: boolean, useImageResponse?: boolean, useThoughtSignature?: boolean) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
@@ -255,6 +255,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
     ): GeminiContent[] => {
         const result: GeminiContent[] = [];
         const useSpeakerTag = roomLocal?.type !== 'Direct';
+        let lastThoughtSignature: string | undefined;
 
         for (let i = 0; i < msgs.length; i++) {
             const msg = msgs[i];
@@ -265,7 +266,18 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
             const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
 
             const baseText = msg.content ? `${header}${msg.content}` : (header ? header : '');
-            const parts: ({ text: string } | { inline_data: { mime_type: string; data: string } } | { file_data: { file_uri: string } })[] = [{ text: baseText }];
+
+            let thoughtSignatureToSend: string | undefined;
+            if (useThoughtSignature && msg.thoughtSignature) {
+                if (msg.thoughtSignature !== lastThoughtSignature) {
+                    thoughtSignatureToSend = msg.thoughtSignature;
+                }
+                lastThoughtSignature = msg.thoughtSignature;
+            } else {
+                lastThoughtSignature = undefined;
+            }
+
+            const parts: ({ text: string } | { inline_data: { mime_type: string; data: string } } | { file_data: { file_uri: string } } & { thought_signature?: string })[] = [{ text: baseText, thought_signature: thoughtSignatureToSend }];
 
             if (msg.file) {
                 const mimeType = msg.file.mimeType;
@@ -302,7 +314,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
             const next = msgs[i + 1];
             if (msgs[i].type != 'TEXT' && next && next.type === 'TEXT') {
                 if (next.content) {
-                    parts[0] = { text: next.content };
+                    parts[0] = { text: next.content, thought_signature: thoughtSignatureToSend };
                 }
                 i++; // Skip the next message by advancing the loop index one extra time
             }
@@ -359,6 +371,7 @@ export async function buildGeminiApiPayload(
     isProactive: boolean,
     useStructuredOutput: boolean,
     useImageResponse: boolean | undefined,
+    useThoughtSignature: boolean,
     apiConfig: ApiConfig,
     extraSystemInstruction?: string
 ): Promise<GeminiApiPayload> {
@@ -366,7 +379,7 @@ export async function buildGeminiApiPayload(
     let trimmedMessages = [...messages];
 
     const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
-    const contentOnlyPrompt = buildGeminiContents([], isProactive, persona, character, room, useStructuredOutput, useImageResponse);
+    const contentOnlyPrompt = buildGeminiContents([], isProactive, persona, character, room, useStructuredOutput, useImageResponse, useThoughtSignature);
 
     const generationConfig: GeminiGenerationConfig = {
         temperature: selectPrompts(store.getState()).temperature,
@@ -416,7 +429,7 @@ export async function buildGeminiApiPayload(
     console.debug("Total tokens for system prompt only:", tokenCountForPromptOnly);
 
     while (true) {
-        const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput, useImageResponse);
+        const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput, useImageResponse, useThoughtSignature);
 
         const payload: GeminiApiPayload = {
             contents: contents,
@@ -737,7 +750,7 @@ export async function buildOpenAIApiPayload(
             }
         }
 
-        const response_format: OpenAIApiPayload['response_format'] = allowResponseFormat ? (provider !== 'deepseek' ? JSONSchema : {type: 'json_object'}) : undefined;
+        const response_format: OpenAIApiPayload['response_format'] = allowResponseFormat ? (provider !== 'deepseek' ? JSONSchema : { type: 'json_object' }) : undefined;
 
         const payload: OpenAIApiPayload = {
             model: apiConfig.model,

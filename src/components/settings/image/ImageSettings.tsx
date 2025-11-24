@@ -20,6 +20,7 @@ type CheckResult = {
 };
 
 const imageModels: string[] = [
+  'gemini-3-pro-image-preview',
   'gemini-2.5-flash-image-preview',
   'gemini-2.0-flash-preview-image-generation',
   'nai-diffusion-4-5-full',
