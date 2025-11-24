@@ -291,6 +291,8 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
                                 data: base64Data,
                             },
                         });
+                    } else {
+                        parts.push({ text: `[${speaker}: Sent an image]` });
                     }
                 }
             }
@@ -497,6 +499,8 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
                         });
                         content.push({ type: 'text', text: `[${_speaker}: Sent an image]` });
                         role = 'user';
+                    } else {
+                        content.push({ type: 'text', text: `[${_speaker}: Sent an image]` });
                     }
                 }
             }
@@ -644,6 +648,8 @@ async function buildOpenAIContents(messages: Message[], isProactive: boolean, pr
             if (msg.file.mimeType.startsWith('image')) {
                 if (provider !== 'custom' || apiConfig.includeImages) {
                     parts.push({ type: 'image_url', image_url: { url: msg.file.dataUrl } });
+                } else {
+                    parts.push({ type: 'text', text: `[${_speaker}: Sent an image]` });
                 }
             }
         }
