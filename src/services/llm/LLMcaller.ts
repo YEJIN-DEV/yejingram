@@ -46,23 +46,6 @@ async function handleApiResponse(
     setTypingCharacterId: (id: number | null) => void,
     t: (key: string) => string
 ) {
-    // If structured output included a newMemory field, append it to the character
-    if (res && 'newMemory' in res) {
-        const mem = res.newMemory;
-        if (typeof mem === 'string') {
-            const trimmed = mem.trim();
-            if (trimmed.length > 0) {
-                const exists = room.memories?.some(m => m.trim().toLowerCase() === trimmed.toLowerCase());
-                if (!exists) {
-                    dispatch(roomsActions.addRoomMemory({ roomId: room.id, value: trimmed }));
-                    // Toast 알림으로 새로운 메모리 추가를 알림
-                    toast.success(`${t('main.newMemory')}:\n"${trimmed}"`, {
-                        duration: 5000,
-                    });
-                }
-            }
-        }
-    }
     if (res && res.messages && Array.isArray(res.messages) && res.messages.length > 0) {
         if (res.reactionDelay && res.reactionDelay > 10000) {
             console.warn("Capping reaction delay to 10 seconds.");
@@ -84,6 +67,23 @@ async function handleApiResponse(
 
             if (i === res.messages.length - 1) {
                 dispatch({ type: 'messages/writingEnd' });
+            }
+        }
+    }
+
+    if (res && 'newMemory' in res) {
+        const mem = res.newMemory;
+        if (typeof mem === 'string') {
+            const trimmed = mem.trim();
+            if (trimmed.length > 0) {
+                const exists = room.memories?.some(m => m.trim().toLowerCase() === trimmed.toLowerCase());
+                if (!exists) {
+                    dispatch(roomsActions.addRoomMemory({ roomId: room.id, value: trimmed }));
+                    // Toast 알림으로 새로운 메모리 추가를 알림
+                    toast.success(`${t('main.newMemory')}:\n"${trimmed}"`, {
+                        duration: 5000,
+                    });
+                }
             }
         }
     }
