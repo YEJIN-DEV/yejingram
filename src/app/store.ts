@@ -205,6 +205,19 @@ export const migrations = {
         }
 
         return state;
+    },
+    5: (state: any) => {
+        // Add maxRetries field to custom apiConfig
+        state = applyRules(state, {
+            add: [
+                {
+                    path: 'settings.apiConfigs.custom',
+                    keys: ['maxRetries'],
+                    defaults: { maxRetries: settingsInitialApiConfigs.custom.maxRetries }
+                },
+            ],
+        });
+        return state;
     }
 } as MigrationManifest;
 
@@ -212,7 +225,7 @@ export const migrations = {
 export const persistConfig = {
     key: 'yejingram',
     storage: blobStorage as any,
-    version: 4,
+    version: 5,
     whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved'],
     migrate: createMigrate(migrations, { debug: true }),
 };

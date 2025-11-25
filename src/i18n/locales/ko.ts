@@ -354,6 +354,8 @@ const ko = {
                 selectPayloadTemplate: "페이로드 템플릿을 선택하세요",
                 includeImagesLabel: "이미지 포함",
                 includeImagesDescription: "모델 컨텍스트에 이미지를 포함합니다.",
+                maxRetriesLabel: "최대 재시도 횟수",
+                maxRetriesDescription: "API 요청 실패 시 재시도 횟수입니다.",
             },
             openrouter: {
                 modelLabel: "OpenRouter 모델",

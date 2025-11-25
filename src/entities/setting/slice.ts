@@ -14,7 +14,7 @@ export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     grok: { apiKey: '', model: 'grok-4-0709', customModels: [] },
     deepseek: { apiKey: '', model: 'deepseek-chat', customModels: [] },
     openrouter: { apiKey: '', model: '', customModels: [], tokenizer: '', providers: [], providerAllowFallbacks: true },
-    custom: { apiKey: '', baseUrl: '', model: '', customModels: [], tokenizer: '', payloadTemplate: '' },
+    custom: { apiKey: '', baseUrl: '', model: '', customModels: [], tokenizer: '', payloadTemplate: '', maxRetries: 3 },
 };
 
 export const initialSyncSettings: Sync = {

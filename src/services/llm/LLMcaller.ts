@@ -257,27 +257,42 @@ async function callApi(
         };
     }
 
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(payload)
-        });
+    const maxRetries = (apiProvider === 'custom' && apiConfig.maxRetries) ? apiConfig.maxRetries : 1;
+    let lastError: unknown = null;
 
-        const data = await response.json();
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload)
+            });
 
-        if (!response.ok) {
-            console.error("API Error:", data);
-            const errorMessage = (data as any)?.error?.message || `API request failed: ${response.statusText}`;
-            throw new Error(errorMessage);
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error("API Error:", data);
+                const errorMessage = (data as any)?.error?.message || `API request failed: ${response.statusText}`;
+                throw new Error(errorMessage);
+            }
+
+            return parseApiResponse(data, settings, messages);
+
+        } catch (error: unknown) {
+            lastError = error;
+            console.error(`${apiProvider} error occurred while requesting (attempt ${attempt + 1}/${maxRetries}):`, error);
+
+            // If not the last attempt and custom provider, wait before retrying
+            if (attempt < maxRetries - 1 && apiProvider === 'custom') {
+                const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Exponential backoff, max 10s
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+            throw error;
         }
-
-        return parseApiResponse(data, settings, messages);
-
-    } catch (error: unknown) {
-        console.error(`${apiProvider} error occured while requesting:`, error);
-        throw error;
     }
+
+    throw lastError;
 }
 
 function parseApiResponse(data: any, settings: SettingsState, messages: Message[]): ChatResponse {
