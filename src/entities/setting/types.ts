@@ -103,7 +103,31 @@ export interface Sync {
     syncBaseUrl: string;
 }
 
+export interface ProactiveTimeRestriction {
+    enabled: boolean;
+    startHour: number; // 0-23
+    startMinute: number; // 0-59
+    endHour: number; // 0-23
+    endMinute: number; // 0-59
+}
+
+export interface ProactivePeriodicSettings {
+    enabled: boolean;
+    intervalMinutes: number; // 주기 간격 (분)
+}
+
+export interface ProactiveProbabilisticSettings {
+    enabled: boolean;
+    probability: number; // 0-100 (퍼센트)
+    maxTriggersPerDay: number; // 하루 최대 트리거 횟수
+    triggeredCountToday: number; // 오늘 트리거된 횟수
+    lastTriggeredDate: string | null; // YYYY-MM-DD 형식
+}
+
 export interface Proactive {
     proactiveChatEnabled: boolean;
     proactiveServerBaseUrl: string;
+    timeRestriction: ProactiveTimeRestriction;
+    periodicSettings: ProactivePeriodicSettings;
+    probabilisticSettings: ProactiveProbabilisticSettings;
 }

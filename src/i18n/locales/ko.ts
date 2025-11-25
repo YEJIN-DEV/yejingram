@@ -198,6 +198,8 @@ const ko = {
             file: "파일",
             send: "전송",
             proactiveChat: "선톡 요청",
+            proactiveEnabled: "선톡 허용됨",
+            proactiveDisabled: "선톡 허용",
         },
         tooltips: {
             authorNote: "작가의 노트",
@@ -501,6 +503,34 @@ const ko = {
                 failed: "동기화에 실패했습니다. 서버 주소와 네트워크를 확인하세요.",
                 restoreFailed: "복원에 실패했습니다. 서버 주소와 네트워크를 확인하세요.",
                 conflict: "서버에 이미 더 최신 버전이 업로드된 상태입니다.",
+            },
+            proactiveChat: {
+                title: "선톡 설정",
+                description: "캐릭터가 먼저 말을 거는 선톡 기능을 관리합니다.",
+                serverUrl: "선톡 서버 주소",
+                serverUrlPlaceholder: "https://your-proactive-server.example.com",
+                timeRestriction: {
+                    title: "제한 시간대 설정",
+                    description: "특정 시간대에는 선톡을 보내지 않습니다",
+                    startTime: "시작 시간",
+                    endTime: "종료 시간",
+                },
+                periodic: {
+                    title: "주기적 선톡",
+                    description: "설정한 간격마다 선톡을 보냅니다",
+                    intervalLabel: "간격 (분)",
+                },
+                probabilistic: {
+                    title: "확률적 선톡",
+                    description: "설정한 확률로 하루에 최대 N번 선톡을 보냅니다",
+                    maxPerDay: "하루 최대 횟수",
+                    probability: "확률",
+                    low: "낮음",
+                    high: "높음",
+                },
+                subscribe: "구독",
+                unsubscribe: "구독 해제",
+                requiresSync: "자동 동기화 활성화 필요",
             },
             reset: {
                 title: "데이터 삭제",

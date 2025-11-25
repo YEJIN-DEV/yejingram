@@ -26,6 +26,24 @@ export const initialSyncSettings: Sync = {
 export const initialProactiveSettings: Proactive = {
     proactiveChatEnabled: false,
     proactiveServerBaseUrl: '',
+    timeRestriction: {
+        enabled: false,
+        startHour: 23,
+        startMinute: 0,
+        endHour: 7,
+        endMinute: 0,
+    },
+    periodicSettings: {
+        enabled: false,
+        intervalMinutes: 60,
+    },
+    probabilisticSettings: {
+        enabled: false,
+        probability: 30,
+        maxTriggersPerDay: 1,
+        triggeredCountToday: 0,
+        lastTriggeredDate: null,
+    },
 };
 
 

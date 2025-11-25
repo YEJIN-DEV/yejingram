@@ -198,6 +198,8 @@ const en = {
             file: "File",
             send: "Send",
             proactiveChat: "Request message",
+            proactiveEnabled: "Proactive enabled",
+            proactiveDisabled: "Enable proactive",
         },
         roomMemory: {
             placeholder: 'Enter content to remember... (multi-line allowed)',
@@ -502,6 +504,34 @@ const en = {
                 failed: "Sync failed. Please check server address and network.",
                 restoreFailed: "Restore failed. Please check server address and network.",
                 conflict: "A newer version is already uploaded to the server.",
+            },
+            proactiveChat: {
+                title: "Proactive Chat Settings",
+                description: "Manage the proactive chat feature where characters initiate conversations.",
+                serverUrl: "Proactive Server URL",
+                serverUrlPlaceholder: "https://your-proactive-server.example.com",
+                timeRestriction: {
+                    title: "Time Restriction",
+                    description: "Do not send proactive messages during specific times",
+                    startTime: "Start Time",
+                    endTime: "End Time",
+                },
+                periodic: {
+                    title: "Periodic Proactive",
+                    description: "Send proactive messages at set intervals",
+                    intervalLabel: "Interval (minutes)",
+                },
+                probabilistic: {
+                    title: "Probabilistic Proactive",
+                    description: "Send up to N proactive messages per day based on probability",
+                    maxPerDay: "Max per day",
+                    probability: "Probability",
+                    low: "Low",
+                    high: "High",
+                },
+                subscribe: "Subscribe",
+                unsubscribe: "Unsubscribe",
+                requiresSync: "Auto sync required",
             },
             reset: {
                 title: "Delete data",

@@ -17,6 +17,7 @@ import ja from '../../src/i18n/locales/ja.ts';
 import { selectCharacterById } from '../../src/entities/character/selectors.ts';
 import path from 'path';
 import { selectLastSaved } from '../../src/entities/lastSaved/selectors.ts';
+import type { ProactiveTimeRestriction, ProactivePeriodicSettings, ProactiveProbabilisticSettings } from '../../src/entities/setting/types.ts';
 
 const resources = {
     ko: { translation: ko },
@@ -181,6 +182,105 @@ function printMessages(messages: Message[]) {
     }
 }
 
+/**
+ * 현재 시간이 제한 시간대에 해당하는지 확인
+ * 제한 시간대라면 true 반환 (선톡 불가)
+ */
+function isInRestrictedTime(timeRestriction: ProactiveTimeRestriction): boolean {
+    if (!timeRestriction.enabled) return false;
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const startMinutes = timeRestriction.startHour * 60 + timeRestriction.startMinute;
+    const endMinutes = timeRestriction.endHour * 60 + timeRestriction.endMinute;
+
+    // 시작 시간이 종료 시간보다 클 경우 (예: 23:00 ~ 07:00 = 밤 시간대)
+    if (startMinutes > endMinutes) {
+        // 자정을 넘기는 경우
+        return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+    } else {
+        // 자정을 넘기지 않는 경우 (예: 13:00 ~ 15:00)
+        return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+    }
+}
+
+/**
+ * 오늘 날짜를 YYYY-MM-DD 형식으로 반환
+ */
+function getTodayDateString(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+// 클라이언트별 확률적 선톡 카운트 관리 (서버 메모리)
+interface ProbabilisticTriggerState {
+    date: string;
+    count: number;
+}
+const probabilisticTriggerCounts: Map<string, ProbabilisticTriggerState> = new Map();
+
+/**
+ * 확률적 선톡을 트리거할지 결정
+ * 하루에 최대 N번까지 트리거되며, 설정된 확률에 따라 결정
+ * 카운트는 서버 측에서 관리
+ */
+function shouldTriggerProbabilistic(clientId: string, settings: ProactiveProbabilisticSettings): boolean {
+    if (!settings.enabled) {
+        return false;
+    }
+
+    const today = getTodayDateString();
+    let triggerState = probabilisticTriggerCounts.get(clientId);
+
+    // 날짜가 바뀌었거나 처음이면 리셋
+    if (!triggerState || triggerState.date !== today) {
+        triggerState = { date: today, count: 0 };
+        probabilisticTriggerCounts.set(clientId, triggerState);
+    }
+
+    // 오늘 최대 횟수에 도달했다면 더 이상 트리거하지 않음
+    const maxTriggers = settings.maxTriggersPerDay ?? 1;
+    if (triggerState.count >= maxTriggers) {
+        console.log(`[${clientId}] 확률적 선톡: 오늘 최대 횟수(${maxTriggers})에 도달함 (현재: ${triggerState.count})`);
+        return false;
+    }
+
+    // 확률 계산 (0-100 사이의 값)
+    const roll = Math.random() * 100;
+    const shouldTrigger = roll < settings.probability;
+
+    console.log(`[${clientId}] 확률적 선톡 주사위: ${roll.toFixed(2)} vs ${settings.probability}% (오늘 ${triggerState.count}/${maxTriggers}회)`);
+
+    if (shouldTrigger) {
+        triggerState.count++;
+        probabilisticTriggerCounts.set(clientId, triggerState);
+        return true;
+    }
+
+    return false;
+}
+
+// 클라이언트별 마지막 주기적 선톡 시간 기록
+const lastPeriodicTriggerTime: Map<string, number> = new Map();
+
+/**
+ * 주기적 선톡을 트리거할지 결정
+ */
+function shouldTriggerPeriodic(clientId: string, settings: ProactivePeriodicSettings): boolean {
+    if (!settings.enabled) return false;
+
+    const now = Date.now();
+    const lastTrigger = lastPeriodicTriggerTime.get(clientId) ?? 0;
+    const intervalMs = settings.intervalMinutes * 60 * 1000;
+
+    if (now - lastTrigger >= intervalMs) {
+        lastPeriodicTriggerTime.set(clientId, now);
+        return true;
+    }
+
+    return false;
+}
+
 (async () => {
     startSubscriptionApi();
 
@@ -196,52 +296,96 @@ function printMessages(messages: Message[]) {
 
             if (!backupResponse.ok) {
                 console.error("백업 데이터 불러오기 실패:", backupResponse.statusText);
-                return;
+                continue;
             }
 
             const backupPayload = await backupResponse.json();
             await restoreStateFromPayload(backupPayload);
             console.log(`백업 로드 완료`);
             const state = store.getState();
+            const proactiveSettings = state.settings.proactiveSettings;
 
-            if (!state.settings.proactiveSettings.proactiveChatEnabled) {
+            if (!proactiveSettings.proactiveChatEnabled) {
                 console.log("Proactive Chat 기능이 설정에서 활성화되어 있지 않습니다.");
-                return;
+                continue;
+            }
+
+            // 제한 시간대 체크
+            if (proactiveSettings.timeRestriction && isInRestrictedTime(proactiveSettings.timeRestriction)) {
+                console.log(`[${clientId}] 현재 제한 시간대입니다. 선톡을 건너뜁니다.`);
+                continue;
+            }
+
+            // 주기적 선톡 또는 확률적 선톡 중 하나라도 트리거 조건을 만족해야 함
+            let shouldSendProactive = false;
+
+            // 주기적 선톡 체크
+            if (proactiveSettings.periodicSettings?.enabled) {
+                if (shouldTriggerPeriodic(clientId, proactiveSettings.periodicSettings)) {
+                    console.log(`[${clientId}] 주기적 선톡 트리거됨`);
+                    shouldSendProactive = true;
+                }
+            }
+
+            // 확률적 선톡 체크 (하루 N번)
+            if (proactiveSettings.probabilisticSettings?.enabled && !shouldSendProactive) {
+                if (shouldTriggerProbabilistic(clientId, proactiveSettings.probabilisticSettings)) {
+                    console.log(`[${clientId}] 확률적 선톡 트리거됨 (확률: ${proactiveSettings.probabilisticSettings.probability}%)`);
+                    shouldSendProactive = true;
+                }
+            }
+
+            // 둘 다 비활성화되어 있으면 기본적으로 선톡 실행
+            if (!proactiveSettings.periodicSettings?.enabled && !proactiveSettings.probabilisticSettings?.enabled) {
+                shouldSendProactive = true;
+            }
+
+            if (!shouldSendProactive) {
+                console.log(`[${clientId}] 선톡 조건을 만족하지 않음`);
+                continue;
             }
 
             const allRooms = selectAllRooms(state);
             if (!allRooms || allRooms.length === 0) {
                 console.error('방이 하나도 없습니다.');
-                return;
+                continue;
             }
 
-            const randomRoom = allRooms[Math.floor(Math.random() * allRooms.length)]
+            // 선톡 허용된 방만 필터링
+            const proactiveEnabledRooms = allRooms.filter(room => room.proactiveEnabled === true);
+            if (proactiveEnabledRooms.length === 0) {
+                console.log(`[${clientId}] 선톡 허용된 방이 없습니다.`);
+                continue;
+            }
+
+            const randomRoom = proactiveEnabledRooms[Math.floor(Math.random() * proactiveEnabledRooms.length)]
 
             const beforeMessages = selectMessagesByRoomId(store.getState(), randomRoom.id);
             const beforeIds = new Set(beforeMessages.map(m => m.id));
             printMessages(beforeMessages);
 
-            const pendingAdded = new Map<string, Message>();
+            const sentNotificationIds = new Set<string>(); // 알림 보낸 메시지 ID 추적
 
-            store.subscribe(async () => {
+            // store.subscribe는 unsubscribe 함수를 반환함
+            const unsubscribe = store.subscribe(async () => {
                 const allMessages = selectMessagesByRoomId(store.getState(), randomRoom.id);
-                const newlyAdded = allMessages.filter(m => !beforeIds.has(m.id) && !pendingAdded.has(m.id))[0];
-                if (!newlyAdded) return;
+                const newMessages = allMessages.filter(m => !beforeIds.has(m.id) && !sentNotificationIds.has(m.id));
 
-                pendingAdded.set(newlyAdded.id, newlyAdded);
-                beforeIds.add(newlyAdded.id);
+                for (const newlyAdded of newMessages) {
+                    sentNotificationIds.add(newlyAdded.id);
 
-                const characterName = selectCharacterById(state, newlyAdded.authorId).name;
-                printMessages([newlyAdded]);
+                    const characterName = selectCharacterById(state, newlyAdded.authorId)?.name ?? 'Unknown';
+                    printMessages([newlyAdded]);
 
-                webpush.sendNotification(
-                    push,
-                    JSON.stringify({
-                        icon: `${state.settings.proactiveSettings.proactiveServerBaseUrl}/api/push/icon/${newlyAdded.authorId}`,
-                        badge: '/yejingram.png',
-                        body: characterName + ": " + newlyAdded.content,
-                    })
-                )
+                    await webpush.sendNotification(
+                        push,
+                        JSON.stringify({
+                            icon: `${proactiveSettings.proactiveServerBaseUrl}/api/push/icon/${newlyAdded.authorId}`,
+                            badge: '/yejingram.png',
+                            body: characterName + ": " + (newlyAdded.content ?? '[스티커/이미지]'),
+                        })
+                    );
+                }
             });
 
             await SendMessage(
@@ -256,16 +400,18 @@ function printMessages(messages: Message[]) {
                 i18next.t,
                 "proactive"
             );
+            unsubscribe();
 
             console.log("동기화중");
+            const updatedState = store.getState();
 
-            fetch(`${state.settings.syncSettings.syncBaseUrl}/api/sync/${state.settings.syncSettings.syncClientId}`, {
+            fetch(`${updatedState.settings.syncSettings.syncBaseUrl}/api/sync/${updatedState.settings.syncSettings.syncClientId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    lastSaved: selectLastSaved(state),
+                    lastSaved: selectLastSaved(updatedState),
                     backup: buildBackupPayload(),
                 })
             }).then((res) => {
@@ -276,6 +422,7 @@ function printMessages(messages: Message[]) {
                 }
             })
         }
-        await new Promise(resolve => setTimeout(resolve, 6000 * 10));
+        // 체크 주기: 1분
+        await new Promise(resolve => setTimeout(resolve, 60 * 1000));
     }
 })();

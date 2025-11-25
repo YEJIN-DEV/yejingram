@@ -198,6 +198,8 @@ const ja = {
             file: "ファイル",
             send: "送信",
             proactiveChat: "メッセージリクエスト",
+            proactiveEnabled: "先送り許可中",
+            proactiveDisabled: "先送りを許可",
         },
         tooltips: {
             authorNote: "作者ノート",
@@ -501,6 +503,34 @@ const ja = {
                 failed: "同期に失敗しました。サーバーアドレスとネットワークを確認してください。",
                 restoreFailed: "復元に失敗しました。サーバーアドレスとネットワークを確認してください。",
                 conflict: "サーバーに既に新しいバージョンがアップロードされています。",
+            },
+            proactiveChat: {
+                title: "話しかけ設定",
+                description: "キャラクターが先に話しかける機能を管理します。",
+                serverUrl: "話しかけサーバーURL",
+                serverUrlPlaceholder: "https://your-proactive-server.example.com",
+                timeRestriction: {
+                    title: "制限時間帯設定",
+                    description: "特定の時間帯には話しかけを送信しません",
+                    startTime: "開始時間",
+                    endTime: "終了時間",
+                },
+                periodic: {
+                    title: "定期的な話しかけ",
+                    description: "設定した間隔で話しかけを送信します",
+                    intervalLabel: "間隔（分）",
+                },
+                probabilistic: {
+                    title: "確率的な話しかけ",
+                    description: "設定した確率で1日最大N回話しかけを送信します",
+                    maxPerDay: "1日の最大回数",
+                    probability: "確率",
+                    low: "低い",
+                    high: "高い",
+                },
+                subscribe: "購読",
+                unsubscribe: "購読解除",
+                requiresSync: "自動同期の有効化が必要",
             },
             reset: {
                 title: "データを削除",

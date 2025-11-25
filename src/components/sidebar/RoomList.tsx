@@ -1,4 +1,4 @@
-import { Trash2, Copy } from 'lucide-react';
+import { Trash2, Copy, BellRing } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { useCallback, memo } from 'react';
@@ -66,9 +66,19 @@ function RoomList({
             >
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                        <h4 className={`text-sm font-medium truncate ${isSelected ? 'text-[var(--color-text-roomlist-title)]' : 'text-[var(--color-text-primary)]'}`}>
-                            {room.name}
-                        </h4>
+                        <div className="flex items-center gap-1.5">
+                            <h4 className={`text-sm font-medium truncate ${isSelected ? 'text-[var(--color-text-roomlist-title)]' : 'text-[var(--color-text-primary)]'}`}>
+                                {room.name}
+                            </h4>
+                            {room.proactiveEnabled && (
+                                <div title="선톡 허용됨">
+                                    <BellRing
+                                        className="w-3.5 h-3.5 text-[var(--color-button-primary)] flex-shrink-0"
+                                    />
+                                </div>
+
+                            )}
+                        </div>
                         <div className="flex items-center space-x-2 ml-2">
                             {lastMessage?.createdAt && (
                                 <span className="text-xs text-[var(--color-text-secondary)] flex-shrink-0">

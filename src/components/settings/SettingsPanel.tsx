@@ -356,14 +356,14 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                 {/* 선톡 설정 섹션 (구독 / 구독 해제 토글 버튼 + 서버 주소) */}
                                 <div className="space-y-3 pt-4 border-t border-[var(--color-border)]">
                                     <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)]">
-                                        <BellRing className="w-4 h-4 mr-2" /> 선톡 설정
+                                        <BellRing className="w-4 h-4 mr-2" /> {t('settings.others.proactiveChat.title')}
                                     </label>
                                     <p className="text-xs text-[var(--color-text-secondary)]">
-                                        캐릭터가 먼저 말을 거는 선톡 기능을 관리합니다.
+                                        {t('settings.others.proactiveChat.description')}
                                     </p>
                                     <div className="space-y-2">
                                         <div className="space-y-1">
-                                            <label className="text-xs text-[var(--color-text-secondary)]">선톡 서버 주소</label>
+                                            <label className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.proactiveChat.serverUrl')}</label>
                                             <input
                                                 type="text"
                                                 value={localSettings.proactiveSettings.proactiveServerBaseUrl}
@@ -375,10 +375,230 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                     },
                                                 }))}
                                                 className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm"
-                                                placeholder="https://your-proactive-server.example.com"
+                                                placeholder={t('settings.others.proactiveChat.serverUrlPlaceholder')}
                                             />
                                         </div>
                                     </div>
+
+                                    {/* 제한 시간대 설정 */}
+                                    <div className="space-y-2 p-3 bg-[var(--color-bg-input-secondary)] rounded-lg">
+                                        <Toggle
+                                            id="proactive-time-restriction-toggle"
+                                            label={t('settings.others.proactiveChat.timeRestriction.title')}
+                                            description={t('settings.others.proactiveChat.timeRestriction.description')}
+                                            checked={!!localSettings.proactiveSettings.timeRestriction?.enabled}
+                                            onChange={(checked) => setLocalSettings(prev => ({
+                                                ...prev,
+                                                proactiveSettings: {
+                                                    ...prev.proactiveSettings,
+                                                    timeRestriction: {
+                                                        ...prev.proactiveSettings.timeRestriction,
+                                                        enabled: checked,
+                                                    },
+                                                },
+                                            }))}
+                                        />
+                                        {localSettings.proactiveSettings.timeRestriction?.enabled && (
+                                            <div className="grid grid-cols-2 gap-3 mt-2">
+                                                <div className="space-y-1">
+                                                    <label className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.proactiveChat.timeRestriction.startTime')}</label>
+                                                    <div className="flex gap-1">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="23"
+                                                            value={localSettings.proactiveSettings.timeRestriction?.startHour ?? 23}
+                                                            onChange={e => setLocalSettings(prev => ({
+                                                                ...prev,
+                                                                proactiveSettings: {
+                                                                    ...prev.proactiveSettings,
+                                                                    timeRestriction: {
+                                                                        ...prev.proactiveSettings.timeRestriction,
+                                                                        startHour: parseInt(e.target.value) || 0,
+                                                                    },
+                                                                },
+                                                            }))}
+                                                            className="w-full px-2 py-1 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm text-center"
+                                                        />
+                                                        <span className="text-[var(--color-text-secondary)] self-center">:</span>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="59"
+                                                            value={localSettings.proactiveSettings.timeRestriction?.startMinute ?? 0}
+                                                            onChange={e => setLocalSettings(prev => ({
+                                                                ...prev,
+                                                                proactiveSettings: {
+                                                                    ...prev.proactiveSettings,
+                                                                    timeRestriction: {
+                                                                        ...prev.proactiveSettings.timeRestriction,
+                                                                        startMinute: parseInt(e.target.value) || 0,
+                                                                    },
+                                                                },
+                                                            }))}
+                                                            className="w-full px-2 py-1 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm text-center"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.proactiveChat.timeRestriction.endTime')}</label>
+                                                    <div className="flex gap-1">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="23"
+                                                            value={localSettings.proactiveSettings.timeRestriction?.endHour ?? 7}
+                                                            onChange={e => setLocalSettings(prev => ({
+                                                                ...prev,
+                                                                proactiveSettings: {
+                                                                    ...prev.proactiveSettings,
+                                                                    timeRestriction: {
+                                                                        ...prev.proactiveSettings.timeRestriction,
+                                                                        endHour: parseInt(e.target.value) || 0,
+                                                                    },
+                                                                },
+                                                            }))}
+                                                            className="w-full px-2 py-1 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm text-center"
+                                                        />
+                                                        <span className="text-[var(--color-text-secondary)] self-center">:</span>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="59"
+                                                            value={localSettings.proactiveSettings.timeRestriction?.endMinute ?? 0}
+                                                            onChange={e => setLocalSettings(prev => ({
+                                                                ...prev,
+                                                                proactiveSettings: {
+                                                                    ...prev.proactiveSettings,
+                                                                    timeRestriction: {
+                                                                        ...prev.proactiveSettings.timeRestriction,
+                                                                        endMinute: parseInt(e.target.value) || 0,
+                                                                    },
+                                                                },
+                                                            }))}
+                                                            className="w-full px-2 py-1 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm text-center"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* 주기적 선톡 설정 */}
+                                    <div className="space-y-2 p-3 bg-[var(--color-bg-input-secondary)] rounded-lg">
+                                        <Toggle
+                                            id="proactive-periodic-toggle"
+                                            label={t('settings.others.proactiveChat.periodic.title')}
+                                            description={t('settings.others.proactiveChat.periodic.description')}
+                                            checked={!!localSettings.proactiveSettings.periodicSettings?.enabled}
+                                            onChange={(checked) => setLocalSettings(prev => ({
+                                                ...prev,
+                                                proactiveSettings: {
+                                                    ...prev.proactiveSettings,
+                                                    periodicSettings: {
+                                                        ...prev.proactiveSettings.periodicSettings,
+                                                        enabled: checked,
+                                                    },
+                                                },
+                                            }))}
+                                        />
+                                        {localSettings.proactiveSettings.periodicSettings?.enabled && (
+                                            <div className="space-y-1 mt-2">
+                                                <label className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.proactiveChat.periodic.intervalLabel')}</label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="1440"
+                                                    value={localSettings.proactiveSettings.periodicSettings?.intervalMinutes ?? 60}
+                                                    onChange={e => setLocalSettings(prev => ({
+                                                        ...prev,
+                                                        proactiveSettings: {
+                                                            ...prev.proactiveSettings,
+                                                            periodicSettings: {
+                                                                ...prev.proactiveSettings.periodicSettings,
+                                                                intervalMinutes: parseInt(e.target.value) || 60,
+                                                            },
+                                                        },
+                                                    }))}
+                                                    className="w-full px-3 py-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* 확률적 선톡 설정 (하루 N번) */}
+                                    <div className="space-y-2 p-3 bg-[var(--color-bg-input-secondary)] rounded-lg">
+                                        <Toggle
+                                            id="proactive-probabilistic-toggle"
+                                            label={t('settings.others.proactiveChat.probabilistic.title')}
+                                            description={t('settings.others.proactiveChat.probabilistic.description')}
+                                            checked={!!localSettings.proactiveSettings.probabilisticSettings?.enabled}
+                                            onChange={(checked) => setLocalSettings(prev => ({
+                                                ...prev,
+                                                proactiveSettings: {
+                                                    ...prev.proactiveSettings,
+                                                    probabilisticSettings: {
+                                                        ...prev.proactiveSettings.probabilisticSettings,
+                                                        enabled: checked,
+                                                    },
+                                                },
+                                            }))}
+                                        />
+                                        {localSettings.proactiveSettings.probabilisticSettings?.enabled && (
+                                            <div className="space-y-3 mt-2">
+                                                <div className="space-y-1">
+                                                    <label className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.proactiveChat.probabilistic.maxPerDay')}</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max="100"
+                                                        value={localSettings.proactiveSettings.probabilisticSettings?.maxTriggersPerDay ?? 1}
+                                                        onChange={e => setLocalSettings(prev => ({
+                                                            ...prev,
+                                                            proactiveSettings: {
+                                                                ...prev.proactiveSettings,
+                                                                probabilisticSettings: {
+                                                                    ...prev.proactiveSettings.probabilisticSettings,
+                                                                    maxTriggersPerDay: parseInt(e.target.value) || 1,
+                                                                },
+                                                            },
+                                                        }))}
+                                                        className="w-full px-3 py-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+                                                        <span>{t('settings.others.proactiveChat.probabilistic.probability')}</span>
+                                                        <span className="text-[var(--color-button-primary)] font-semibold">
+                                                            {localSettings.proactiveSettings.probabilisticSettings?.probability ?? 30}%
+                                                        </span>
+                                                    </label>
+                                                    <input
+                                                        type="range"
+                                                        min="1"
+                                                        max="100"
+                                                        value={localSettings.proactiveSettings.probabilisticSettings?.probability ?? 30}
+                                                        onChange={e => setLocalSettings(prev => ({
+                                                            ...prev,
+                                                            proactiveSettings: {
+                                                                ...prev.proactiveSettings,
+                                                                probabilisticSettings: {
+                                                                    ...prev.proactiveSettings.probabilisticSettings,
+                                                                    probability: parseInt(e.target.value) || 30,
+                                                                },
+                                                            },
+                                                        }))}
+                                                        className="w-full accent-[var(--color-button-primary)]"
+                                                    />
+                                                    <div className="flex justify-between text-xs text-[var(--color-text-secondary)]">
+                                                        <span>{t('settings.others.proactiveChat.probabilistic.low')}</span>
+                                                        <span>{t('settings.others.proactiveChat.probabilistic.high')}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     <button
                                         type="button"
                                         className={`w-full py-2 px-4 rounded-lg text-sm flex items-center justify-center gap-2 border transition-colors
@@ -406,17 +626,17 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             <>
                                                 {localSettings.proactiveSettings.proactiveChatEnabled ? (
                                                     <>
-                                                        <BellOff className="w-4 h-4" /> 구독 해제
+                                                        <BellOff className="w-4 h-4" /> {t('settings.others.proactiveChat.unsubscribe')}
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <BellRing className="w-4 h-4" /> 구독
+                                                        <BellRing className="w-4 h-4" /> {t('settings.others.proactiveChat.subscribe')}
                                                     </>
                                                 )}
                                             </>
                                         ) : (
                                             <>
-                                                <BellOff className="w-4 h-4" /> 자동 동기화 활성화 필요
+                                                <BellOff className="w-4 h-4" /> {t('settings.others.proactiveChat.requiresSync')}
                                             </>
                                         )}
                                     </button>

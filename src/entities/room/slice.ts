@@ -147,6 +147,13 @@ const roomsSlice = createSlice({
                 const newRoom = { ...room, id: action.payload.newId };
                 roomsAdapter.upsertOne(state, newRoom);
             }
+        },
+        toggleProactive: (state, action: PayloadAction<{ roomId: string; enabled: boolean }>) => {
+            const { roomId, enabled } = action.payload;
+            const room = state.entities[roomId];
+            if (room) {
+                room.proactiveEnabled = enabled;
+            }
         }
     }
 })
