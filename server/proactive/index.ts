@@ -388,19 +388,24 @@ function shouldTriggerPeriodic(clientId: string, settings: ProactivePeriodicSett
                 }
             });
 
-            await SendMessage(
-                randomRoom,
-                (id) => {
-                    if (id) {
-                        console.log("Message Generating... id:", id);
-                    } else {
-                        console.log("Message generation completed.");
-                    }
-                },
-                i18next.t,
-                "proactive"
-            );
-            unsubscribe();
+            try {
+                await SendMessage(
+                    randomRoom,
+                    (id) => {
+                        if (id) {
+                            console.log("Message Generating... id:", id);
+                        } else {
+                            console.log("Message generation completed.");
+                        }
+                    },
+                    i18next.t,
+                    "proactive"
+                );
+            } catch (err) {
+                console.error("선톡 메시지 전송 중 오류 발생:", err);
+            } finally {
+                unsubscribe();
+            }
 
             console.log("동기화중");
             const updatedState = store.getState();
