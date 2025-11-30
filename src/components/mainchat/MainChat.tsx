@@ -26,6 +26,7 @@ import { renderFile } from './FilePreview';
 import { useTranslation } from 'react-i18next';
 import type { Character } from '../../entities/character/types';
 import type { Lore } from '../../entities/lorebook/types';
+import { type VirtuosoHandle } from 'react-virtuoso';
 
 interface MainChatProps {
   room: Room | null;
@@ -36,7 +37,7 @@ interface MainChatProps {
 }
 
 function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCharacterPanel, onToggleGroupchatSettings }: MainChatProps) {
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<VirtuosoHandle>(null);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [typingCharacterId, setTypingCharacterId] = useState<number | null>(null);
   const [showStickerPanel, setShowStickerPanel] = useState(false);
@@ -73,33 +74,24 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
   const settings = useSelector(selectAllSettings);
 
   useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (container) {
-      // DOM 업데이트 후 스크롤이 정확하게 되도록 setTimeout 사용
-      setTimeout(() => {
-        scrollToBottom(container);
-      }, 0);
-    }
+    // DOM 업데이트 후 스크롤이 정확하게 되도록 setTimeout 사용
+    setTimeout(() => {
+      scrollToBottom();
+    }, 0);
   }, [room, messages]);
 
-  const scrollToBottom = (container: HTMLDivElement | null) => {
-    // rAF보다 직접 할당이 모바일에서 더 안정적일 때가 많습니다
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
+  const scrollToBottom = () => {
+    messagesContainerRef.current?.scrollToIndex({ index: messages.length - 1, align: 'end' });
   };
 
 
   const handleInputFocus = () => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
     // 모바일 키보드가 열리면 visualViewport가 resize됩니다 (특히 iOS)
     if (typeof window !== 'undefined' && 'visualViewport' in window) {
       const vv = window.visualViewport!;
       const onResize = () => {
         // 키보드가 완전히 열린 뒤 한 번 더 스크롤
-        scrollToBottom(container);
+        scrollToBottom();
         vv.removeEventListener('resize', onResize);
       };
       vv.addEventListener('resize', onResize, { once: true });
@@ -389,8 +381,9 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
         />
 
         {/* Messages Container*/}
-        <div id="messages-container" className="flex-1 overflow-y-auto w-full bg-[var(--color-bg-main)]" ref={messagesContainerRef}>
+        <div id="messages-container" className="flex-1 w-full bg-[var(--color-bg-main)]">
           <MessageList
+            ref={messagesContainerRef}
             messages={messages}
             room={room}
             isWaitingForResponse={isWaitingForResponse}
@@ -399,7 +392,6 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
             setTypingCharacterId={setTypingCharacterId}
             setIsWaitingForResponse={setIsWaitingForResponse}
           />
-          <div id="messages-end-ref"></div>
         </div>
 
         {/* Input Area*/}
