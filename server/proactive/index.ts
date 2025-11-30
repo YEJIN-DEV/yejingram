@@ -292,144 +292,150 @@ function shouldTriggerPeriodic(clientId: string, settings: ProactivePeriodicSett
         const subscription = await readSubscriptions();
 
         for (const [clientId, push] of Object.entries(subscription)) {
-            console.log(i18next.t('proactiveServer.restoreStart'));
-
-            const backupResponse = await fetch(`${process.env.SYNC_BASE_URL}/api/sync/${clientId}`, {
-                method: 'GET',
-            });
-
-            if (!backupResponse.ok) {
-                console.error(i18next.t('proactiveServer.restoreFailed'), backupResponse.statusText);
-                continue;
-            }
-
-            const backupPayload = await backupResponse.json();
-            await restoreStateFromPayload(backupPayload);
-            console.log(i18next.t('proactiveServer.restoreComplete'));
-            const state = store.getState();
-            const proactiveSettings = state.settings.proactiveSettings;
-
-            if (!proactiveSettings.proactiveChatEnabled) {
-                console.log(i18next.t('proactiveServer.featureDisabled'));
-                continue;
-            }
-
-            // 제한 시간대 체크
-            if (proactiveSettings.timeRestriction && isInRestrictedTime(proactiveSettings.timeRestriction)) {
-                console.log(`[${clientId}] ${i18next.t('proactiveServer.restrictedTime')}`);
-                continue;
-            }
-
-            // 주기적 선톡 또는 확률적 선톡 중 하나라도 트리거 조건을 만족해야 함
-            let shouldSendProactive = false;
-
-            // 주기적 선톡 체크
-            if (proactiveSettings.periodicSettings?.enabled) {
-                if (shouldTriggerPeriodic(clientId, proactiveSettings.periodicSettings)) {
-                    console.log(`[${clientId}] ${i18next.t('proactiveServer.periodicTriggered')}`);
-                    shouldSendProactive = true;
-                }
-            }
-
-            // 확률적 선톡 체크 (하루 N번)
-            if (proactiveSettings.probabilisticSettings?.enabled && !shouldSendProactive) {
-                if (shouldTriggerProbabilistic(clientId, proactiveSettings.probabilisticSettings)) {
-                    console.log(`[${clientId}] ${i18next.t('proactiveServer.probabilisticTriggered', { probability: proactiveSettings.probabilisticSettings.probability })}`);
-                    shouldSendProactive = true;
-                }
-            }
-
-            // 둘 다 비활성화되어 있으면 기본적으로 선톡 실행
-            if (!proactiveSettings.periodicSettings?.enabled && !proactiveSettings.probabilisticSettings?.enabled) {
-                shouldSendProactive = true;
-            }
-
-            if (!shouldSendProactive) {
-                console.log(`[${clientId}] ${i18next.t('proactiveServer.conditionNotMet')}`);
-                continue;
-            }
-
-            const allRooms = selectAllRooms(state);
-            if (!allRooms || allRooms.length === 0) {
-                console.error(i18next.t('proactiveServer.noRooms'));
-                continue;
-            }
-
-            // 선톡 허용된 방만 필터링
-            const proactiveEnabledRooms = allRooms.filter(room => room.proactiveEnabled === true);
-            if (proactiveEnabledRooms.length === 0) {
-                console.log(`[${clientId}] ${i18next.t('proactiveServer.noProactiveRooms')}`);
-                continue;
-            }
-
-            const randomRoom = proactiveEnabledRooms[Math.floor(Math.random() * proactiveEnabledRooms.length)];
-
-            const beforeMessages = selectMessagesByRoomId(store.getState(), randomRoom.id);
-            const beforeIds = new Set(beforeMessages.map(m => m.id));
-            printMessages(beforeMessages);
-
-            const sentNotificationIds = new Set<string>(); // 알림 보낸 메시지 ID 추적
-
-            // store.subscribe는 unsubscribe 함수를 반환함
-            const unsubscribe = store.subscribe(async () => {
-                const allMessages = selectMessagesByRoomId(store.getState(), randomRoom.id);
-                const newMessages = allMessages.filter(m => !beforeIds.has(m.id) && !sentNotificationIds.has(m.id));
-
-                for (const newlyAdded of newMessages) {
-                    sentNotificationIds.add(newlyAdded.id);
-
-                    const characterName = selectCharacterById(state, newlyAdded.authorId)?.name ?? 'Unknown';
-                    printMessages([newlyAdded]);
-
-                    await webpush.sendNotification(
-                        push,
-                        JSON.stringify({
-                            icon: `${proactiveSettings.proactiveServerBaseUrl}/api/push/icon/${newlyAdded.authorId}`,
-                            badge: '/yejingram.png',
-                            body: characterName + ": " + (newlyAdded.content ?? i18next.t('proactiveServer.stickerOrImage')),
-                        })
-                    );
-                }
-            });
-
             try {
-                await SendMessage(
-                    randomRoom,
-                    (id) => {
-                        if (id) {
-                            console.log(i18next.t('proactiveServer.messageGenerating'), id);
-                        } else {
-                            console.log(i18next.t('proactiveServer.messageComplete'));
-                        }
-                    },
-                    i18next.t,
-                    "proactive"
-                );
-            } catch (err) {
-                console.error(i18next.t('proactiveServer.sendError'), err);
-            } finally {
-                unsubscribe();
-            }
+                console.log(`[${clientId}] ${i18next.t('proactiveServer.restoreStart')}`);
 
-            console.log(i18next.t('proactiveServer.syncing'));
-            const updatedState = store.getState();
+                const backupResponse = await fetch(`${process.env.SYNC_BASE_URL}/api/sync/${clientId}`, {
+                    method: 'GET',
+                });
 
-            fetch(`${updatedState.settings.syncSettings.syncBaseUrl}/api/sync/${updatedState.settings.syncSettings.syncClientId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    lastSaved: selectLastSaved(updatedState),
-                    backup: buildBackupPayload(),
-                })
-            }).then((res) => {
-                if (res.ok) {
-                    console.log(i18next.t('proactiveServer.syncComplete'));
-                } else {
-                    console.error(i18next.t('proactiveServer.syncFailed'), res.statusText);
+                if (!backupResponse.ok) {
+                    console.error(`[${clientId}] ${i18next.t('proactiveServer.restoreFailed')}`, backupResponse.statusText);
+                    continue;
                 }
-            });
+
+                const backupPayload = await backupResponse.json();
+                await restoreStateFromPayload(backupPayload);
+                console.log(i18next.t('proactiveServer.restoreComplete'));
+                const state = store.getState();
+                const proactiveSettings = state.settings.proactiveSettings;
+
+                if (!proactiveSettings.proactiveChatEnabled) {
+                    console.log(i18next.t('proactiveServer.featureDisabled'));
+                    continue;
+                }
+
+                // 제한 시간대 체크
+                if (proactiveSettings.timeRestriction && isInRestrictedTime(proactiveSettings.timeRestriction)) {
+                    console.log(`[${clientId}] ${i18next.t('proactiveServer.restrictedTime')}`);
+                    continue;
+                }
+
+                // 주기적 선톡 또는 확률적 선톡 중 하나라도 트리거 조건을 만족해야 함
+                let shouldSendProactive = false;
+
+                // 주기적 선톡 체크
+                if (proactiveSettings.periodicSettings?.enabled) {
+                    if (shouldTriggerPeriodic(clientId, proactiveSettings.periodicSettings)) {
+                        console.log(`[${clientId}] ${i18next.t('proactiveServer.periodicTriggered')}`);
+                        shouldSendProactive = true;
+                    }
+                }
+
+                // 확률적 선톡 체크 (하루 N번)
+                if (proactiveSettings.probabilisticSettings?.enabled && !shouldSendProactive) {
+                    if (shouldTriggerProbabilistic(clientId, proactiveSettings.probabilisticSettings)) {
+                        console.log(`[${clientId}] ${i18next.t('proactiveServer.probabilisticTriggered', { probability: proactiveSettings.probabilisticSettings.probability })}`);
+                        shouldSendProactive = true;
+                    }
+                }
+
+                // 둘 다 비활성화되어 있으면 기본적으로 선톡 실행
+                if (!proactiveSettings.periodicSettings?.enabled && !proactiveSettings.probabilisticSettings?.enabled) {
+                    shouldSendProactive = true;
+                }
+
+                if (!shouldSendProactive) {
+                    console.log(`[${clientId}] ${i18next.t('proactiveServer.conditionNotMet')}`);
+                    continue;
+                }
+
+                const allRooms = selectAllRooms(state);
+                if (!allRooms || allRooms.length === 0) {
+                    console.error(i18next.t('proactiveServer.noRooms'));
+                    continue;
+                }
+
+                // 선톡 허용된 방만 필터링
+                const proactiveEnabledRooms = allRooms.filter(room => room.proactiveEnabled === true);
+                if (proactiveEnabledRooms.length === 0) {
+                    console.log(`[${clientId}] ${i18next.t('proactiveServer.noProactiveRooms')}`);
+                    continue;
+                }
+
+                const randomRoom = proactiveEnabledRooms[Math.floor(Math.random() * proactiveEnabledRooms.length)];
+
+                const beforeMessages = selectMessagesByRoomId(store.getState(), randomRoom.id);
+                const beforeIds = new Set(beforeMessages.map(m => m.id));
+                printMessages(beforeMessages);
+
+                const sentNotificationIds = new Set<string>(); // 알림 보낸 메시지 ID 추적
+
+                // store.subscribe는 unsubscribe 함수를 반환함
+                const unsubscribe = store.subscribe(async () => {
+                    const allMessages = selectMessagesByRoomId(store.getState(), randomRoom.id);
+                    const newMessages = allMessages.filter(m => !beforeIds.has(m.id) && !sentNotificationIds.has(m.id));
+
+                    for (const newlyAdded of newMessages) {
+                        sentNotificationIds.add(newlyAdded.id);
+
+                        const characterName = selectCharacterById(state, newlyAdded.authorId)?.name ?? 'Unknown';
+                        printMessages([newlyAdded]);
+
+                        await webpush.sendNotification(
+                            push,
+                            JSON.stringify({
+                                icon: `${proactiveSettings.proactiveServerBaseUrl}/api/push/icon/${newlyAdded.authorId}`,
+                                badge: '/yejingram.png',
+                                body: characterName + ": " + (newlyAdded.content ?? i18next.t('proactiveServer.stickerOrImage')),
+                            })
+                        );
+                    }
+                });
+
+                try {
+                    await SendMessage(
+                        randomRoom,
+                        (id) => {
+                            if (id) {
+                                console.log(i18next.t('proactiveServer.messageGenerating'), id);
+                            } else {
+                                console.log(i18next.t('proactiveServer.messageComplete'));
+                            }
+                        },
+                        i18next.t,
+                        "proactive"
+                    );
+                } catch (err) {
+                    console.error(i18next.t('proactiveServer.sendError'), err);
+                } finally {
+                    unsubscribe();
+                }
+
+                console.log(i18next.t('proactiveServer.syncing'));
+                const updatedState = store.getState();
+
+                fetch(`${updatedState.settings.syncSettings.syncBaseUrl}/api/sync/${updatedState.settings.syncSettings.syncClientId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lastSaved: selectLastSaved(updatedState),
+                        backup: buildBackupPayload(),
+                    })
+                }).then((res) => {
+                    if (res.ok) {
+                        console.log(`[${clientId}] ${i18next.t('proactiveServer.syncComplete')}`);
+                    } else {
+                        console.error(`[${clientId}] ${i18next.t('proactiveServer.syncFailed')}`, res.statusText);
+                    }
+                }).catch((err) => {
+                    console.error(`[${clientId}] ${i18next.t('proactiveServer.syncFailed')}`, err);
+                });
+            } catch (err) {
+                console.error(`[${clientId}] Unhandled error during proactive processing:`, err);
+            }
         }
         // 체크 주기: 1분
         await new Promise(resolve => setTimeout(resolve, 60 * 1000));
