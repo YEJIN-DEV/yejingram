@@ -92,12 +92,12 @@ Usage:
     node dist/headless/index.js [options]
 
 Options:
-    --printCharacters, -c            모든 캐릭터와 해당 방 요약 출력
-    --printRoomInfo <characterId>    특정 캐릭터가 속한 방 정보 출력 (숫자)
-    --room <roomId>, -r <roomId>     메시지를 보낼 방 ID 지정
-    --text <message>, -t <message>   전송 전 추가할 텍스트 메시지 지정
-    --file <path>, -f <path>         복원할 백업 JSON 경로 (기본: yejingram-backup-1762960265234.json)
-    --help, -h                       도움말 표시 후 종료
+    --printCharacters, -c            Print all characters and their room summaries
+    --printRoomInfo <characterId>    Print room info for a specific character (number)
+    --room <roomId>, -r <roomId>     Specify room ID to send message to
+    --text <message>, -t <message>   Specify text message to add before sending
+    --file <path>, -f <path>         Backup JSON path to restore (default: yejingram-backup-1762960265234.json)
+    --help, -h                       Show help and exit
 
 Examples:
     tsx headless/index.ts -f backup.json --printCharacters
@@ -106,20 +106,20 @@ Examples:
     tsx headless/index.ts -f backup.json -c
 
 Note:
-    --room 과 --text 를 함께 제공하면 해당 방에 메시지를 추가하고 응답 생성을 요청합니다.`.trim();
+    When both --room and --text are provided, a message will be added to the room and a response will be generated.`.trim();
         console.log(usage);
         return;
     }
 
-    console.log("백업 복원 시작");
+    console.log("Starting backup restoration");
     const backupFile = argv['--file'];
     if (backupFile) {
         try {
             const raw = await fs.readFile(backupFile, 'utf-8');
             await restoreStateFromPayload(JSON.parse(raw));
-            console.log(`백업 로드 완료: ${backupFile}`);
+            console.log(`Backup loaded: ${backupFile}`);
         } catch (e: any) {
-            console.error(`백업 파일 읽기 실패: ${backupFile}\n`, e?.message ?? e);
+            console.error(`Failed to read backup file: ${backupFile}\n`, e?.message ?? e);
             return;
         }
 
@@ -128,7 +128,7 @@ Note:
             return;
         }
     } else {
-        console.error('백업 파일 경로를 제공해주세요. --file <path> 옵션을 사용하세요.');
+        console.error('Please provide a backup file path. Use --file <path> option.');
         return;
     }
 
@@ -185,8 +185,8 @@ Note:
         const added = afterMessages.filter(m => !beforeIds.has(m.id));
         printMessages(added);
 
-        console.log("백업 저장중");
+        console.log("Saving backup");
         const payload = buildBackupPayload();
-        await fs.writeFile(backupFile, JSON.stringify(payload, null, 2))
+        await fs.writeFile(backupFile, JSON.stringify(payload, null, 2));
     }
 })();

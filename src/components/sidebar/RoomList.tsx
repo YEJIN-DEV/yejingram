@@ -71,7 +71,7 @@ function RoomList({
                                 {room.name}
                             </h4>
                             {room.proactiveEnabled && (
-                                <div title="선톡 허용됨">
+                                <div title={t('main.roomlist.proactiveEnabled')}>
                                     <BellRing
                                         className="w-3.5 h-3.5 text-[var(--color-button-primary)] flex-shrink-0"
                                     />

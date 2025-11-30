@@ -25,5 +25,5 @@ export interface Room {
     authorNote?: string
     memories?: string[]
     lorebook?: Lore[]
-    proactiveEnabled?: boolean // 선톡 허용 여부
+    proactiveEnabled?: boolean // Whether proactive chat is enabled for this room
 }

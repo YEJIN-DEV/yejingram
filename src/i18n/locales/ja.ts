@@ -29,6 +29,28 @@ const ja = {
         antiEchoFallback: "それは興味深いポイントですね。あなたはどう思いますか？",
     },
 
+    proactiveServer: {
+        restoreStart: "バックアップ復元開始",
+        restoreFailed: "バックアップデータの読み込みに失敗:",
+        restoreComplete: "バックアップ読み込み完了",
+        featureDisabled: "話しかけ機能が設定で有効になっていません。",
+        restrictedTime: "現在は制限時間帯です。話しかけをスキップします。",
+        periodicTriggered: "定期的な話しかけがトリガーされました",
+        probabilisticTriggered: "確率的な話しかけがトリガーされました (確率: {{probability}}%)",
+        conditionNotMet: "話しかけ条件を満たしていません",
+        noRooms: "ルームがありません。",
+        noProactiveRooms: "話しかけが許可されたルームがありません。",
+        messageGenerating: "メッセージ生成中... id:",
+        messageComplete: "メッセージ生成が完了しました。",
+        sendError: "話しかけメッセージの送信中にエラーが発生:",
+        syncing: "同期中",
+        syncComplete: "同期完了",
+        syncFailed: "同期失敗:",
+        probabilisticMaxReached: "確率的話しかけ: 本日の最大回数({{max}})に達しました (現在: {{current}})",
+        probabilisticRoll: "確率的話しかけの判定: {{roll}} vs {{probability}}% (本日 {{current}}/{{max}}回)",
+        stickerOrImage: "[ステッカー/画像]",
+    },
+
     sidebar: {
         tooltipClose: "閉じる",
         tooltipSettings: "設定",

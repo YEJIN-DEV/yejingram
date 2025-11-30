@@ -4,7 +4,7 @@ import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import sharp from 'sharp';
 import { store } from '../../src/app/store';
-import { selectAllRooms, selectRoomById } from '../../src/entities/room/selectors';
+import { selectAllRooms } from '../../src/entities/room/selectors';
 import { selectMessagesByRoomId } from '../../src/entities/message/selectors';
 import type { Message } from '../../src/entities/message/types';
 import { buildBackupPayload, restoreStateFromPayload } from '../../src/utils/backup';
@@ -34,10 +34,16 @@ i18next
         interpolation: { escapeValue: false },
     });
 
+const pushPublicKey = process.env.push_public_key;
+const pushPrivateKey = process.env.push_private_key;
+if (!pushPublicKey || !pushPrivateKey) {
+    throw new Error('Missing required environment variables: push_public_key and push_private_key');
+}
+
 webpush.setVapidDetails(
     'https://github.com/YEJIN-DEV/yejingram',
-    process.env.push_public_key!,
-    process.env.push_private_key!
+    pushPublicKey,
+    pushPrivateKey
 );
 
 interface SubscriptionBody extends PushSubscription {
@@ -46,9 +52,7 @@ interface SubscriptionBody extends PushSubscription {
 
 const SUBSCRIPTION_DIR = path.resolve(process.cwd(), 'data');
 async function readSubscriptions(clientId?: string): Promise<PushSubscription | { [key: string]: PushSubscription }> {
-    try {
-        await fs.mkdir(SUBSCRIPTION_DIR, { recursive: true });
-    } catch { }
+    await fs.mkdir(SUBSCRIPTION_DIR, { recursive: true });
 
     if (clientId) {
         const filePath = path.join(SUBSCRIPTION_DIR, `${clientId}.json`);
@@ -241,7 +245,7 @@ function shouldTriggerProbabilistic(clientId: string, settings: ProactiveProbabi
     // 오늘 최대 횟수에 도달했다면 더 이상 트리거하지 않음
     const maxTriggers = settings.maxTriggersPerDay ?? 1;
     if (triggerState.count >= maxTriggers) {
-        console.log(`[${clientId}] 확률적 선톡: 오늘 최대 횟수(${maxTriggers})에 도달함 (현재: ${triggerState.count})`);
+        console.log(`[${clientId}] ${i18next.t('proactiveServer.probabilisticMaxReached', { max: maxTriggers, current: triggerState.count })}`);
         return false;
     }
 
@@ -249,7 +253,7 @@ function shouldTriggerProbabilistic(clientId: string, settings: ProactiveProbabi
     const roll = Math.random() * 100;
     const shouldTrigger = roll < settings.probability;
 
-    console.log(`[${clientId}] 확률적 선톡 주사위: ${roll.toFixed(2)} vs ${settings.probability}% (오늘 ${triggerState.count}/${maxTriggers}회)`);
+    console.log(`[${clientId}] ${i18next.t('proactiveServer.probabilisticRoll', { roll: roll.toFixed(2), probability: settings.probability, current: triggerState.count, max: maxTriggers })}`);
 
     if (shouldTrigger) {
         triggerState.count++;
@@ -288,31 +292,31 @@ function shouldTriggerPeriodic(clientId: string, settings: ProactivePeriodicSett
         const subscription = await readSubscriptions();
 
         for (const [clientId, push] of Object.entries(subscription)) {
-            console.log("백업 복원 시작");
+            console.log(i18next.t('proactiveServer.restoreStart'));
 
             const backupResponse = await fetch(`${process.env.SYNC_BASE_URL}/api/sync/${clientId}`, {
                 method: 'GET',
             });
 
             if (!backupResponse.ok) {
-                console.error("백업 데이터 불러오기 실패:", backupResponse.statusText);
+                console.error(i18next.t('proactiveServer.restoreFailed'), backupResponse.statusText);
                 continue;
             }
 
             const backupPayload = await backupResponse.json();
             await restoreStateFromPayload(backupPayload);
-            console.log(`백업 로드 완료`);
+            console.log(i18next.t('proactiveServer.restoreComplete'));
             const state = store.getState();
             const proactiveSettings = state.settings.proactiveSettings;
 
             if (!proactiveSettings.proactiveChatEnabled) {
-                console.log("Proactive Chat 기능이 설정에서 활성화되어 있지 않습니다.");
+                console.log(i18next.t('proactiveServer.featureDisabled'));
                 continue;
             }
 
             // 제한 시간대 체크
             if (proactiveSettings.timeRestriction && isInRestrictedTime(proactiveSettings.timeRestriction)) {
-                console.log(`[${clientId}] 현재 제한 시간대입니다. 선톡을 건너뜁니다.`);
+                console.log(`[${clientId}] ${i18next.t('proactiveServer.restrictedTime')}`);
                 continue;
             }
 
@@ -322,7 +326,7 @@ function shouldTriggerPeriodic(clientId: string, settings: ProactivePeriodicSett
             // 주기적 선톡 체크
             if (proactiveSettings.periodicSettings?.enabled) {
                 if (shouldTriggerPeriodic(clientId, proactiveSettings.periodicSettings)) {
-                    console.log(`[${clientId}] 주기적 선톡 트리거됨`);
+                    console.log(`[${clientId}] ${i18next.t('proactiveServer.periodicTriggered')}`);
                     shouldSendProactive = true;
                 }
             }
@@ -330,7 +334,7 @@ function shouldTriggerPeriodic(clientId: string, settings: ProactivePeriodicSett
             // 확률적 선톡 체크 (하루 N번)
             if (proactiveSettings.probabilisticSettings?.enabled && !shouldSendProactive) {
                 if (shouldTriggerProbabilistic(clientId, proactiveSettings.probabilisticSettings)) {
-                    console.log(`[${clientId}] 확률적 선톡 트리거됨 (확률: ${proactiveSettings.probabilisticSettings.probability}%)`);
+                    console.log(`[${clientId}] ${i18next.t('proactiveServer.probabilisticTriggered', { probability: proactiveSettings.probabilisticSettings.probability })}`);
                     shouldSendProactive = true;
                 }
             }
@@ -341,24 +345,24 @@ function shouldTriggerPeriodic(clientId: string, settings: ProactivePeriodicSett
             }
 
             if (!shouldSendProactive) {
-                console.log(`[${clientId}] 선톡 조건을 만족하지 않음`);
+                console.log(`[${clientId}] ${i18next.t('proactiveServer.conditionNotMet')}`);
                 continue;
             }
 
             const allRooms = selectAllRooms(state);
             if (!allRooms || allRooms.length === 0) {
-                console.error('방이 하나도 없습니다.');
+                console.error(i18next.t('proactiveServer.noRooms'));
                 continue;
             }
 
             // 선톡 허용된 방만 필터링
             const proactiveEnabledRooms = allRooms.filter(room => room.proactiveEnabled === true);
             if (proactiveEnabledRooms.length === 0) {
-                console.log(`[${clientId}] 선톡 허용된 방이 없습니다.`);
+                console.log(`[${clientId}] ${i18next.t('proactiveServer.noProactiveRooms')}`);
                 continue;
             }
 
-            const randomRoom = proactiveEnabledRooms[Math.floor(Math.random() * proactiveEnabledRooms.length)]
+            const randomRoom = proactiveEnabledRooms[Math.floor(Math.random() * proactiveEnabledRooms.length)];
 
             const beforeMessages = selectMessagesByRoomId(store.getState(), randomRoom.id);
             const beforeIds = new Set(beforeMessages.map(m => m.id));
@@ -382,7 +386,7 @@ function shouldTriggerPeriodic(clientId: string, settings: ProactivePeriodicSett
                         JSON.stringify({
                             icon: `${proactiveSettings.proactiveServerBaseUrl}/api/push/icon/${newlyAdded.authorId}`,
                             badge: '/yejingram.png',
-                            body: characterName + ": " + (newlyAdded.content ?? '[스티커/이미지]'),
+                            body: characterName + ": " + (newlyAdded.content ?? i18next.t('proactiveServer.stickerOrImage')),
                         })
                     );
                 }
@@ -393,21 +397,21 @@ function shouldTriggerPeriodic(clientId: string, settings: ProactivePeriodicSett
                     randomRoom,
                     (id) => {
                         if (id) {
-                            console.log("Message Generating... id:", id);
+                            console.log(i18next.t('proactiveServer.messageGenerating'), id);
                         } else {
-                            console.log("Message generation completed.");
+                            console.log(i18next.t('proactiveServer.messageComplete'));
                         }
                     },
                     i18next.t,
                     "proactive"
                 );
             } catch (err) {
-                console.error("선톡 메시지 전송 중 오류 발생:", err);
+                console.error(i18next.t('proactiveServer.sendError'), err);
             } finally {
                 unsubscribe();
             }
 
-            console.log("동기화중");
+            console.log(i18next.t('proactiveServer.syncing'));
             const updatedState = store.getState();
 
             fetch(`${updatedState.settings.syncSettings.syncBaseUrl}/api/sync/${updatedState.settings.syncSettings.syncClientId}`, {
@@ -421,11 +425,11 @@ function shouldTriggerPeriodic(clientId: string, settings: ProactivePeriodicSett
                 })
             }).then((res) => {
                 if (res.ok) {
-                    console.log("동기화 완료");
+                    console.log(i18next.t('proactiveServer.syncComplete'));
                 } else {
-                    console.error("동기화 실패:", res.statusText);
+                    console.error(i18next.t('proactiveServer.syncFailed'), res.statusText);
                 }
-            })
+            });
         }
         // 체크 주기: 1분
         await new Promise(resolve => setTimeout(resolve, 60 * 1000));

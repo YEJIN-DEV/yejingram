@@ -16,7 +16,10 @@ export async function registerProactivePush(clientId: string, serverBaseUrl: str
             return;
         }
 
-        const vapidPublicKey = "BJ5xoic3vp3IzdzUpp2dCra48XsMMYxrhahccCuvapbjMSAcsvrFA3UajU9PWM1fuXEeG2yIaShHaJN1MrBTUFc"
+        const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+        if (!vapidPublicKey) {
+            throw new Error('VAPID_PUBLIC_KEY is not defined');
+        }
 
         const subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,

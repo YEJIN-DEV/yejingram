@@ -29,6 +29,28 @@ const en = {
         antiEchoFallback: "That's an interesting point. What do you think?",
     },
 
+    proactiveServer: {
+        restoreStart: "Starting backup restore",
+        restoreFailed: "Failed to load backup data:",
+        restoreComplete: "Backup load complete",
+        featureDisabled: "Proactive Chat feature is not enabled in settings.",
+        restrictedTime: "Currently in restricted time period. Skipping proactive message.",
+        periodicTriggered: "Periodic proactive triggered",
+        probabilisticTriggered: "Probabilistic proactive triggered (probability: {{probability}}%)",
+        conditionNotMet: "Proactive condition not met",
+        noRooms: "No rooms available.",
+        noProactiveRooms: "No rooms with proactive enabled.",
+        messageGenerating: "Message generating... id:",
+        messageComplete: "Message generation completed.",
+        sendError: "Error occurred while sending proactive message:",
+        syncing: "Syncing",
+        syncComplete: "Sync complete",
+        syncFailed: "Sync failed:",
+        probabilisticMaxReached: "Probabilistic proactive: Max daily count ({{max}}) reached (current: {{current}})",
+        probabilisticRoll: "Probabilistic proactive roll: {{roll}} vs {{probability}}% (today {{current}}/{{max}})",
+        stickerOrImage: "[Sticker/Image]",
+    },
+
     sidebar: {
         tooltipClose: "Close",
         tooltipSettings: "Settings",

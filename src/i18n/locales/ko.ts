@@ -29,6 +29,28 @@ const ko = {
         antiEchoFallback: "그 얘기 흥미로운데, 너는 어떻게 생각해?",
     },
 
+    proactiveServer: {
+        restoreStart: "백업 복원 시작",
+        restoreFailed: "백업 데이터 불러오기 실패:",
+        restoreComplete: "백업 로드 완료",
+        featureDisabled: "Proactive Chat 기능이 설정에서 활성화되어 있지 않습니다.",
+        restrictedTime: "현재 제한 시간대입니다. 선톡을 건너뜁니다.",
+        periodicTriggered: "주기적 선톡 트리거됨",
+        probabilisticTriggered: "확률적 선톡 트리거됨 (확률: {{probability}}%)",
+        conditionNotMet: "선톡 조건을 만족하지 않음",
+        noRooms: "방이 하나도 없습니다.",
+        noProactiveRooms: "선톡 허용된 방이 없습니다.",
+        messageGenerating: "메시지 생성 중... id:",
+        messageComplete: "메시지 생성이 완료되었습니다.",
+        sendError: "선톡 메시지 전송 중 오류 발생:",
+        syncing: "동기화중",
+        syncComplete: "동기화 완료",
+        syncFailed: "동기화 실패:",
+        probabilisticMaxReached: "확률적 선톡: 오늘 최대 횟수({{max}})에 도달함 (현재: {{current}})",
+        probabilisticRoll: "확률적 선톡 주사위: {{roll}} vs {{probability}}% (오늘 {{current}}/{{max}}회)",
+        stickerOrImage: "[스티커/이미지]",
+    },
+
     sidebar: {
         tooltipClose: "닫기",
         tooltipSettings: "설정",
