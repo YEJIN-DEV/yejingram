@@ -233,22 +233,29 @@ export const migrations = {
                     keys: ['maxRetries'],
                     defaults: { maxRetries: settingsInitialApiConfigs.custom.maxRetries }
                 },
+            ]
+        });
+        return state;
+    },
+    6: (state: any) => {
+        state = applyRules(state, {
+            add: [
                 {
                     path: 'settings',
                     keys: ['proactiveSettings'],
                     defaults: { proactiveSettings: initialProactiveSettings }
-                }
+                },
             ]
         });
         return state;
-    }
+    },
 } as MigrationManifest;
 
 
 export const persistConfig = {
     key: 'yejingram',
     storage: blobStorage as any,
-    version: 5,
+    version: 6,
     whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved'],
     migrate: createMigrate(migrations, { debug: true }),
 };
