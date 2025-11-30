@@ -1,5 +1,5 @@
 // src/app/stateBackup.ts
-import { store, persistor, resetAll, migrations, persistConfig, isBrowser } from '../app/store';
+import { store, persistor, resetAll, migrations, persistConfig } from '../app/store';
 import type { RootState } from '../app/store';
 import { charactersActions } from '../entities/character/slice';
 import { roomsActions } from '../entities/room/slice';
@@ -119,34 +119,32 @@ export async function backupStateToServer(clientId: string, baseURL: string) {
       backup: buildBackupPayload(),
     });
 
-    if (isBrowser) {
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('PUT', `${baseURL}/api/sync/${clientId}`);
-        xhr.setRequestHeader('Content-Type', 'application/json');
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', `${baseURL}/api/sync/${clientId}`);
+      xhr.setRequestHeader('Content-Type', 'application/json');
 
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.max(0, Math.min(100, Math.floor((event.loaded / event.total) * 100)));
-            store.dispatch(uiActions.setUploadProgress(percent));
-          }
-        };
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.max(0, Math.min(100, Math.floor((event.loaded / event.total) * 100)));
+          store.dispatch(uiActions.setUploadProgress(percent));
+        }
+      };
 
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else if (xhr.status === 409) {
-            reject(new Error('Already backed up to the latest version.', { cause: 'conflict' }));
-          } else {
-            reject(new Error(`Upload failed: ${xhr.statusText}`));
-          }
-        };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else if (xhr.status === 409) {
+          reject(new Error('Already backed up to the latest version.', { cause: 'conflict' }));
+        } else {
+          reject(new Error(`Upload failed: ${xhr.statusText}`));
+        }
+      };
 
-        xhr.onerror = () => reject(new Error('Upload failed'));
+      xhr.onerror = () => reject(new Error('Upload failed'));
 
-        xhr.send(data);
-      });
-    }
+      xhr.send(data);
+    });
   } finally {
     // 업로드 인디케이터 종료
     store.dispatch(uiActions.clearUploadProgress());
