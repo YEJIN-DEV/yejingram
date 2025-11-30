@@ -96,7 +96,7 @@ Options:
     --printRoomInfo <characterId>    Print room info for a specific character (number)
     --room <roomId>, -r <roomId>     Specify room ID to send message to
     --text <message>, -t <message>   Specify text message to add before sending
-    --file <path>, -f <path>         Backup JSON path to restore (default: yejingram-backup-1762960265234.json)
+    --file <path>, -f <path>         Backup JSON path to restore
     --help, -h                       Show help and exit
 
 Examples:
