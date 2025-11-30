@@ -2,7 +2,7 @@
 .env
 
 # Backend data
-server/**/*.json
+server/data
 # Logs
 logs
 *.log

@@ -17,30 +17,19 @@ import {
 import characterReducer from '../entities/character/slice';
 import roomReducer from '../entities/room/slice';
 import messageReducer from '../entities/message/slice';
-import settingsReducer, { initialSyncSettings, initialState as settingsInitialState, initialApiConfigs as settingsInitialApiConfigs, initialProactiveSettings } from '../entities/setting/slice';
+import settingsReducer, { initialSyncSettings, initialState as settingsInitialState, initialApiConfigs as settingsInitialApiConfigs } from '../entities/setting/slice';
 import { initialState as imageSettingsInitialState } from '../entities/setting/image/slice';
 import { applyRules } from '../utils/migration';
 import uiReducer from '../entities/ui/slice';
 import lastSavedReducer from '../entities/lastSaved/slice';
 
-// Enable localforage only in browser environments
-export const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
-
-if (isBrowser) {
-    localforage.config({
-        name: 'yejingram',
-        storeName: 'persist',
-    });
-}
-
-const memoryStore = new Map<string, string>();
+localforage.config({
+    name: 'yejingram',
+    storeName: 'persist',
+});
 
 const blobStorage = {
     async getItem(key: string): Promise<string | null> {
-        if (!isBrowser) {
-            return memoryStore.has(key) ? memoryStore.get(key)! : null;
-        }
-
         const data = await localforage.getItem(key);
         if (data == null) return null;
 
@@ -64,18 +53,10 @@ const blobStorage = {
         }
     },
     async setItem(key: string, value: string): Promise<void> {
-        if (!isBrowser) {
-            memoryStore.set(key, value);
-            return;
-        }
         const blob = new Blob([value], { type: 'application/json' });
         await localforage.setItem(key, blob);
     },
     removeItem(key: string): Promise<void> {
-        if (!isBrowser) {
-            memoryStore.delete(key);
-            return Promise.resolve();
-        }
         return localforage.removeItem(key);
     },
 } as const;
@@ -224,18 +205,6 @@ export const migrations = {
         }
 
         return state;
-    },
-    5: (state: any) => {
-        state = applyRules(state, {
-            add: [
-                {
-                    path: 'settings',
-                    keys: ['proactiveSettings'],
-                    defaults: { proactiveSettings: initialProactiveSettings }
-                },
-            ]
-        });
-        return state;
     }
 } as MigrationManifest;
 
@@ -243,7 +212,7 @@ export const migrations = {
 export const persistConfig = {
     key: 'yejingram',
     storage: blobStorage as any,
-    version: 5,
+    version: 4,
     whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved'],
     migrate: createMigrate(migrations, { debug: true }),
 };

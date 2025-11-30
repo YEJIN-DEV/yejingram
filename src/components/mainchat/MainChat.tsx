@@ -1,5 +1,5 @@
 import type { Room } from '../../entities/room/types';
-import { Menu, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown, Zap, BellRing } from 'lucide-react';
+import { Menu, MoreHorizontal, MessageCircle, Smile, X, Plus, Paperclip, Edit2, Check, XCircle, StickyNote, Brain, BookOpen, ChevronDown, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCharacterById } from '../../entities/character/selectors';
@@ -429,7 +429,6 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
               )
             }
             handleRequestProactiveChat={handleRequestProactiveChat}
-            onToggleProactive={(enabled) => dispatch(roomsActions.toggleProactive({ roomId: room.id, enabled }))}
           />
         </div>
       </div>
@@ -691,7 +690,6 @@ interface InputAreaProps {
   // (선택) 커스텀 스티커 패널 렌더링
   renderUserStickerPanel?: () => React.ReactNode;
   handleRequestProactiveChat: () => void;
-  onToggleProactive?: (enabled: boolean) => void;
 }
 
 function InputArea({
@@ -708,8 +706,7 @@ function InputArea({
   onFocus,
   onUserActivity,
   renderUserStickerPanel,
-  handleRequestProactiveChat,
-  onToggleProactive
+  handleRequestProactiveChat
 }: InputAreaProps) {
   const { t } = useTranslation();
   const [text, setText] = useState("");
@@ -800,18 +797,6 @@ function InputArea({
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
             >
               <Zap className="w-4 h-4" /> {t('main.input.proactiveChat')}
-            </button>
-          )}
-          {room.type === 'Direct' && (
-            <button
-              type="button"
-              onClick={() => {
-                onToggleProactive?.(!room.proactiveEnabled);
-                setInputOptions((prev) => !prev);
-              }}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-left rounded-xl hover:bg-[var(--color-bg-secondary)] ${room.proactiveEnabled ? 'text-[var(--color-button-primary)]' : 'text-[var(--color-text-secondary)]'}`}
-            >
-              <BellRing className="w-4 h-4" /> {room.proactiveEnabled ? t('main.input.proactiveEnabled') : t('main.input.proactiveDisabled')}
             </button>
           )}
         </div>
