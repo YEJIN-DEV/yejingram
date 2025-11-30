@@ -37,6 +37,7 @@ export async function registerProactivePush(clientId: string, serverBaseUrl: str
             }),
         });
     } catch (err) {
+        alert('Failed to register service worker or subscribe to push');
         console.error('Failed to register service worker or subscribe to push', err);
     }
 }
@@ -65,6 +66,7 @@ export async function unsubscribeProactivePush(clientId: string, serverBaseUrl: 
             }),
         });
     } catch (err) {
+        alert('Failed to unsubscribe from proactive push');
         console.error('Failed to unsubscribe from proactive push', err);
     }
 }
