@@ -1,6 +1,6 @@
 import { createEntityAdapter, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona, ThemeOverrides, Sync } from './types';
+import type { SettingsState, ApiProvider, ApiConfig, Prompts, Persona, ThemeOverrides, Sync, Proactive } from './types';
 import type { ImageApiConfig, ImageApiProvider, ArtStyle } from './image/types';
 import { initialState as imageSettingsInitialState, initialImageApiConfigs } from './image/slice';
 import { nanoid } from '@reduxjs/toolkit';
@@ -23,6 +23,29 @@ export const initialSyncSettings: Sync = {
     syncBaseUrl: '',
 };
 
+export const initialProactiveSettings: Proactive = {
+    proactiveChatEnabled: false,
+    proactiveServerBaseUrl: '',
+    timeRestriction: {
+        enabled: false,
+        startHour: 23,
+        startMinute: 0,
+        endHour: 7,
+        endMinute: 0,
+    },
+    periodicSettings: {
+        enabled: false,
+        intervalMinutes: 60,
+    },
+    probabilisticSettings: {
+        enabled: false,
+        probability: 30,
+        maxTriggersPerDay: 1,
+        triggeredCountToday: 0,
+        lastTriggeredDate: null,
+    },
+};
+
 
 export const initialState: SettingsState = {
     colorTheme: 'light',
@@ -41,7 +64,6 @@ export const initialState: SettingsState = {
     fontScale: 1.0,
     userName: '',
     userDescription: '',
-    proactiveChatEnabled: true,
     randomFirstMessageEnabled: false,
     randomCharacterCount: 1,
     randomMessageFrequencyMin: 10,
@@ -51,7 +73,8 @@ export const initialState: SettingsState = {
     speedup: 2,
     personas: [],
     selectedPersonaId: null,
-    syncSettings: initialSyncSettings
+    syncSettings: initialSyncSettings,
+    proactiveSettings: initialProactiveSettings,
 };
 
 export const settingsAdapter = createEntityAdapter<SettingsState, string>({

@@ -43,10 +43,7 @@ export const selectPrompts = createSelector(
     (settings) => settings.prompts
 );
 
-export const selectAllSettings = createSelector(
-    [selectSettingsState],
-    (settings) => settings
-);
+export const selectAllSettings = selectSettingsState;
 
 export const selectApiProvider = createSelector(
     [selectSettingsState],

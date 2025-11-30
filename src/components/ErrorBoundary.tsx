@@ -2,7 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import ErrorPage from './ErrorPage';
 import { store } from '../app/store';
 import { persistor, resetAll } from '../app/store';
-import { settingsActions } from '../entities/setting/slice';
+import { initialProactiveSettings, settingsActions } from '../entities/setting/slice';
 import { initialApiConfigs } from '../entities/setting/slice';
 import { initialSyncSettings } from '../entities/setting/slice';
 import { initialImageApiConfigs } from '../entities/setting/image/slice';
@@ -85,7 +85,6 @@ class ErrorBoundary extends Component<Props, State> {
             store.dispatch(settingsActions.setSettings({
                 ...currentState,
                 fontScale: 1.0,
-                proactiveChatEnabled: true,
                 randomFirstMessageEnabled: false,
                 randomCharacterCount: 1,
                 randomMessageFrequencyMin: 10,
@@ -94,7 +93,8 @@ class ErrorBoundary extends Component<Props, State> {
                 speedup: 2,
                 personas: [],
                 selectedPersonaId: null,
-                syncSettings: initialSyncSettings
+                syncSettings: initialSyncSettings,
+                proactiveSettings: initialProactiveSettings
             }));
         }
         this.setState({ hasError: false, error: undefined });
