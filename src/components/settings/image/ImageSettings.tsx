@@ -322,7 +322,7 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
                 type="number"
                 min={64}
                 max={2624}
-                onChange={(e) => handleImageModelConfigChange('novelai', 'width', e.target.value)}
+                onChange={(e) => handleImageModelConfigChange('novelai', 'width', parseInt(e.target.value))}
                 value={imageConfig.naiConfig?.width || 512}
                 placeholder="Width"
                 className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] border-[var(--color-border)] rounded-xl border focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm font-mono"
@@ -332,7 +332,7 @@ export function ImageSettings({ settings, setSettings }: ComfySettingsProps): JS
                 type="number"
                 min={64}
                 max={2624}
-                onChange={(e) => handleImageModelConfigChange('novelai', 'height', e.target.value)}
+                onChange={(e) => handleImageModelConfigChange('novelai', 'height', parseInt(e.target.value))}
                 value={imageConfig.naiConfig?.height || 768}
                 placeholder="Height"
                 className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] border-[var(--color-border)] rounded-xl border focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-all duration-200 text-sm font-mono"
