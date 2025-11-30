@@ -97,7 +97,6 @@ const MessageList = forwardRef<VirtuosoHandle, MessageListProps>(({
   isWaitingForResponse,
   typingCharacterId,
   currentUserId,
-
   setTypingCharacterId,
   setIsWaitingForResponse
 }, ref) => {
@@ -655,9 +654,11 @@ const MessageList = forwardRef<VirtuosoHandle, MessageListProps>(({
         ref={ref}
         data={messages}
         itemContent={itemContent}
+        initialTopMostItemIndex={messages.length - 1}
         components={{ Footer }}
         followOutput="auto"
         alignToBottom
+        overscan={window.innerHeight * 2}
       />
 
       {/* Image Modal */}

@@ -73,37 +73,6 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
   );
   const settings = useSelector(selectAllSettings);
 
-  useEffect(() => {
-    // DOM 업데이트 후 스크롤이 정확하게 되도록 setTimeout 사용
-    setTimeout(() => {
-      scrollToBottom();
-    }, 0);
-  }, [room, messages]);
-
-  const scrollToBottom = () => {
-    messagesContainerRef.current?.scrollToIndex({ index: messages.length - 1, align: 'end' });
-  };
-
-
-  const handleInputFocus = () => {
-    // 모바일 키보드가 열리면 visualViewport가 resize됩니다 (특히 iOS)
-    if (typeof window !== 'undefined' && 'visualViewport' in window) {
-      const vv = window.visualViewport!;
-      const onResize = () => {
-        // 키보드가 완전히 열린 뒤 한 번 더 스크롤
-        scrollToBottom();
-        vv.removeEventListener('resize', onResize);
-      };
-      vv.addEventListener('resize', onResize, { once: true });
-
-      // 혹시 resize 이벤트가 안 오더라도 대비용 딜레이
-      setTimeout(scrollToBottom, 350);
-    } else {
-      // 안드로이드/기타 브라우저 대비: 짧은 딜레이만으로도 충분한 경우가 많음
-      setTimeout(scrollToBottom, 120);
-    }
-  };
-
   const handleEditRoomName = () => {
     if (!room) return;
     setNewRoomName(room.name);
@@ -408,7 +377,6 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
             onStickerClear={handleCancelSticker}
             onSendMessage={handleSendMessage}
             onPaste={handlePaste}
-            onFocus={handleInputFocus}
             onUserActivity={handleUserActivity}
             renderUserStickerPanel={() =>
               showStickerPanel && character && (
@@ -677,7 +645,6 @@ interface InputAreaProps {
   onSendMessage: (text: string) => void;
   onStickerClear?: () => void;
   onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
-  onFocus?: () => void;
   onUserActivity?: () => void;
 
   // (선택) 커스텀 스티커 패널 렌더링
@@ -697,7 +664,6 @@ function InputArea({
   onSendMessage,
   onStickerClear,
   onPaste,
-  onFocus,
   onUserActivity,
   renderUserStickerPanel,
   handleRequestProactiveChat,
@@ -850,7 +816,6 @@ function InputArea({
                 onUserActivity?.();
               }}
               onPaste={onPaste}
-              onFocus={onFocus}
               style={{ minHeight: '20px' }}
             />
 
