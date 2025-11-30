@@ -28,6 +28,66 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
     const [localSettings, setLocalSettings] = useState<SettingsState>(settings);
     const [activeTab, setActiveTab] = useState<'ai' | 'image' | 'persona' | 'others'>('ai');
 
+    // Helper functions for nested state updates
+    const updateSyncSettings = <K extends keyof SettingsState['syncSettings']>(
+        key: K,
+        value: SettingsState['syncSettings'][K]
+    ) => {
+        setLocalSettings(prev => ({
+            ...prev,
+            syncSettings: { ...prev.syncSettings, [key]: value }
+        }));
+    };
+
+    const updateProactiveSettings = <K extends keyof SettingsState['proactiveSettings']>(
+        key: K,
+        value: SettingsState['proactiveSettings'][K]
+    ) => {
+        setLocalSettings(prev => ({
+            ...prev,
+            proactiveSettings: { ...prev.proactiveSettings, [key]: value }
+        }));
+    };
+
+    const updateTimeRestriction = <K extends keyof NonNullable<SettingsState['proactiveSettings']['timeRestriction']>>(
+        key: K,
+        value: NonNullable<SettingsState['proactiveSettings']['timeRestriction']>[K]
+    ) => {
+        setLocalSettings(prev => ({
+            ...prev,
+            proactiveSettings: {
+                ...prev.proactiveSettings,
+                timeRestriction: { ...prev.proactiveSettings.timeRestriction, [key]: value }
+            }
+        }));
+    };
+
+    const updatePeriodicSettings = <K extends keyof NonNullable<SettingsState['proactiveSettings']['periodicSettings']>>(
+        key: K,
+        value: NonNullable<SettingsState['proactiveSettings']['periodicSettings']>[K]
+    ) => {
+        setLocalSettings(prev => ({
+            ...prev,
+            proactiveSettings: {
+                ...prev.proactiveSettings,
+                periodicSettings: { ...prev.proactiveSettings.periodicSettings, [key]: value }
+            }
+        }));
+    };
+
+    const updateProbabilisticSettings = <K extends keyof NonNullable<SettingsState['proactiveSettings']['probabilisticSettings']>>(
+        key: K,
+        value: NonNullable<SettingsState['proactiveSettings']['probabilisticSettings']>[K]
+    ) => {
+        setLocalSettings(prev => ({
+            ...prev,
+            proactiveSettings: {
+                ...prev.proactiveSettings,
+                probabilisticSettings: { ...prev.proactiveSettings.probabilisticSettings, [key]: value }
+            }
+        }));
+    };
+
     const importBackup = () => {
         const input = document.createElement("input");
         input.type = "file";
@@ -299,11 +359,11 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                     </label>
                                     <div className="space-y-2">
                                         <label className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.sync.clientIdLabel')}</label>
-                                        <input value={localSettings.syncSettings.syncClientId} onChange={e => setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncClientId: e.target.value } }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm" placeholder={t('settings.others.sync.clientIdPlaceholder', { idexample: "my-device-1" })} />
+                                        <input value={localSettings.syncSettings.syncClientId} onChange={e => updateSyncSettings('syncClientId', e.target.value)} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm" placeholder={t('settings.others.sync.clientIdPlaceholder', { idexample: "my-device-1" })} />
                                     </div>
                                     <div>
                                         <label className="text-xs text-[var(--color-text-secondary)]">{t('settings.others.sync.serverAddrLabel')}</label>
-                                        <input value={localSettings.syncSettings.syncBaseUrl} onChange={e => setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncBaseUrl: e.target.value } }))} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm" placeholder={`http://your-host:3001`} />
+                                        <input value={localSettings.syncSettings.syncBaseUrl} onChange={e => updateSyncSettings('syncBaseUrl', e.target.value)} className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm" placeholder={`http://your-host:3001`} />
                                     </div>
                                     <Toggle
                                         id="settings-sync-enabled-toggle"
@@ -313,16 +373,10 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                         onChange={(checked) => {
                                             if (!checked && localSettings.proactiveSettings.proactiveChatEnabled) {
                                                 // If disabling sync while proactive chat is enabled, also disable proactive chat
-                                                setLocalSettings(prev => ({
-                                                    ...prev,
-                                                    proactiveSettings: {
-                                                        ...prev.proactiveSettings,
-                                                        proactiveChatEnabled: false,
-                                                    },
-                                                }));
+                                                updateProactiveSettings('proactiveChatEnabled', false);
                                                 unsubscribeProactivePush(localSettings.syncSettings.syncClientId, localSettings.proactiveSettings.proactiveServerBaseUrl);
                                             }
-                                            setLocalSettings(prev => ({ ...prev, syncSettings: { ...prev.syncSettings, syncEnabled: checked } }))
+                                            updateSyncSettings('syncEnabled', checked);
                                         }}
                                     />
                                     <div className="grid grid-cols-2 gap-2">
@@ -367,13 +421,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             <input
                                                 type="text"
                                                 value={localSettings.proactiveSettings.proactiveServerBaseUrl}
-                                                onChange={e => setLocalSettings(prev => ({
-                                                    ...prev,
-                                                    proactiveSettings: {
-                                                        ...prev.proactiveSettings,
-                                                        proactiveServerBaseUrl: e.target.value,
-                                                    },
-                                                }))}
+                                                onChange={e => updateProactiveSettings('proactiveServerBaseUrl', e.target.value)}
                                                 className="w-full px-3 py-2 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-lg border border-[var(--color-border)] text-sm"
                                                 placeholder={t('settings.others.proactiveChat.serverUrlPlaceholder')}
                                             />
@@ -387,16 +435,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             label={t('settings.others.proactiveChat.timeRestriction.title')}
                                             description={t('settings.others.proactiveChat.timeRestriction.description')}
                                             checked={!!localSettings.proactiveSettings.timeRestriction?.enabled}
-                                            onChange={(checked) => setLocalSettings(prev => ({
-                                                ...prev,
-                                                proactiveSettings: {
-                                                    ...prev.proactiveSettings,
-                                                    timeRestriction: {
-                                                        ...prev.proactiveSettings.timeRestriction,
-                                                        enabled: checked,
-                                                    },
-                                                },
-                                            }))}
+                                            onChange={(checked) => updateTimeRestriction('enabled', checked)}
                                         />
                                         {localSettings.proactiveSettings.timeRestriction?.enabled && (
                                             <div className="grid grid-cols-2 gap-3 mt-2">
@@ -408,16 +447,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                             min="0"
                                                             max="23"
                                                             value={localSettings.proactiveSettings.timeRestriction?.startHour ?? 23}
-                                                            onChange={e => setLocalSettings(prev => ({
-                                                                ...prev,
-                                                                proactiveSettings: {
-                                                                    ...prev.proactiveSettings,
-                                                                    timeRestriction: {
-                                                                        ...prev.proactiveSettings.timeRestriction,
-                                                                        startHour: parseInt(e.target.value) || 0,
-                                                                    },
-                                                                },
-                                                            }))}
+                                                            onChange={e => updateTimeRestriction('startHour', parseInt(e.target.value) || 0)}
                                                             className="w-full px-2 py-1 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm text-center"
                                                         />
                                                         <span className="text-[var(--color-text-secondary)] self-center">:</span>
@@ -426,16 +456,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                             min="0"
                                                             max="59"
                                                             value={localSettings.proactiveSettings.timeRestriction?.startMinute ?? 0}
-                                                            onChange={e => setLocalSettings(prev => ({
-                                                                ...prev,
-                                                                proactiveSettings: {
-                                                                    ...prev.proactiveSettings,
-                                                                    timeRestriction: {
-                                                                        ...prev.proactiveSettings.timeRestriction,
-                                                                        startMinute: parseInt(e.target.value) || 0,
-                                                                    },
-                                                                },
-                                                            }))}
+                                                            onChange={e => updateTimeRestriction('startMinute', parseInt(e.target.value) || 0)}
                                                             className="w-full px-2 py-1 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm text-center"
                                                         />
                                                     </div>
@@ -448,16 +469,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                             min="0"
                                                             max="23"
                                                             value={localSettings.proactiveSettings.timeRestriction?.endHour ?? 7}
-                                                            onChange={e => setLocalSettings(prev => ({
-                                                                ...prev,
-                                                                proactiveSettings: {
-                                                                    ...prev.proactiveSettings,
-                                                                    timeRestriction: {
-                                                                        ...prev.proactiveSettings.timeRestriction,
-                                                                        endHour: parseInt(e.target.value) || 0,
-                                                                    },
-                                                                },
-                                                            }))}
+                                                            onChange={e => updateTimeRestriction('endHour', parseInt(e.target.value) || 0)}
                                                             className="w-full px-2 py-1 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm text-center"
                                                         />
                                                         <span className="text-[var(--color-text-secondary)] self-center">:</span>
@@ -466,16 +478,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                             min="0"
                                                             max="59"
                                                             value={localSettings.proactiveSettings.timeRestriction?.endMinute ?? 0}
-                                                            onChange={e => setLocalSettings(prev => ({
-                                                                ...prev,
-                                                                proactiveSettings: {
-                                                                    ...prev.proactiveSettings,
-                                                                    timeRestriction: {
-                                                                        ...prev.proactiveSettings.timeRestriction,
-                                                                        endMinute: parseInt(e.target.value) || 0,
-                                                                    },
-                                                                },
-                                                            }))}
+                                                            onChange={e => updateTimeRestriction('endMinute', parseInt(e.target.value) || 0)}
                                                             className="w-full px-2 py-1 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm text-center"
                                                         />
                                                     </div>
@@ -491,16 +494,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             label={t('settings.others.proactiveChat.periodic.title')}
                                             description={t('settings.others.proactiveChat.periodic.description')}
                                             checked={!!localSettings.proactiveSettings.periodicSettings?.enabled}
-                                            onChange={(checked) => setLocalSettings(prev => ({
-                                                ...prev,
-                                                proactiveSettings: {
-                                                    ...prev.proactiveSettings,
-                                                    periodicSettings: {
-                                                        ...prev.proactiveSettings.periodicSettings,
-                                                        enabled: checked,
-                                                    },
-                                                },
-                                            }))}
+                                            onChange={(checked) => updatePeriodicSettings('enabled', checked)}
                                         />
                                         {localSettings.proactiveSettings.periodicSettings?.enabled && (
                                             <div className="space-y-1 mt-2">
@@ -510,16 +504,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                     min="1"
                                                     max="1440"
                                                     value={localSettings.proactiveSettings.periodicSettings?.intervalMinutes ?? 60}
-                                                    onChange={e => setLocalSettings(prev => ({
-                                                        ...prev,
-                                                        proactiveSettings: {
-                                                            ...prev.proactiveSettings,
-                                                            periodicSettings: {
-                                                                ...prev.proactiveSettings.periodicSettings,
-                                                                intervalMinutes: parseInt(e.target.value) || 60,
-                                                            },
-                                                        },
-                                                    }))}
+                                                    onChange={e => updatePeriodicSettings('intervalMinutes', parseInt(e.target.value) || 60)}
                                                     className="w-full px-3 py-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm"
                                                 />
                                             </div>
@@ -533,16 +518,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                             label={t('settings.others.proactiveChat.probabilistic.title')}
                                             description={t('settings.others.proactiveChat.probabilistic.description')}
                                             checked={!!localSettings.proactiveSettings.probabilisticSettings?.enabled}
-                                            onChange={(checked) => setLocalSettings(prev => ({
-                                                ...prev,
-                                                proactiveSettings: {
-                                                    ...prev.proactiveSettings,
-                                                    probabilisticSettings: {
-                                                        ...prev.proactiveSettings.probabilisticSettings,
-                                                        enabled: checked,
-                                                    },
-                                                },
-                                            }))}
+                                            onChange={(checked) => updateProbabilisticSettings('enabled', checked)}
                                         />
                                         {localSettings.proactiveSettings.probabilisticSettings?.enabled && (
                                             <div className="space-y-3 mt-2">
@@ -553,16 +529,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                         min="1"
                                                         max="100"
                                                         value={localSettings.proactiveSettings.probabilisticSettings?.maxTriggersPerDay ?? 1}
-                                                        onChange={e => setLocalSettings(prev => ({
-                                                            ...prev,
-                                                            proactiveSettings: {
-                                                                ...prev.proactiveSettings,
-                                                                probabilisticSettings: {
-                                                                    ...prev.proactiveSettings.probabilisticSettings,
-                                                                    maxTriggersPerDay: parseInt(e.target.value) || 1,
-                                                                },
-                                                            },
-                                                        }))}
+                                                        onChange={e => updateProbabilisticSettings('maxTriggersPerDay', parseInt(e.target.value) || 1)}
                                                         className="w-full px-3 py-2 bg-[var(--color-bg-main)] text-[var(--color-text-primary)] rounded border border-[var(--color-border)] text-sm"
                                                     />
                                                 </div>
@@ -578,16 +545,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                         min="1"
                                                         max="100"
                                                         value={localSettings.proactiveSettings.probabilisticSettings?.probability ?? 30}
-                                                        onChange={e => setLocalSettings(prev => ({
-                                                            ...prev,
-                                                            proactiveSettings: {
-                                                                ...prev.proactiveSettings,
-                                                                probabilisticSettings: {
-                                                                    ...prev.proactiveSettings.probabilisticSettings,
-                                                                    probability: parseInt(e.target.value) || 30,
-                                                                },
-                                                            },
-                                                        }))}
+                                                        onChange={e => updateProbabilisticSettings('probability', parseInt(e.target.value) || 30)}
                                                         className="w-full accent-[var(--color-button-primary)]"
                                                     />
                                                     <div className="flex justify-between text-xs text-[var(--color-text-secondary)]">
@@ -607,13 +565,7 @@ function SettingsPanel({ openPromptModal, onClose }: SettingsPanelProps) {
                                                 : 'bg-[var(--color-button-secondary)] hover:bg-[var(--color-button-secondary-accent)] text-[var(--color-text-interface)] border-[var(--color-border)]'
                                             }`}
                                         onClick={() => {
-                                            setLocalSettings(prev => ({
-                                                ...prev,
-                                                proactiveSettings: {
-                                                    ...prev.proactiveSettings,
-                                                    proactiveChatEnabled: !prev.proactiveSettings.proactiveChatEnabled,
-                                                },
-                                            }));
+                                            updateProactiveSettings('proactiveChatEnabled', !localSettings.proactiveSettings.proactiveChatEnabled);
 
                                             if (!localSettings.proactiveSettings.proactiveChatEnabled && localSettings.proactiveSettings.proactiveServerBaseUrl) {
                                                 registerProactivePush(localSettings.syncSettings.syncClientId, localSettings.proactiveSettings.proactiveServerBaseUrl);
