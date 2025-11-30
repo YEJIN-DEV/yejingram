@@ -6,7 +6,7 @@ import { charactersAdapter } from '../../entities/character/slice';
 import type { Message as MessageType } from '../../entities/message/types';
 import { Calendar, Edit3, Trash2, RefreshCw, RotateCwSquare, Loader2, StepForward, UserCheck, UserX } from 'lucide-react';
 import { messagesActions } from '../../entities/message/slice';
-import { Virtuoso, type VirtuosoHandle, type Components } from 'react-virtuoso';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
 import SenderName from './SenderName';
 import { Avatar } from '../../utils/Avatar';
@@ -117,7 +117,6 @@ const MessageList = forwardRef<VirtuosoHandle, MessageListProps>(({
     return window.matchMedia('(pointer: coarse)').matches;
   });
   const hideControlsTimeoutRef = useRef<number | null>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
 
   const CONTROLS_AUTOHIDE_MS = 2000; // 모바일 컨트롤 자동 숨김 시간(ms)
 
