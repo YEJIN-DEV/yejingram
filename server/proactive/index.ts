@@ -50,12 +50,20 @@ interface SubscriptionBody extends PushSubscription {
     clientId: string;
 }
 
+function sanitizeClientId(input: string): string {
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(input)) {
+        throw new Error('Invalid clientId format');
+    }
+    return input;
+}
+
 const SUBSCRIPTION_DIR = path.resolve(process.cwd(), 'data');
 async function readSubscriptions(clientId?: string): Promise<PushSubscription | { [key: string]: PushSubscription }> {
     await fs.mkdir(SUBSCRIPTION_DIR, { recursive: true });
 
     if (clientId) {
-        const filePath = path.join(SUBSCRIPTION_DIR, `${clientId}.json`);
+        const safeClientId = sanitizeClientId(clientId);
+        const filePath = path.join(SUBSCRIPTION_DIR, `${safeClientId}.json`);
         const json = await fs.readFile(filePath, 'utf-8');
         const parsed: PushSubscription = JSON.parse(json);
         return parsed;
@@ -82,8 +90,9 @@ export async function saveSubscription(subscription: SubscriptionBody): Promise<
         throw new Error('Invalid subscription object');
     }
 
+    const safeClientId = sanitizeClientId(subscription.clientId);
     const { clientId, ...pure } = subscription;
-    const filePath = path.join(SUBSCRIPTION_DIR, `${clientId}.json`);
+    const filePath = path.join(SUBSCRIPTION_DIR, `${safeClientId}.json`);
     await fs.mkdir(SUBSCRIPTION_DIR, { recursive: true });
     await fs.writeFile(filePath, JSON.stringify(pure, null, 2));
 }
@@ -117,7 +126,8 @@ function startSubscriptionApi(port: number = Number(process.env.HEADLESS_PORT ??
             if (!clientId) {
                 return res.status(400).json({ error: 'clientId is required' });
             }
-            const filePath = path.join(SUBSCRIPTION_DIR, `${clientId}.json`);
+            const safeClientId = sanitizeClientId(clientId);
+            const filePath = path.join(SUBSCRIPTION_DIR, `${safeClientId}.json`);
             if (!(await fs.stat(filePath).catch(() => false))) {
                 return res.status(404).json({ error: 'Subscription not found' });
             } else {
@@ -126,7 +136,7 @@ function startSubscriptionApi(port: number = Number(process.env.HEADLESS_PORT ??
             res.json({ ok: true });
         } catch (err: any) {
             console.error('[Unsubscription API Error]', err);
-            res.status(500).json({ error: 'Internal server error' });
+            res.status(500).json({ error: err?.message ?? 'Internal server error' });
         }
     });
 
