@@ -238,7 +238,7 @@ function buildSystemPrompt(persona?: Persona | null, character?: Character, extr
     return lines.join('\n\n');
 }
 
-function buildGeminiContents(messages: Message[], isProactive: boolean, persona: Persona, character: Character, room: Room, useStructuredOutput?: boolean, useImageResponse?: boolean) {
+function buildGeminiContents(messages: Message[], isProactive: boolean, persona: Persona, character: Character, room: Room, useStructuredOutput?: boolean, useImageResponse?: boolean, useThoughtSignature?: boolean, apiConfig?: ApiConfig) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
@@ -255,6 +255,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
     ): GeminiContent[] => {
         const result: GeminiContent[] = [];
         const useSpeakerTag = roomLocal?.type !== 'Direct';
+        let lastThoughtSignature: string | undefined;
 
         for (let i = 0; i < msgs.length; i++) {
             const msg = msgs[i];
@@ -265,19 +266,34 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
             const header = useSpeakerTag ? `[From: ${speaker}] ` : '';
 
             const baseText = msg.content ? `${header}${msg.content}` : (header ? header : '');
-            const parts: ({ text: string } | { inline_data: { mime_type: string; data: string } } | { file_data: { file_uri: string } })[] = [{ text: baseText }];
+
+            let thoughtSignatureToSend: string | undefined;
+            if (useThoughtSignature && msg.thoughtSignature) {
+                if (msg.thoughtSignature !== lastThoughtSignature) {
+                    thoughtSignatureToSend = msg.thoughtSignature;
+                }
+                lastThoughtSignature = msg.thoughtSignature;
+            } else {
+                lastThoughtSignature = undefined;
+            }
+
+            const parts: ({ text: string } | { inline_data: { mime_type: string; data: string } } | { file_data: { file_uri: string } } & { thought_signature?: string })[] = [{ text: baseText, thought_signature: thoughtSignatureToSend }];
 
             if (msg.file) {
                 const mimeType = msg.file.mimeType;
                 const dataUrl = msg.file.dataUrl;
                 const base64Data = dataUrl.split(',')[1];
                 if (mimeType && base64Data) {
-                    parts.push({
-                        inline_data: {
-                            mime_type: mimeType,
-                            data: base64Data,
-                        },
-                    });
+                    if (!apiConfig || !apiConfig.payloadTemplate || apiConfig.includeImages) {
+                        parts.push({
+                            inline_data: {
+                                mime_type: mimeType,
+                                data: base64Data,
+                            },
+                        });
+                    } else {
+                        parts.push({ text: `[${speaker}: Sent an image]` });
+                    }
                 }
             }
 
@@ -302,7 +318,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
             const next = msgs[i + 1];
             if (msgs[i].type != 'TEXT' && next && next.type === 'TEXT') {
                 if (next.content) {
-                    parts[0] = { text: next.content };
+                    parts[0] = { text: next.content, thought_signature: thoughtSignatureToSend };
                 }
                 i++; // Skip the next message by advancing the loop index one extra time
             }
@@ -351,7 +367,7 @@ function buildGeminiContents(messages: Message[], isProactive: boolean, persona:
 }
 
 export async function buildGeminiApiPayload(
-    provider: 'gemini' | 'vertexai',
+    provider: 'gemini' | 'vertexai' | 'custom',
     room: Room,
     persona: Persona,
     character: Character,
@@ -359,6 +375,7 @@ export async function buildGeminiApiPayload(
     isProactive: boolean,
     useStructuredOutput: boolean,
     useImageResponse: boolean | undefined,
+    useThoughtSignature: boolean,
     apiConfig: ApiConfig,
     extraSystemInstruction?: string
 ): Promise<GeminiApiPayload> {
@@ -366,7 +383,7 @@ export async function buildGeminiApiPayload(
     let trimmedMessages = [...messages];
 
     const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
-    const contentOnlyPrompt = buildGeminiContents([], isProactive, persona, character, room, useStructuredOutput, useImageResponse);
+    const contentOnlyPrompt = buildGeminiContents([], isProactive, persona, character, room, useStructuredOutput, useImageResponse, useThoughtSignature, apiConfig);
 
     const generationConfig: GeminiGenerationConfig = {
         temperature: selectPrompts(store.getState()).temperature,
@@ -416,7 +433,7 @@ export async function buildGeminiApiPayload(
     console.debug("Total tokens for system prompt only:", tokenCountForPromptOnly);
 
     while (true) {
-        const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput, useImageResponse);
+        const contents = buildGeminiContents(trimmedMessages, isProactive, persona, character, room, useStructuredOutput, useImageResponse, useThoughtSignature, apiConfig);
 
         const payload: GeminiApiPayload = {
             contents: contents,
@@ -449,7 +466,7 @@ export async function buildGeminiApiPayload(
     }
 }
 
-function buildClaudeContents(messages: Message[], isProactive: boolean, persona?: Persona, model?: string, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean, useImageResponse?: boolean) {
+function buildClaudeContents(messages: Message[], isProactive: boolean, persona?: Persona, model?: string, character?: Character, extraSystemInstruction?: string, room?: Room, useStructuredOutput?: boolean, useImageResponse?: boolean, apiConfig?: ApiConfig) {
     const state = store.getState();
     const activeRoomId = getActiveRoomId();
     const currentRoom = room || (activeRoomId ? selectRoomById(state, activeRoomId) : null);
@@ -471,16 +488,20 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
                 }
                 const base64Data = msg.file.dataUrl.split(',')[1];
                 if (mimeType && base64Data) {
-                    content.push({
-                        type: 'image',
-                        source: {
-                            data: base64Data,
-                            media_type: mimeType,
-                            type: 'base64'
-                        }
-                    });
-                    content.push({ type: 'text', text: `[${_speaker}: Sent an image]` });
-                    role = 'user';
+                    if (!apiConfig || !apiConfig.payloadTemplate || apiConfig.includeImages) {
+                        content.push({
+                            type: 'image',
+                            source: {
+                                data: base64Data,
+                                media_type: mimeType,
+                                type: 'base64'
+                            }
+                        });
+                        content.push({ type: 'text', text: `[${_speaker}: Sent an image]` });
+                        role = 'user';
+                    } else {
+                        content.push({ type: 'text', text: `[${_speaker}: Sent an image]` });
+                    }
                 }
             }
         }
@@ -536,7 +557,7 @@ function buildClaudeContents(messages: Message[], isProactive: boolean, persona?
 }
 
 export async function buildClaudeApiPayload(
-    provider: 'claude' | 'grok',
+    provider: 'claude' | 'grok' | 'custom',
     room: Room,
     persona: Persona,
     character: Character,
@@ -551,7 +572,7 @@ export async function buildClaudeApiPayload(
     let trimmedMessages = [...messages];
 
     const systemPrompt = buildSystemPrompt(persona, character, extraSystemInstruction, room, trimmedMessages, useStructuredOutput, useImageResponse);
-    const contentOnlyPrompt = buildClaudeContents([], isProactive, persona, apiConfig.model, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse);
+    const contentOnlyPrompt = buildClaudeContents([], isProactive, persona, apiConfig.model, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse, apiConfig);
 
     const payload_promptOnly: ClaudeApiPayload = {
         model: apiConfig.model,
@@ -562,7 +583,7 @@ export async function buildClaudeApiPayload(
         }],
         temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature,
         top_k: selectPrompts(store.getState()).topK,
-        ...((apiConfig.model.startsWith("claude-opus-4-1") || apiConfig.model.startsWith("claude-sonnet-4-5")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
+        ...((apiConfig.model.startsWith("claude-opus-4-1") || apiConfig.model.startsWith("claude-sonnet-4-5") || apiConfig.model.startsWith("claude-opus-4-5-20251101")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
         max_tokens: selectPrompts(store.getState()).maxResponseTokens,
     };
 
@@ -570,7 +591,7 @@ export async function buildClaudeApiPayload(
     console.debug("Total tokens for system prompt only:", tokenCountForPromptOnly);
 
     while (true) {
-        const contents = buildClaudeContents(trimmedMessages, isProactive, persona, apiConfig.model, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse);
+        const contents = buildClaudeContents(trimmedMessages, isProactive, persona, apiConfig.model, character, extraSystemInstruction, room, useStructuredOutput, useImageResponse, apiConfig);
 
         const payload: ClaudeApiPayload = {
             model: apiConfig.model,
@@ -581,7 +602,7 @@ export async function buildClaudeApiPayload(
             }],
             temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature,
             top_k: selectPrompts(store.getState()).topK,
-            ...((apiConfig.model.startsWith("claude-opus-4-1") || apiConfig.model.startsWith("claude-sonnet-4-5")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
+            ...((apiConfig.model.startsWith("claude-opus-4-1") || apiConfig.model.startsWith("claude-sonnet-4-5") || apiConfig.model.startsWith("claude-opus-4-5-20251101")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
             max_tokens: selectPrompts(store.getState()).maxResponseTokens,
         };
 
@@ -625,7 +646,11 @@ async function buildOpenAIContents(messages: Message[], isProactive: boolean, pr
         }
         if (msg.file?.dataUrl) {
             if (msg.file.mimeType.startsWith('image')) {
-                parts.push({ type: 'image_url', image_url: { url: msg.file.dataUrl } });
+                if (provider !== 'custom' || apiConfig.includeImages) {
+                    parts.push({ type: 'image_url', image_url: { url: msg.file.dataUrl } });
+                } else {
+                    parts.push({ type: 'text', text: `[${_speaker}: Sent an image]` });
+                }
             }
         }
 
@@ -737,7 +762,7 @@ export async function buildOpenAIApiPayload(
             }
         }
 
-        const response_format: OpenAIApiPayload['response_format'] = allowResponseFormat ? (provider !== 'deepseek' ? JSONSchema : {type: 'json_object'}) : undefined;
+        const response_format: OpenAIApiPayload['response_format'] = allowResponseFormat ? (provider !== 'deepseek' ? JSONSchema : { type: 'json_object' }) : undefined;
 
         const payload: OpenAIApiPayload = {
             model: apiConfig.model,

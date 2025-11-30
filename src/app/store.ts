@@ -229,10 +229,15 @@ export const migrations = {
         state = applyRules(state, {
             add: [
                 {
+                    path: 'settings.apiConfigs.custom',
+                    keys: ['maxRetries'],
+                    defaults: { maxRetries: settingsInitialApiConfigs.custom.maxRetries }
+                },
+                {
                     path: 'settings',
                     keys: ['proactiveSettings'],
                     defaults: { proactiveSettings: initialProactiveSettings }
-                },
+                }
             ]
         });
         return state;

@@ -5,7 +5,21 @@ import { unzipToDataUrls } from "../../utils/zip2png";
 import { GEMINI_API_BASE_URL, NAI_DIFFUSION_API_BASE_URL } from "../URLs";
 import { buildGeminiImagePayload, buildNovelAIImagePayload } from "./ImagePromptBuilder";
 
-export async function callImageGeneration(imageGenerationSetting: { prompt: string; isIncludingChar: boolean }, char: Character) {
+export interface ImageApiResponse {
+    candidates: [{
+        content: {
+            parts: [{
+                inlineData: {
+                    mimeType: string;
+                    data: string;
+                }
+                thoughtSignature?: string;
+            }]
+        },
+        finishReason: string;
+    }]
+};
+export async function callImageGeneration(imageGenerationSetting: { prompt: string; isIncludingChar: boolean }, char: Character): Promise<ImageApiResponse> {
     const imageConfig = selectCurrentImageApiConfig(store.getState());
     const artStyle = selectCurrentArtStyle(store.getState());
 
@@ -153,7 +167,7 @@ export async function callImageGeneration(imageGenerationSetting: { prompt: stri
                     content: {
                         parts: [{
                             inlineData: {
-                                mimeType: imageResponse.headers.get('Content-Type'),
+                                mimeType: imageResponse.headers.get('Content-Type')!,
                                 data: await imageUrlToBase64(await imageResponse.blob())
                             }
                         }]

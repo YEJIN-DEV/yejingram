@@ -376,6 +376,10 @@ const en = {
                 selectTokenizer: "Select a tokenizer",
                 payloadTemplateLabel: "Payload template",
                 selectPayloadTemplate: "Select a payload template",
+                includeImagesLabel: "Include images",
+                includeImagesDescription: "Include images in the model context.",
+                maxRetriesLabel: "Max retries",
+                maxRetriesDescription: "Number of retry attempts when API request fails.",
             },
             openrouter: {
                 modelLabel: "OpenRouter model",

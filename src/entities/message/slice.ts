@@ -20,6 +20,7 @@ const messagesSlice = createSlice({
         upsertMany: messagesAdapter.upsertMany,
         removeOne: messagesAdapter.removeOne,
         updateOne: messagesAdapter.updateOne,
+        updateMany: messagesAdapter.updateMany,
         removeMany: messagesAdapter.removeMany,
         importMessages: (state, action: PayloadAction<Message[]>) => {
             messagesAdapter.upsertMany(state, action.payload);
@@ -39,11 +40,50 @@ export const messagesActions = {
         (message: Message): AppThunk =>
             (dispatch) => {
                 dispatch(messagesSlice.actions.upsertOne(message));
-
                 const activeRoomId = getActiveRoomId();
                 if (message.roomId && message.roomId !== activeRoomId) {
                     dispatch(roomsActions.incrementUnread(message.roomId));
                 }
             },
+    removeOne:
+        (message: Message): AppThunk =>
+            (dispatch) => {
+                if (message.thoughtSignature)
+                    dispatch(messagesActions.removethoughtSignatures(message.thoughtSignature));
+
+                dispatch(messagesSlice.actions.removeOne(message.id));
+            },
+    updateOne:
+        (payload: { id: string; changes: Partial<Message> }): AppThunk =>
+            (dispatch) => {
+                dispatch(messagesSlice.actions.updateOne(payload));
+                if (payload.changes.content && payload.changes.thoughtSignature)
+                    dispatch(messagesActions.removethoughtSignatures(payload.changes.thoughtSignature));
+            },
+    removethoughtSignatures: (thoughtSignature: string): AppThunk =>
+        (dispatch, getState) => {
+            const state = getState() as any;
+            const updates = messagesAdapter.getSelectors().selectAll(state.messages)
+                .filter(msg => msg.thoughtSignature === thoughtSignature)
+                .map(msg => ({
+                    id: msg.id,
+                    changes: { thoughtSignature: undefined }
+                }));
+            dispatch(messagesSlice.actions.updateMany(updates));
+        },
+    clearAllThoughtSignatures: (): AppThunk =>
+        (dispatch, getState) => {
+            const state = getState() as RootState;
+            const updates = messagesAdapter.getSelectors().selectAll(state.messages)
+                .filter(msg => msg.thoughtSignature !== undefined)
+                .map(msg => ({
+                    id: msg.id,
+                    changes: { thoughtSignature: undefined }
+                }));
+
+            if (updates.length > 0) {
+                dispatch(messagesSlice.actions.updateMany(updates));
+            }
+        }
 }
 export default messagesSlice.reducer

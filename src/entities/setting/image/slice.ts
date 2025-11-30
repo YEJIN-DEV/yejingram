@@ -6,7 +6,7 @@ import { nanoid } from '@reduxjs/toolkit';
 export const initialImageApiConfigs: Record<ImageApiProvider, ImageApiConfig> = {
     gemini: {
         apiKey: '',
-        model: 'gemini-2.5-flash-image-preview'
+        model: 'gemini-3-pro-image-preview'
     },
     novelai: {
         apiKey: '',

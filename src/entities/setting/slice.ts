@@ -9,12 +9,12 @@ import defaultPrompts from './defaultPrompts.json';
 export const initialApiConfigs: Record<ApiProvider, ApiConfig> = {
     gemini: { apiKey: '', model: 'gemini-2.5-pro', customModels: [] },
     vertexai: { apiKey: '', model: 'gemini-2.5-pro', customModels: [], projectId: '', location: 'global', accessToken: '' },
-    claude: { apiKey: '', model: 'claude-opus-4-1-20250805', customModels: [] },
+    claude: { apiKey: '', model: 'claude-opus-4-5-20251101', customModels: [] },
     openai: { apiKey: '', model: 'gpt-5', customModels: [] },
     grok: { apiKey: '', model: 'grok-4-0709', customModels: [] },
     deepseek: { apiKey: '', model: 'deepseek-chat', customModels: [] },
     openrouter: { apiKey: '', model: '', customModels: [], tokenizer: '', providers: [], providerAllowFallbacks: true },
-    custom: { apiKey: '', baseUrl: '', model: '', customModels: [], tokenizer: '', payloadTemplate: '' },
+    custom: { apiKey: '', baseUrl: '', model: '', customModels: [], tokenizer: '', payloadTemplate: '', maxRetries: 3 },
 };
 
 export const initialSyncSettings: Sync = {

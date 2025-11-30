@@ -376,6 +376,10 @@ const ja = {
                 selectTokenizer: "トークナイザーを選択してください",
                 payloadTemplateLabel: "ペイロードテンプレート",
                 selectPayloadTemplate: "ペイロードテンプレートを選択してください",
+                includeImagesLabel: "画像を含める",
+                includeImagesDescription: "モデルのコンテキストに画像を含めます。",
+                maxRetriesLabel: "最大リトライ回数",
+                maxRetriesDescription: "APIリクエスト失敗時のリトライ回数です。",
             },
             openrouter: {
                 modelLabel: "OpenRouter モデル",

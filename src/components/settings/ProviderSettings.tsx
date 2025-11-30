@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { SettingsState, ApiConfig } from '../../entities/setting/types';
-import { Key, Cpu, Link, Plus, X, Briefcase, Globe, LayoutTemplate, Braces } from 'lucide-react';
+import { Key, Cpu, Link, Plus, X, Briefcase, Globe, LayoutTemplate, Braces, RefreshCw } from 'lucide-react';
 import { initialApiConfigs } from '../../entities/setting/slice';
 import { Toggle } from '../Toggle';
 
@@ -13,14 +13,17 @@ interface ProviderSettingsProps {
 
 const providerModels: Record<string, string[]> = {
     gemini: [
+        'gemini-3-pro-preview',
         'gemini-2.5-pro',
         'gemini-2.5-flash'
     ],
     vertexai: [
+        'gemini-3-pro-preview',
         'gemini-2.5-pro',
         'gemini-2.5-flash'
     ],
     claude: [
+        'claude-opus-4-5-20251101',
         'claude-sonnet-4-5',
         'claude-opus-4-1-20250805',
         'claude-opus-4-20250514',
@@ -502,6 +505,32 @@ export function ProviderSettings({ settings, setSettings }: ProviderSettingsProp
                                 </select>
                             );
                         })()}
+                    </div>
+
+                    <Toggle
+                        id="include-images-toggle"
+                        label={t('settings.ai.custom.includeImagesLabel')}
+                        description={t('settings.ai.custom.includeImagesDescription')}
+                        checked={config.includeImages ?? false}
+                        onChange={(checked) => handleConfigChange('includeImages', checked)}
+                    />
+
+                    {/* Max retries for custom provider */}
+                    <div>
+                        <label className="flex items-center text-sm font-medium text-[var(--color-text-interface)] mb-2"><RefreshCw className="w-4 h-4 mr-2" />{t('settings.ai.custom.maxRetriesLabel')}</label>
+                        <input
+                            type="number"
+                            min={1}
+                            value={config.maxRetries ?? 3}
+                            onChange={e => {
+                                const val = parseInt(e.target.value, 10);
+                                if (!isNaN(val) && val >= 1) {
+                                    handleConfigChange('maxRetries', val);
+                                }
+                            }}
+                            className="w-full px-4 py-3 bg-[var(--color-bg-input-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-focus-border)]/50 focus:border-[var(--color-focus-border)] transition-transform duration-200 text-sm"
+                        />
+                        <p className="text-xs text-[var(--color-text-secondary)] mt-1">{t('settings.ai.custom.maxRetriesDescription')}</p>
                     </div>
                 </div>
             )}

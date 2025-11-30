@@ -46,7 +46,31 @@ async function handleApiResponse(
     setTypingCharacterId: (id: number | null) => void,
     t: (key: string) => string
 ) {
-    // If structured output included a newMemory field, append it to the character
+    if (res && res.messages && Array.isArray(res.messages) && res.messages.length > 0) {
+        if (res.reactionDelay && res.reactionDelay > 10000) {
+            console.warn("Capping reaction delay to 10 seconds.");
+            res.reactionDelay = 10000;
+        }
+        await sleep(res.reactionDelay || 1000);
+        setTypingCharacterId(char.id);
+
+        for (let i = 0; i < res.messages.length; i++) {
+            const messagePart = res.messages[i];
+            if (i > 0) {
+                await sleep(messagePart.delay || 1000);
+            }
+
+            const messages = await createMessageFromPart(messagePart, room.id, char, res.thoughtSignature);
+            for (const message of messages) {
+                dispatch(messagesActions.upsertOne(message));
+            }
+
+            if (i === res.messages.length - 1) {
+                dispatch({ type: 'messages/writingEnd' });
+            }
+        }
+    }
+
     if (res && 'newMemory' in res) {
         const mem = res.newMemory;
         if (typeof mem === 'string') {
@@ -63,33 +87,9 @@ async function handleApiResponse(
             }
         }
     }
-    if (res && res.messages && Array.isArray(res.messages) && res.messages.length > 0) {
-        if (res.reactionDelay && res.reactionDelay > 10000) {
-            console.warn("Capping reaction delay to 10 seconds.");
-            res.reactionDelay = 10000;
-        }
-        await sleep(res.reactionDelay || 1000);
-        setTypingCharacterId(char.id);
-
-        for (let i = 0; i < res.messages.length; i++) {
-            const messagePart = res.messages[i];
-            if (i > 0) {
-                await sleep(messagePart.delay || 1000);
-            }
-
-            const messages = await createMessageFromPart(messagePart, room.id, char);
-            for (const message of messages) {
-                dispatch(messagesActions.upsertOne(message));
-            }
-
-            if (i === res.messages.length - 1) {
-                dispatch({ type: 'messages/writingEnd' });
-            }
-        }
-    }
 }
 
-async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character): Promise<Message[]> {
+async function createMessageFromPart(messagePart: MessagePart, roomId: string, char: Character, thoughtSignature?: string): Promise<Message[]> {
     let message: Message[] = [];
 
     if (messagePart.content) {
@@ -100,6 +100,7 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
             createdAt: new Date().toISOString(),
             type: 'TEXT',
             content: messagePart.content,
+            thoughtSignature
         });
     }
 
@@ -113,13 +114,14 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
                 createdAt: new Date().toISOString(),
                 type: 'STICKER',
                 sticker: foundSticker,
+                thoughtSignature
             });
         }
     }
 
     if (messagePart.imageGenerationSetting) {
         const imageResponse = await callImageGeneration(messagePart.imageGenerationSetting, char);
-        const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData ?? imageResponse.candidates[0].content.parts[1].inlineData ?? null;
+        const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData;
         if (inlineDataBody) {
             message.push({
                 id: nanoid(),
@@ -132,10 +134,11 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
                     mimeType: inlineDataBody.mimeType,
                     name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
                 },
-                imageGenerationSetting: messagePart.imageGenerationSetting
+                imageGenerationSetting: messagePart.imageGenerationSetting,
+                thoughtSignature: imageResponse.candidates[0].content.parts[0].thoughtSignature
             });
         } else {
-            throw new Error('Failed to generate image:', imageResponse.candidates[0].finishReason ?? '');
+            throw new Error(`Failed to generate image: ${imageResponse.candidates[0].finishReason}`);
         }
     }
 
@@ -170,10 +173,11 @@ async function callApi(
     const { apiProvider } = settings;
     let payload: string | object = '';
 
+    const useThoughtSignature = apiConfig.model.startsWith('gemini-3');
     switch (apiProvider) {
         case 'gemini':
         case 'vertexai':
-            payload = await buildGeminiApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
+            payload = await buildGeminiApiPayload(apiProvider, room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, useThoughtSignature, apiConfig, extraSystemInstruction);
             break;
         case 'claude':
         case 'grok':
@@ -187,13 +191,13 @@ async function callApi(
         case 'custom':
             switch (apiConfig.payloadTemplate) {
                 case 'gemini':
-                    payload = await buildGeminiApiPayload('gemini', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
+                    payload = await buildGeminiApiPayload('custom', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, useThoughtSignature, apiConfig, extraSystemInstruction);
                     break;
                 case 'anthropic':
-                    payload = await buildClaudeApiPayload('claude', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
+                    payload = await buildClaudeApiPayload('custom', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction);
                     break;
                 case 'openai':
-                    payload = await buildOpenAIApiPayload('openai', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction, settings.useResponseFormat ?? true);
+                    payload = await buildOpenAIApiPayload('custom', room, persona, character, messages, isProactive, settings.useStructuredOutput, settings.useImageResponse, apiConfig, extraSystemInstruction, settings.useResponseFormat ?? true);
                     break;
             }
             break;
@@ -253,39 +257,54 @@ async function callApi(
         };
     }
 
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(payload)
-        });
+    const maxRetries = (apiProvider === 'custom' && apiConfig.maxRetries) ? apiConfig.maxRetries : 1;
+    let lastError: unknown = null;
 
-        const data = await response.json();
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload)
+            });
 
-        if (!response.ok) {
-            console.error("API Error:", data);
-            const errorMessage = (data as any)?.error?.message || `API request failed: ${response.statusText}`;
-            throw new Error(errorMessage);
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error("API Error:", data);
+                const errorMessage = (data as any)?.error?.message || `API request failed: ${response.statusText}`;
+                throw new Error(errorMessage);
+            }
+
+            return parseApiResponse(data, settings, messages);
+
+        } catch (error: unknown) {
+            lastError = error;
+            console.error(`${apiProvider} error occurred while requesting (attempt ${attempt + 1}/${maxRetries}):`, error);
+
+            // If not the last attempt and custom provider, wait before retrying
+            if (attempt < maxRetries - 1 && apiProvider === 'custom') {
+                const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Exponential backoff, max 10s
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+            throw error;
         }
-
-        return parseApiResponse(data, settings, messages);
-
-    } catch (error: unknown) {
-        console.error(`${apiProvider} error occured while requesting:`, error);
-        throw error;
     }
+
+    throw lastError;
 }
 
 function parseApiResponse(data: any, settings: SettingsState, messages: Message[]): ChatResponse {
     const apiProvider = settings.apiProvider;
 
-    function processApiMessage(targetData: string): ChatResponse {
+    function processApiMessage(targetData: string, thoughtSignature?: string): ChatResponse {
         const rawResponseText = sanitizeOutputContent(targetData) ?? '';
         if (settings.useStructuredOutput) {
             try {
                 const parsed = llmParser.parse(rawResponseText);
                 parsed.reactionDelay = Math.max(0, parsed?.reactionDelay || 0);
-                return parsed;
+                return { ...parsed, thoughtSignature };
             } catch {
                 // If parsing fails, fallback to plain text
                 console.warn("Failed to parse structured output, falling back to plain text.");
@@ -308,7 +327,7 @@ function parseApiResponse(data: any, settings: SettingsState, messages: Message[
 
     if (apiProvider === 'gemini' || apiProvider === 'vertexai') {
         if (data.candidates && data.candidates.length > 0 && data.candidates[0].content?.parts[0]?.text) {
-            return processApiMessage(data.candidates[0].content?.parts[0]?.text);
+            return processApiMessage(data.candidates[0].content?.parts[0]?.text, data.candidates[0].content?.parts[0]?.thoughtSignature);
         } else {
             throw new Error(data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || 'Unknown reason');
         }
