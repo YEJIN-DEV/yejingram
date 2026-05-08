@@ -55,6 +55,9 @@ export interface Prompts {
     temperature: number;
     topP: number;
     topK: number;
+    useTemperature: boolean;
+    useTopP: boolean;
+    useTopK: boolean;
 }
 
 export interface SettingsState {

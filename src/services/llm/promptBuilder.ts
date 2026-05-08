@@ -393,13 +393,13 @@ export async function buildGeminiApiPayload(
     const contentOnlyPrompt = await buildGeminiContents([], isProactive, persona, character, room, useStructuredOutput, useImageResponse, usePayloadImage, useThoughtSignature, apiConfig);
 
     const generationConfig: GeminiGenerationConfig = {
-        temperature: selectPrompts(store.getState()).temperature,
-        topP: selectPrompts(store.getState()).topP,
+        ...(selectPrompts(store.getState()).useTemperature ? { temperature: selectPrompts(store.getState()).temperature } : {}),
+        ...(selectPrompts(store.getState()).useTopP ? { topP: selectPrompts(store.getState()).topP } : {}),
     };
 
     const topK = selectPrompts(store.getState()).topK;
 
-    if (topK) {
+    if (selectPrompts(store.getState()).useTopK && topK) {
         generationConfig.topK = topK;
     }
 
@@ -598,9 +598,9 @@ export async function buildClaudeApiPayload(
             type: "text",
             text: systemPrompt
         }],
-        temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature,
-        top_k: selectPrompts(store.getState()).topK,
-        ...((apiConfig.model.startsWith("claude-opus-4-1") || apiConfig.model.startsWith("claude-sonnet-4-5") || apiConfig.model.startsWith("claude-opus-4-5-20251101")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
+        ...(selectPrompts(store.getState()).useTemperature ? { temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature } : {}),
+        ...(selectPrompts(store.getState()).useTopK ? { top_k: selectPrompts(store.getState()).topK } : {}),
+        ...(selectPrompts(store.getState()).useTopP ? { top_p: selectPrompts(store.getState()).topP } : {}),
         max_tokens: selectPrompts(store.getState()).maxResponseTokens,
     };
 
@@ -617,9 +617,9 @@ export async function buildClaudeApiPayload(
                 type: "text",
                 text: systemPrompt
             }],
-            temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature,
-            top_k: selectPrompts(store.getState()).topK,
-            ...((apiConfig.model.startsWith("claude-opus-4-1") || apiConfig.model.startsWith("claude-sonnet-4-5") || apiConfig.model.startsWith("claude-opus-4-5-20251101")) ? {} : { top_p: selectPrompts(store.getState()).topP }),
+            ...(selectPrompts(store.getState()).useTemperature ? { temperature: selectPrompts(store.getState()).temperature > 1 ? 1 : selectPrompts(store.getState()).temperature } : {}),
+            ...(selectPrompts(store.getState()).useTopK ? { top_k: selectPrompts(store.getState()).topK } : {}),
+            ...(selectPrompts(store.getState()).useTopP ? { top_p: selectPrompts(store.getState()).topP } : {}),
             max_tokens: selectPrompts(store.getState()).maxResponseTokens,
         };
 
@@ -793,8 +793,8 @@ export async function buildOpenAIApiPayload(
         const payload: OpenAIApiPayload = {
             model: apiConfig.model,
             messages: history,
-            temperature: apiConfig.model == 'gpt-5' ? 1 : selectPrompts(store.getState()).temperature,
-            top_p: apiConfig.model == 'gpt-5' ? undefined : selectPrompts(store.getState()).topP,
+            temperature: selectPrompts(store.getState()).useTemperature ? selectPrompts(store.getState()).temperature : undefined,
+            top_p: selectPrompts(store.getState()).useTopP ? selectPrompts(store.getState()).topP : undefined,
             max_completion_tokens: selectPrompts(store.getState()).maxResponseTokens,
             response_format,
         };

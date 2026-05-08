@@ -333,8 +333,11 @@ const en = {
             generation: {
                 title: "Generation settings",
                 temperature: "Temperature",
+                useTemperature: "Use Temperature",
                 topP: "Top-P",
                 topK: "Top-K",
+                useTopP: "Use Top-P",
+                useTopK: "Use Top-K",
             },
             actions: {
                 backup: "Back up prompts",

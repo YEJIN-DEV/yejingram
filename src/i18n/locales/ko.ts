@@ -335,8 +335,11 @@ const ko = {
             generation: {
                 title: "생성 설정",
                 temperature: "온도",
+                useTemperature: "온도 사용",
                 topP: "Top-P",
                 topK: "Top-K",
+                useTopP: "Top-P 사용",
+                useTopK: "Top-K 사용",
             },
             actions: {
                 backup: "프롬프트 백업",

@@ -90,8 +90,8 @@ export interface ClaudeApiPayload {
         type: string;
         text: string;
     }[];
-    temperature: number;
-    top_k: number;
+    temperature?: number;
+    top_k?: number;
     top_p?: number;
     max_tokens: number;
 }

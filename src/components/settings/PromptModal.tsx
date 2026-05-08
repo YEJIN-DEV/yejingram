@@ -354,7 +354,18 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         <div className="flex flex-col">
                             <label className="flex items-center justify-between text-xs font-medium text-(--color-text-tertiary) mb-2">
                                 <span className="flex items-center gap-1"><Thermometer className="w-4 h-4" /> {t('settings.prompts.generation.temperature')}</span>
-                                <span className="text-(--color-preview-accent-to) font-semibold">{localPrompts.temperature?.toFixed(2) ?? 'N/A'}</span>
+                                <span className="flex items-center gap-2">
+                                    <span className={localPrompts.useTemperature ?? true ? "text-(--color-preview-accent-to) font-semibold" : "text-(--color-text-tertiary) line-through"}>{localPrompts.temperature?.toFixed(2) ?? 'N/A'}</span>
+                                    <label className="flex items-center gap-1 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={localPrompts.useTemperature ?? true}
+                                            onChange={e => setLocalPrompts(prev => ({ ...prev, useTemperature: e.target.checked }))}
+                                            className="accent-(--color-button-primary) w-3.5 h-3.5"
+                                        />
+                                        <span className="text-xs">{t('settings.prompts.generation.useTemperature')}</span>
+                                    </label>
+                                </span>
                             </label>
                             <input
                                 type="range"
@@ -362,9 +373,9 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                 max={currentApiProvider === 'claude' ? 1 : 2}
                                 step="0.01"
                                 value={localPrompts.temperature || 1.25}
+                                disabled={!(localPrompts.useTemperature ?? true)}
                                 onChange={e => setLocalPrompts(prev => ({ ...prev, temperature: parseFloat(parseFloat(e.target.value).toFixed(2)) ?? -1 }))}
-
-                                className="w-full accent-(--color-button-primary)"
+                                className={`w-full accent-(--color-button-primary) transition-opacity ${!(localPrompts.useTemperature ?? true) ? 'opacity-30 cursor-not-allowed' : ''}`}
                             />
                             <div className="flex justify-between text-xs text-(--color-text-informative-primary) mt-1">
                                 <span>0</span>
@@ -374,7 +385,18 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         <div className="flex flex-col">
                             <label className="flex items-center justify-between text-xs font-medium text-(--color-text-tertiary) mb-2">
                                 <span className="flex items-center gap-1"><Percent className="w-4 h-4" /> {t('settings.prompts.generation.topP')}</span>
-                                <span className="text-(--color-preview-accent-to) font-semibold">{localPrompts.topP?.toFixed(2) ?? 'N/A'}</span>
+                                <span className="flex items-center gap-2">
+                                    <span className={localPrompts.useTopP ? "text-(--color-preview-accent-to) font-semibold" : "text-(--color-text-tertiary) line-through"}>{localPrompts.topP?.toFixed(2) ?? 'N/A'}</span>
+                                    <label className="flex items-center gap-1 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={localPrompts.useTopP ?? true}
+                                            onChange={e => setLocalPrompts(prev => ({ ...prev, useTopP: e.target.checked }))}
+                                            className="accent-(--color-button-primary) w-3.5 h-3.5"
+                                        />
+                                        <span className="text-xs">{t('settings.prompts.generation.useTopP')}</span>
+                                    </label>
+                                </span>
                             </label>
                             <input
                                 type="range"
@@ -382,8 +404,9 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                 max="1"
                                 step="0.01"
                                 value={localPrompts.topP || 0.95}
+                                disabled={!(localPrompts.useTopP ?? true)}
                                 onChange={e => setLocalPrompts(prev => ({ ...prev, topP: parseFloat(parseFloat(e.target.value).toFixed(2)) ?? -1 }))}
-                                className="w-full accent-(--color-button-primary)"
+                                className={`w-full accent-(--color-button-primary) transition-opacity ${!(localPrompts.useTopP ?? true) ? 'opacity-30 cursor-not-allowed' : ''}`}
                             />
                             <div className="flex justify-between text-xs text-(--color-text-informative-primary) mt-1">
                                 <span>0</span>
@@ -393,7 +416,18 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                         <div className="flex flex-col">
                             <label className="flex items-center justify-between text-xs font-medium text-(--color-text-tertiary) mb-2">
                                 <span className="flex items-center gap-1"><ArrowUpToLine className="w-4 h-4" /> {t('settings.prompts.generation.topK')}</span>
-                                <span className="text-(--color-preview-accent-to) font-semibold">{localPrompts.topK ?? 'N/A'}</span>
+                                <span className="flex items-center gap-2">
+                                    <span className={localPrompts.useTopK ? "text-(--color-preview-accent-to) font-semibold" : "text-(--color-text-tertiary) line-through"}>{localPrompts.topK ?? 'N/A'}</span>
+                                    <label className="flex items-center gap-1 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={localPrompts.useTopK ?? true}
+                                            onChange={e => setLocalPrompts(prev => ({ ...prev, useTopK: e.target.checked }))}
+                                            className="accent-(--color-button-primary) w-3.5 h-3.5"
+                                        />
+                                        <span className="text-xs">{t('settings.prompts.generation.useTopK')}</span>
+                                    </label>
+                                </span>
                             </label>
                             <input
                                 type="range"
@@ -401,8 +435,9 @@ function PromptModal({ isOpen, onClose }: PromptModalProps) {
                                 max="100"
                                 step="1"
                                 value={localPrompts.topK || 40}
+                                disabled={!(localPrompts.useTopK ?? true)}
                                 onChange={e => setLocalPrompts(prev => ({ ...prev, topK: parseInt(e.target.value) ?? -1 }))}
-                                className="w-full accent-(--color-button-primary)"
+                                className={`w-full accent-(--color-button-primary) transition-opacity ${!(localPrompts.useTopK ?? true) ? 'opacity-30 cursor-not-allowed' : ''}`}
                             />
                             <div className="flex justify-between text-xs text-(--color-text-informative-primary) mt-1">
                                 <span>1</span>

@@ -151,5 +151,8 @@
     "maxResponseTokens": 2048,
     "temperature": 1.25,
     "topP": 0.95,
-    "topK": 40
+    "topK": 40,
+    "useTemperature": true,
+    "useTopP": true,
+    "useTopK": true
 }

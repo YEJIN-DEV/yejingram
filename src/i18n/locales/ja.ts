@@ -333,8 +333,11 @@ const ja = {
             generation: {
                 title: "生成設定",
                 temperature: "温度",
+                useTemperature: "温度を使用",
                 topP: "Top-P",
                 topK: "Top-K",
+                useTopP: "Top-P を使用",
+                useTopK: "Top-K を使用",
             },
             actions: {
                 backup: "プロンプトをバックアップ",

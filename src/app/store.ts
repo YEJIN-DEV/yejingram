@@ -388,6 +388,16 @@ export const migrations = {
             }]
         });
         return state;
+    },
+    10: (state: any) => {
+        state = applyRules(state, {
+            add: [{
+                path: 'settings.prompts',
+                keys: ['useTemperature', 'useTopP', 'useTopK'],
+                defaults: { useTemperature: true, useTopP: true, useTopK: true }
+            }]
+        });
+        return state;
     }
 } as MigrationManifest;
 
@@ -395,7 +405,7 @@ export const migrations = {
 export const persistConfig = {
     key: 'yejingram',
     storage: blobStorage as any,
-    version: 9,
+    version: 10,
     whitelist: ['characters', 'rooms', 'messages', 'settings', 'lastSaved', 'sync'],
     migrate: createMigrate(migrations, { debug: true }),
 };
