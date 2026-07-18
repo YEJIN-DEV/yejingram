@@ -16,7 +16,8 @@ import toast from 'react-hot-toast';
 import { callImageGeneration } from "../image/ImageCaller";
 import { LLMJSONParser } from 'ai-json-fixer';
 import { CLAUDE_API_BASE_URL, GEMINI_API_BASE_URL, GROK_API_BASE_URL, OPENAI_API_BASE_URL, VERTEX_AI_API_BASE_URL, OPENROUTER_API_BASE_URL, DEEPSEEK_API_BASE_URL } from "../URLs";
-import { makeMessageBinaryKey, saveBase64 } from '../binaryStore';
+import { base64ToBlob, makeMessageBinaryKey, saveBlob } from '../binaryStore';
+import { measureImageBlob, setCachedImageDims } from '../../utils/imageDims';
 
 const llmParser = new LLMJSONParser();
 
@@ -126,7 +127,10 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
         if (inlineDataBody) {
             const messageId = nanoid();
             const storageKey = makeMessageBinaryKey(messageId);
-            await saveBase64(storageKey, inlineDataBody.data, inlineDataBody.mimeType);
+            const blob = base64ToBlob(inlineDataBody.data, inlineDataBody.mimeType);
+            await saveBlob(storageKey, blob);
+            const dims = await measureImageBlob(blob);
+            if (dims) setCachedImageDims(storageKey, dims);
             message.push({
                 id: messageId,
                 roomId: roomId,
@@ -136,7 +140,8 @@ async function createMessageFromPart(messagePart: MessagePart, roomId: string, c
                 file: {
                     storageKey,
                     mimeType: inlineDataBody.mimeType,
-                    name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`
+                    name: `generated_image.${inlineDataBody.mimeType.split('/')[1] || 'png'}`,
+                    ...(dims ?? {})
                 },
                 imageGenerationSetting: messagePart.imageGenerationSetting,
                 thoughtSignature: imageResponse.candidates[0].content.parts[0].thoughtSignature

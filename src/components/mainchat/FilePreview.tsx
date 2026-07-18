@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { StickyNote } from 'lucide-react';
 import type { StoredFileRef } from '../../entities/message/types';
 import { getBlob, makeBinaryUrl } from '../../services/binaryStore';
+import { getCachedImageDims, setCachedImageDims } from '../../utils/imageDims';
 
 export function FilePreview({
   file,
@@ -9,12 +10,14 @@ export function FilePreview({
   t,
   previewSrc,
   onResolveImageUrl,
+  onImageDims,
 }: {
   file: StoredFileRef;
   preview: boolean;
   t: (key: string) => string;
   previewSrc?: string;
   onResolveImageUrl?: (url: string) => void;
+  onImageDims?: (width: number, height: number) => void;
 }) {
   const mimeType = file.mimeType;
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -57,7 +60,22 @@ export function FilePreview({
   const src = objectUrl || previewSrc || null;
 
   if (mimeType.startsWith('image/')) {
+    // Known natural size (from the message or the session cache) lets us reserve
+    // the final layout box before the blob resolves, so virtualized list items
+    // keep a stable height and the scroll position doesn't jump.
+    const dims = (file.width && file.height)
+      ? { width: file.width, height: file.height }
+      : getCachedImageDims(file.storageKey);
+
     if (!src) {
+      if (!preview && dims) {
+        return (
+          <div
+            className="max-w-64 bg-(--color-button-secondary-accent) rounded-lg"
+            style={{ width: dims.width, aspectRatio: `${dims.width} / ${dims.height}` }}
+          />
+        );
+      }
       return (
         <div className="flex flex-col items-center justify-center h-24 bg-(--color-button-secondary-accent) rounded-lg">
           <StickyNote className="w-8 h-8 text-(--color-icon-tertiary)" />
@@ -68,8 +86,16 @@ export function FilePreview({
     return (
       <img
         src={src}
-        className={`${preview ? 'max-w-full max-h-32' : 'max-w-64'} object-contain rounded-lg`}
+        {...(!preview && dims ? { width: dims.width, height: dims.height } : {})}
+        className={`${preview ? 'max-w-full max-h-32' : 'max-w-64 h-auto'} object-contain rounded-lg`}
         alt={t('main.filePreview.alt')}
+        onLoad={(e) => {
+          const el = e.currentTarget;
+          if (el.naturalWidth > 0 && el.naturalHeight > 0) {
+            setCachedImageDims(file.storageKey, { width: el.naturalWidth, height: el.naturalHeight });
+            onImageDims?.(el.naturalWidth, el.naturalHeight);
+          }
+        }}
       />
     );
   }

@@ -8,6 +8,9 @@ export type StoredFileRef = {
     storageKey: string;
     mimeType: string;
     name?: string;
+    // Natural pixel size for images; lets the UI reserve layout space before load.
+    width?: number;
+    height?: number;
 };
 
 export type Message = {

@@ -15,7 +15,8 @@ import type { Room } from '../../entities/room/types';
 import { inviteCharacter } from '../../utils/inviteCharacter';
 import { UrlPreview } from './chatcontents/UrlPreviewProps';
 import { callImageGeneration } from '../../services/image/ImageCaller';
-import { deleteBlob, getBlob, makeBinaryUrl, makeMessageBinaryKey, saveBase64 } from '../../services/binaryStore';
+import { base64ToBlob, deleteBlob, getBlob, makeBinaryUrl, makeMessageBinaryKey, saveBlob } from '../../services/binaryStore';
+import { getCachedImageDims, measureImageBlob, setCachedImageDims } from '../../utils/imageDims';
 import type { Sticker } from '../../entities/character/types';
 import { FilePreview } from './FilePreview';
 
@@ -68,13 +69,28 @@ function StickerMessageContent({
     };
   }, [sticker.storageKey]);
 
+  // Reserve the final layout box while loading so virtualized items keep a stable height.
+  const dims = sticker.storageKey ? getCachedImageDims(sticker.storageKey) : null;
+
   return (
     <div className="space-x-1 inline-block cursor-pointer transition-all duration-300" onClick={() => onToggle(messageId)}>
       {objectUrl ? (
         <img
           src={objectUrl}
           alt={stickerName}
-          className={`${sizeClass} rounded-2xl object-contain transition-all duration-500`}
+          {...(dims ? { width: dims.width, height: dims.height } : {})}
+          className={`${sizeClass} h-auto rounded-2xl object-contain transition-all duration-500`}
+          onLoad={(e) => {
+            const el = e.currentTarget;
+            if (sticker.storageKey && el.naturalWidth > 0 && el.naturalHeight > 0) {
+              setCachedImageDims(sticker.storageKey, { width: el.naturalWidth, height: el.naturalHeight });
+            }
+          }}
+        />
+      ) : dims ? (
+        <div
+          className={`${sizeClass} rounded-2xl bg-gray-100 dark:bg-gray-800 transition-all duration-500`}
+          style={{ width: dims.width, aspectRatio: `${dims.width} / ${dims.height}` }}
         />
       ) : (
         <div
@@ -420,7 +436,21 @@ const MessageList = forwardRef<VirtuosoHandle, MessageListProps>(({
               }}
               className={`relative ${msg.type === 'IMAGE' && !isRegenerating ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
             >
-              <FilePreview file={msg.file} preview={false} t={t} />
+              <FilePreview
+                file={msg.file}
+                preview={false}
+                t={t}
+                onImageDims={(width, height) => {
+                  // Backfill dimensions on legacy messages so future renders can
+                  // reserve space before the image loads.
+                  if (!msg.file.width || !msg.file.height) {
+                    dispatch(messagesActions.updateOne({
+                      id: msg.id,
+                      changes: { file: { ...msg.file, width, height } }
+                    }));
+                  }
+                }}
+              />
               {isRegenerating && (
                 <div className="absolute inset-0 bg-(--color-bg-shadow)/50 flex items-center justify-center rounded-lg">
                   <div className="flex flex-col items-center text-(--color-text-accent)">
@@ -649,7 +679,10 @@ const MessageList = forwardRef<VirtuosoHandle, MessageListProps>(({
                                   const inlineDataBody = imageResponse.candidates[0].content.parts[0].inlineData;
                                   if (inlineDataBody) {
                                     const storageKey = `${makeMessageBinaryKey(msg.id)}_reroll_${Date.now()}`;
-                                    await saveBase64(storageKey, inlineDataBody.data, inlineDataBody.mimeType);
+                                    const blob = base64ToBlob(inlineDataBody.data, inlineDataBody.mimeType);
+                                    await saveBlob(storageKey, blob);
+                                    const dims = await measureImageBlob(blob);
+                                    if (dims) setCachedImageDims(storageKey, dims);
                                     await deleteBlob(msg.file.storageKey);
 
                                     dispatch(messagesActions.updateOne({
@@ -658,7 +691,8 @@ const MessageList = forwardRef<VirtuosoHandle, MessageListProps>(({
                                         file: {
                                           storageKey,
                                           mimeType: inlineDataBody.mimeType,
-                                          name: msg.file.name
+                                          name: msg.file.name,
+                                          ...(dims ?? {})
                                         },
                                         thoughtSignature: imageResponse.candidates[0].content.parts[0].thoughtSignature
                                       }

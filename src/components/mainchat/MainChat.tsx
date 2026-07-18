@@ -28,6 +28,7 @@ import type { Lore } from '../../entities/lorebook/types';
 import { type VirtuosoHandle } from 'react-virtuoso';
 import type { StoredFileRef } from '../../entities/message/types';
 import { getBlob, makeBinaryUrl, saveBlob } from '../../services/binaryStore';
+import { measureImageBlob, setCachedImageDims } from '../../utils/imageDims';
 import { FilePreview } from './FilePreview';
 
 interface MainChatProps {
@@ -46,7 +47,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
   const [stickerToSend, setStickerToSend] = useState<Sticker | null>(null);
   const [isEditingRoomName, setIsEditingRoomName] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
-  const [fileToSend, setFileToSend] = useState<{ previewSrc: string; mimeType: string; name: string; storageKey: string } | null>(null);
+  const [fileToSend, setFileToSend] = useState<{ previewSrc: string; mimeType: string; name: string; storageKey: string; width?: number; height?: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAuthorNoteOpen, setIsAuthorNoteOpen] = useState(false);
   const [tempAuthorNote, setTempAuthorNote] = useState('');
@@ -152,13 +153,24 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
     }
   };
 
+  const attachFile = (file: File) => {
+    const storageKey = `draftfile:${nanoid()}`;
+    void saveBlob(storageKey, file);
+    const previewSrc = URL.createObjectURL(file);
+    setFileToSend({ previewSrc, mimeType: file.type, name: file.name, storageKey });
+    if (file.type.startsWith('image/')) {
+      void measureImageBlob(file).then(dims => {
+        if (!dims) return;
+        setCachedImageDims(storageKey, dims);
+        setFileToSend(prev => prev && prev.storageKey === storageKey ? { ...prev, ...dims } : prev);
+      });
+    }
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const storageKey = `draftfile:${nanoid()}`;
-      void saveBlob(storageKey, file);
-      const previewSrc = URL.createObjectURL(file);
-      setFileToSend({ previewSrc, mimeType: file.type, name: file.name, storageKey });
+      attachFile(file);
     }
   };
 
@@ -166,10 +178,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
     const file = Array.from(event.clipboardData.items).find(item => item.kind === 'file')?.getAsFile();
     if (file) {
       event.preventDefault();
-      const storageKey = `draftfile:${nanoid()}`;
-      void saveBlob(storageKey, file);
-      const previewSrc = URL.createObjectURL(file);
-      setFileToSend({ previewSrc, mimeType: file.type, name: file.name, storageKey });
+      attachFile(file);
     }
   };
 
@@ -247,7 +256,7 @@ function MainChat({ room, isMobileSidebarOpen, onToggleMobileSidebar, onToggleCh
     } else if (['IMAGE', 'AUDIO', 'VIDEO', 'FILE'].includes(messageType)) {
       userMessage.push(userMessage[0]);
       // Persisted at selection time; keep only a reference in Redux
-      const storedFile: StoredFileRef = { storageKey: fileToSend!.storageKey, mimeType: fileToSend!.mimeType, name: fileToSend!.name };
+      const storedFile: StoredFileRef = { storageKey: fileToSend!.storageKey, mimeType: fileToSend!.mimeType, name: fileToSend!.name, width: fileToSend!.width, height: fileToSend!.height };
       userMessage[0] = { ...userMessage[0], type: messageType as Message['type'], file: storedFile } as Message;
       userMessage[1] = { ...userMessage[1], id: nanoid(), type: 'TEXT', content: processedText || '' } as Message;
     }
